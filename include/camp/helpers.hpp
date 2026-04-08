@@ -291,8 +291,17 @@ namespace experimental
 
 #ifdef CAMP_ENABLE_CUDA
   
-// SGS Question should the specialization for CUDA 13 cudaMemLocation printing be here?
+// SGS Question should the specialization for CUDA 13 cudaMemLocation
+// I/O be in Camp?  And should the method be defined here?
+//  
+// Invoking CUDA methods via CAMP_CUDA_API_INVOKE_AND_CHECK() may have
+// cudaMemLocation arguments which require I/O for error reporting
+// messages.  In CUDA < 13 these were simple enum values but in CUDA
+// 13 cudaMemLocation is a struct.
+//  
 // SGS Question Is camp requiring C++20 as well so use "requires std::is_same_v()" simplify non-const / const specialization?
+//  
+// Could simplify the two methods to be :  
 //  template <typename T>
 //  struct StreamInsertHelper<T&>
 //  requires std::is_same_v<std::remove_cv_t<T>, cudaMemLocation>
@@ -334,8 +343,11 @@ namespace experimental
 
   //! Specialization for printing of cudaMemLocation&
   //
-  // CUDA does not supply an operator<< for cudaMemLocation.
-  // Specialize the StreamInsertHelper rather than operator<< to avoid conflicts.
+  // Invoking CUDA methods via CAMP_CUDA_API_INVOKE_AND_CHECK() may
+  // have cudaMemLocation arguments which require I/O for error
+  // reporting messages.  CUDA does not supply an operator<< for
+  // cudaMemLocation.  Specialize the StreamInsertHelper rather than
+  // operator<< to avoid conflicts.
   template <>
   struct StreamInsertHelper<cudaMemLocation&> {
     cudaMemLocation& m_val;
@@ -347,8 +359,11 @@ namespace experimental
 
   //! Specialization for printing of const cudaMemLocation&
   //
-  // CUDA does not supply an operator<< for cudaMemLocation.
-  // Specialize the StreamInsertHelper rather than operator<< to avoid conflicts.
+  // Invoking CUDA methods via CAMP_CUDA_API_INVOKE_AND_CHECK() may
+  // have cudaMemLocation arguments which require I/O for error
+  // reporting messages.  CUDA does not supply an operator<< for
+  // cudaMemLocation.  Specialize the StreamInsertHelper rather than
+  // operator<< to avoid conflicts.
   template <>
   struct StreamInsertHelper<const cudaMemLocation&> {
     const cudaMemLocation& m_val;
