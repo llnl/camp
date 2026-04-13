@@ -67,9 +67,8 @@ namespace concepts
 }  // end namespace concepts
 }  // end namespace camp
 
-template <typename... T>
-camp::true_type ___valid_expr___(T &&...) noexcept;
-#define DefineConcept(...) decltype(___valid_expr___(__VA_ARGS__))
+
+#define DefineConcept(CONCEPT_NAME, ...) concept CONCEPT_NAME = 
 
 #define DefineTypeTraitFromConcept(TTName, ConceptName)             \
   template <typename... Args>                                       \
@@ -186,6 +185,11 @@ namespace concepts
   template <typename T>
   struct LessEqualComparable
       : DefineConcept(convertible_to<bool>(val<T>() <= val<T>())){};
+
+  template<typename T>
+  concept LessEqualComparable = requires(T arg) {
+    arg <= arg -> std::convertible_to<bool>;
+  };
 
   template <typename T>
   struct GreaterEqualComparable
