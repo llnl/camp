@@ -67,8 +67,21 @@ namespace concepts
 }  // end namespace concepts
 }  // end namespace camp
 
+#define DefineConcept(CONCEPT_NAME, expr) \
+template<typename T> \
+concept CONCEPT_NAME = requires(T arg) { expr };
 
-#define DefineConcept(CONCEPT_NAME, ...) concept CONCEPT_NAME = 
+#define DefineConceptBool(CONCEPT_NAME, expr) \
+template<typename T> \
+concept CONCEPT_NAME = static_cast<bool>(expr);
+
+#define DefineConceptBinary(CONCEPT_NAME, expr1, expr2) \
+template<typename T> \
+concept CONCEPT_NAME = expr1 && expr2;
+
+#define DefineConceptVar(CONCEPT_NAME, ...) \
+template<typename T> \
+concept CONCEPT_NAME = EXPAND_AND(__VA_ARGS__);
 
 #define DefineTypeTraitFromConcept(TTName, ConceptName)             \
   template <typename... Args>                                       \
@@ -171,117 +184,82 @@ namespace concepts
   struct requires_ : detail::detected<Op, detail::TL<Args...>> {
   };
 
-  template <typename T>
-  struct Swappable : DefineConcept(swap(val<T>(), val<T>())){};
-
-  template <typename T>
-  struct LessThanComparable
-      : DefineConcept(convertible_to<bool>(val<T>() < val<T>())){};
-
-  template <typename T>
-  struct GreaterThanComparable
-      : DefineConcept(convertible_to<bool>(val<T>() > val<T>())){};
-
-  template <typename T>
-  struct LessEqualComparable
-      : DefineConcept(convertible_to<bool>(val<T>() <= val<T>())){};
-
-  template<typename T>
-  concept LessEqualComparable = requires(T arg) {
-    arg <= arg -> std::convertible_to<bool>;
-  };
-
-  template <typename T>
-  struct GreaterEqualComparable
-      : DefineConcept(convertible_to<bool>(val<T>() >= val<T>())){};
-
-  template <typename T>
-  struct EqualityComparable
-      : DefineConcept(convertible_to<bool>(val<T>() == val<T>())){};
+  DefineConcept(Swappable, swap(arg, arg);)
+  DefineConcept(LessThanComparable, {arg < arg} -> std::convertible_to<bool>; )
+  DefineConcept(GreaterThanComparable, {arg > arg} -> std::convertible_to<bool>; )
+  DefineConcept(LessEqualComparable,  {arg <= arg} -> std::convertible_to<bool>; )
+  DefineConcept(GreaterEqualComparable,  {arg >= arg} -> std::convertible_to<bool>; )
+  DefineConcept(EqualityComparable,  {arg == arg} -> std::convertible_to<bool>; )
 
   template <typename T, typename U>
-  struct ComparableTo
-      : DefineConcept(convertible_to<bool>(val<U>() < val<T>()),
-                      convertible_to<bool>(val<T>() < val<U>()),
-                      convertible_to<bool>(val<U>() <= val<T>()),
-                      convertible_to<bool>(val<T>() <= val<U>()),
-                      convertible_to<bool>(val<U>() > val<T>()),
-                      convertible_to<bool>(val<T>() > val<U>()),
-                      convertible_to<bool>(val<U>() >= val<T>()),
-                      convertible_to<bool>(val<T>() >= val<U>()),
-                      convertible_to<bool>(val<U>() == val<T>()),
-                      convertible_to<bool>(val<T>() == val<U>()),
-                      convertible_to<bool>(val<U>() != val<T>()),
-                      convertible_to<bool>(val<T>() != val<U>())){};
-
-  template <typename T>
-  struct Comparable : ComparableTo<T, T> {
+  concept ComparableTo = requires (T lhs, U rhs) {
+        {lhs < val<T>()} -> std::convertible_to<bool>;
+        {lhs < val<U>()} -> std::convertible_to<bool>;
+        {lhs <= val<T>()} -> std::convertible_to<bool>;
+        {lhs <= val<U>()} -> std::convertible_to<bool>;
+        {lhs > val<T>()} -> std::convertible_to<bool>;
+        {lhs > val<U>()} -> std::convertible_to<bool>;
+        {lhs >= val<T>()} -> std::convertible_to<bool>;
+        {lhs >= val<U>()} -> std::convertible_to<bool>;
+        {lhs == val<T>()} -> std::convertible_to<bool>;
+        {lhs == val<U>()} -> std::convertible_to<bool>;
+        {lhs != val<T>()} -> std::convertible_to<bool>;
+        {lhs != val<U>()} -> std::convertible_to<bool>;
   };
 
   template <typename T>
-  struct Arithmetic : DefineConcept(is(std::is_arithmetic<T>())){};
+  concept Comparable = ComparableTo<T, T>;
+
+  DefineConceptBool(Arithmetic, std::is_arithmetic<T>())
+  DefineConceptBool(FloatingPoint, std::is_floating_point<T>())
+  DefineConceptBool(Integral, std::is_integral<T>())
+  DefineConceptBool(Signed, std::is_signed<T>())
+  DefineConceptBool(Unsigned, std::is_unsigned<T>())
+
+  DefineConceptBinary(Iterator, !Integral<T>, requires(T arg, T& arg_ref) {
+    *arg;
+    { ++arg_ref } -> std::same_as<T&>;
+  })
+  DefineConceptBinary(ForwardIterator, Iterator<T>, requires(T& arg) {
+    arg++;
+    *arg++;
+  })
+
+  DefineConceptBinary(BidirectionalIterator, ForwardIterator<T>, requires(T& arg) {
+    { --arg } -> std::same_as<T&>;
+    { arg-- } -> std::convertible_to<T const &>;
+    *arg--;
+  })
+
+  template<typename T>
+  concept RandomAccessIterator =
+    BidirectionalIterator<T> &&
+    Comparable<T> &&
+    requires(T arg, T& arg_ref, diff_from<T> increment) {
+        // Reference increment requirements
+        {arg_ref += increment} -> std::same_as<T&>;
+        {arg_ref -= increment} ->std::same_as<T&>;
+        // Value increment requirements
+        {arg + increment} -> std::same_as<T>;
+        {increment + arg} -> std::same_as<T>;
+        {arg - increment} -> std::same_as<T>;
+        // random access index operator
+        arg[increment];
+    };
 
   template <typename T>
-  struct FloatingPoint : DefineConcept(is(std::is_floating_point<T>())){};
+  concept HasBeginEnd = requires(T arg) {
+    std::begin(arg);
+    std::end(arg);
+  };
 
-  template <typename T>
-  struct Integral : DefineConcept(is(std::is_integral<T>())){};
 
-  template <typename T>
-  struct Signed : DefineConcept(Integral<T>(), is(std::is_signed<T>())){};
-
-  template <typename T>
-  struct Unsigned : DefineConcept(Integral<T>(), is(std::is_unsigned<T>())){};
-
-  template <typename T>
-  struct Iterator
-      : DefineConcept(is_not(Integral<T>()),  // hacky NVCC 8 workaround
-                      *(val<T>()),
-                      has_type<T &>(++val<T &>())){};
-
-  template <typename T>
-  struct ForwardIterator
-      : DefineConcept(Iterator<T>(), val<T &>()++, *val<T &>()++){};
-
-  template <typename T>
-  struct BidirectionalIterator
-      : DefineConcept(ForwardIterator<T>(),
-                      has_type<T &>(--val<T &>()),
-                      convertible_to<T const &>(val<T &>()--),
-                      *val<T &>()--){};
-
-  template <typename T>
-  struct RandomAccessIterator
-      : DefineConcept(BidirectionalIterator<T>(),
-                      Comparable<T>(),
-                      has_type<T &>(val<T &>() += val<diff_from<T>>()),
-                      has_type<T>(val<T>() + val<diff_from<T>>()),
-                      has_type<T>(val<diff_from<T>>() + val<T>()),
-                      has_type<T &>(val<T &>() -= val<diff_from<T>>()),
-                      has_type<T>(val<T>() - val<diff_from<T>>()),
-                      val<T>()[val<diff_from<T>>()]){};
-
-  template <typename T>
-  struct HasBeginEnd
-      : DefineConcept(std::begin(val<T>()), std::end(val<T>())){};
-
-  template <typename T>
-  struct Range
-      : DefineConcept(HasBeginEnd<T>(), Iterator<iterator_from<T>>()){};
-
-  template <typename T>
-  struct ForwardRange
-      : DefineConcept(HasBeginEnd<T>(), ForwardIterator<iterator_from<T>>()){};
-
-  template <typename T>
-  struct BidirectionalRange
-      : DefineConcept(HasBeginEnd<T>(),
-                      BidirectionalIterator<iterator_from<T>>()){};
-
-  template <typename T>
-  struct RandomAccessRange
-      : DefineConcept(HasBeginEnd<T>(),
-                      RandomAccessIterator<iterator_from<T>>()){};
+  DefineConceptBinary(Range,  HasBeginEnd<T>, Iterator<iterator_from<T>>)
+  DefineConceptBinary(ForwardRange,  HasBeginEnd<T>,
+    ForwardIterator<iterator_from<T>>)
+  DefineConceptBinary(BidirectionalRange,  HasBeginEnd<T>,
+    BidirectionalIterator<iterator_from<T>>)
+  DefineConceptBinary(RandomAccessRange, HasBeginEnd<T>, RandomAccessIterator<iterator_from<T>>)
 
 }  // end namespace concepts
 
