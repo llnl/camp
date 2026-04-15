@@ -291,29 +291,13 @@ namespace experimental
 
 #ifdef CAMP_ENABLE_CUDA
   
-// SGS Question should the specialization for CUDA 13 cudaMemLocation
-// I/O be in Camp?  And should the method be defined here?
-//  
-// Invoking CUDA methods via CAMP_CUDA_API_INVOKE_AND_CHECK() may have
-// cudaMemLocation arguments which require I/O for error reporting
-// messages.  In CUDA < 13 these were simple enum values but in CUDA
-// 13 cudaMemLocation is a struct.
-//  
-// SGS Question Is camp requiring C++20 as well so use "requires std::is_same_v()" simplify non-const / const specialization?
-//  
-// Could simplify the two methods to be :  
-//  template <typename T>
-//  struct StreamInsertHelper<T&>
-//  requires std::is_same_v<std::remove_cv_t<T>, cudaMemLocation>
-//  {
-//    T& m_val;
-//
-//    std::ostream& operator()(std::ostream& str) const {
-//      return print_cudaMemLocation(str, m_val);
-//    }
-//  };
-
 #if CUDART_VERSION >= 13000
+  // Specialization of camp I/O for CUDA 13 cudaMemLocation.
+  //
+  // Invoking CUDA methods via CAMP_CUDA_API_INVOKE_AND_CHECK() may have
+  // cudaMemLocation arguments which require I/O for error reporting
+  // messages.  In CUDA < 13 these were simple int enum values but in CUDA
+  // 13 cudaMemLocation it is a struct.
 
   //! Convert CUDA cudaMemLocationType to string
   inline const char* to_string(cudaMemLocationType t)
