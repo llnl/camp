@@ -333,7 +333,7 @@ namespace experimental
   // operator<< to avoid conflicts.
   template <>
   struct StreamInsertHelper<cudaMemLocation&> {
-    cudaMemLocation& m_val;
+    const cudaMemLocation& m_val;
 
     std::ostream& operator()(std::ostream& str) const {
       return print_cudaMemLocation(str, m_val);
