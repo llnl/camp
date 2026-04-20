@@ -84,9 +84,10 @@ template<typename T> \
 concept CONCEPT_NAME = EXPAND_AND(__VA_ARGS__);
 
 #define DefineTypeTraitFromConcept(TTName, ConceptName)             \
-  template <typename... Args>                                       \
-  struct TTName : camp::concepts::requires_<ConceptName, Args...> { \
-  }
+  template<class T>                                                 \
+  struct TTName : std::bool_constant<ConceptName<T>> {};            \
+  template<class T>                                                 \
+  inline constexpr bool TTName##_v = is_iterator<T>::value;
 
 namespace camp
 {
@@ -281,13 +282,17 @@ namespace type_traits
                              camp::concepts::RandomAccessRange);
 
   DefineTypeTraitFromConcept(is_comparable, camp::concepts::Comparable);
-  DefineTypeTraitFromConcept(is_comparable_to, camp::concepts::ComparableTo);
 
   DefineTypeTraitFromConcept(is_arithmetic, camp::concepts::Arithmetic);
   DefineTypeTraitFromConcept(is_floating_point, camp::concepts::FloatingPoint);
   DefineTypeTraitFromConcept(is_integral, camp::concepts::Integral);
   DefineTypeTraitFromConcept(is_signed, camp::concepts::Signed);
   DefineTypeTraitFromConcept(is_unsigned, camp::concepts::Unsigned);
+
+  template<class T>
+  struct is_comparable_to : std::bool_constant<camp::concepts::ComparableTo<T, T>> {};
+  template<class T>
+  inline constexpr bool is_comparable_to_v = is_comparable_to<T>::value;
 
   template <typename T>
   using IterableValue = decltype(*std::begin(camp::val<T>()));
