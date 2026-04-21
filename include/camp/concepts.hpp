@@ -10,6 +10,7 @@
 
 #include <iterator>
 #include <type_traits>
+#include <concepts>
 
 #include "camp/helpers.hpp"
 #include "camp/list.hpp"
@@ -67,13 +68,13 @@ namespace concepts
 }  // end namespace concepts
 }  // end namespace camp
 
-#define DefineConcept(CONCEPT_NAME, expr) \
+#define DefineConceptRequires(CONCEPT_NAME, expr) \
 template<typename T> \
 concept CONCEPT_NAME = requires(T arg) { expr };
 
-#define DefineConceptBool(CONCEPT_NAME, expr) \
+#define DefineConceptFromSTL(CONCEPT_NAME, stl_concept) \
 template<typename T> \
-concept CONCEPT_NAME = static_cast<bool>(expr);
+concept CONCEPT_NAME = stl_concept;
 
 #define DefineConceptBinary(CONCEPT_NAME, expr1, expr2) \
 template<typename T> \
@@ -185,37 +186,37 @@ namespace concepts
   struct requires_ : detail::detected<Op, detail::TL<Args...>> {
   };
 
-  DefineConcept(Swappable, swap(arg, arg);)
-  DefineConcept(LessThanComparable, {arg < arg} -> std::convertible_to<bool>; )
-  DefineConcept(GreaterThanComparable, {arg > arg} -> std::convertible_to<bool>; )
-  DefineConcept(LessEqualComparable,  {arg <= arg} -> std::convertible_to<bool>; )
-  DefineConcept(GreaterEqualComparable,  {arg >= arg} -> std::convertible_to<bool>; )
-  DefineConcept(EqualityComparable,  {arg == arg} -> std::convertible_to<bool>; )
+  DefineConceptRequires(Swappable, swap(arg, arg);)
+  DefineConceptRequires(LessThanComparable, {arg < arg} -> std::convertible_to<bool>; )
+  DefineConceptRequires(GreaterThanComparable, {arg > arg} -> std::convertible_to<bool>; )
+  DefineConceptRequires(LessEqualComparable,  {arg <= arg} -> std::convertible_to<bool>; )
+  DefineConceptRequires(GreaterEqualComparable,  {arg >= arg} -> std::convertible_to<bool>; )
+  DefineConceptRequires(EqualityComparable,  {arg == arg} -> std::convertible_to<bool>; )
 
   template <typename T, typename U>
   concept ComparableTo = requires (T lhs, U rhs) {
-        {lhs < val<T>()} -> std::convertible_to<bool>;
-        {lhs < val<U>()} -> std::convertible_to<bool>;
-        {lhs <= val<T>()} -> std::convertible_to<bool>;
-        {lhs <= val<U>()} -> std::convertible_to<bool>;
-        {lhs > val<T>()} -> std::convertible_to<bool>;
-        {lhs > val<U>()} -> std::convertible_to<bool>;
-        {lhs >= val<T>()} -> std::convertible_to<bool>;
-        {lhs >= val<U>()} -> std::convertible_to<bool>;
-        {lhs == val<T>()} -> std::convertible_to<bool>;
-        {lhs == val<U>()} -> std::convertible_to<bool>;
-        {lhs != val<T>()} -> std::convertible_to<bool>;
-        {lhs != val<U>()} -> std::convertible_to<bool>;
+        {lhs < rhs} -> std::convertible_to<bool>;
+        {rhs < lhs} -> std::convertible_to<bool>;
+        {lhs <= rhs} -> std::convertible_to<bool>;
+        {rhs <= lhs} -> std::convertible_to<bool>;
+        {lhs > rhs} -> std::convertible_to<bool>;
+        {rhs > lhs} -> std::convertible_to<bool>;
+        {lhs >= rhs} -> std::convertible_to<bool>;
+        {rhs >= lhs} -> std::convertible_to<bool>;
+        {lhs == rhs} -> std::convertible_to<bool>;
+        {rhs == lhs} -> std::convertible_to<bool>;
+        {lhs != rhs} -> std::convertible_to<bool>;
+        {rhs != lhs} -> std::convertible_to<bool>;
   };
 
   template <typename T>
   concept Comparable = ComparableTo<T, T>;
 
-  DefineConceptBool(Arithmetic, std::is_arithmetic<T>())
-  DefineConceptBool(FloatingPoint, std::is_floating_point<T>())
-  DefineConceptBool(Integral, std::is_integral<T>())
-  DefineConceptBool(Signed, std::is_signed<T>())
-  DefineConceptBool(Unsigned, std::is_unsigned<T>())
+  DefineConceptFromSTL(FloatingPoint, std::floating_point<T>)
+  DefineConceptFromSTL(Integral, std::integral<T>)
+  DefineConceptFromSTL(Arithmetic, FloatingPoint<T> || Integral<T>)
+  DefineConceptFromSTL(Signed, std::signed_integral<T>)
+  DefineConceptFromSTL(Unsigned, std::unsigned_integral<T>)
 
   DefineConceptBinary(Iterator, !Integral<T>, requires(T arg, T& arg_ref) {
     *arg;
@@ -254,13 +255,13 @@ namespace concepts
     std::end(arg);
   };
 
-
   DefineConceptBinary(Range,  HasBeginEnd<T>, Iterator<iterator_from<T>>)
   DefineConceptBinary(ForwardRange,  HasBeginEnd<T>,
     ForwardIterator<iterator_from<T>>)
   DefineConceptBinary(BidirectionalRange,  HasBeginEnd<T>,
     BidirectionalIterator<iterator_from<T>>)
-  DefineConceptBinary(RandomAccessRange, HasBeginEnd<T>, RandomAccessIterator<iterator_from<T>>)
+  DefineConceptBinary(RandomAccessRange, HasBeginEnd<T>,
+    RandomAccessIterator<iterator_from<T>>)
 
 }  // end namespace concepts
 

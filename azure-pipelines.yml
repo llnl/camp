@@ -24,7 +24,7 @@ jobs:
   pool:
     vmImage: 'windows-2022'
   variables:
-    CMAKE_EXTRA_FLAGS: '-DENABLE_WARNINGS_AS_ERRORS=Off -DBLT_CXX_STD="" -DCMAKE_CXX_STANDARD=17'
+    CMAKE_EXTRA_FLAGS: '-DENABLE_WARNINGS_AS_ERRORS=Off -DBLT_CXX_STD="" -DCMAKE_CXX_STANDARD=20'
   steps:
   - checkout: self
     clean: boolean
