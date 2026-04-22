@@ -17,22 +17,22 @@ ARG CMAKE_OPTIONS="-G Ninja -B build ${CMAKE_EXTRA} -DCMAKE_BUILD_TYPE=${BUILD_T
 ARG PARALLEL=4
 ARG BUILD_EXTRA=""
 ARG CMAKE_BUILD_OPTS="--build build --verbose --parallel ${PARALLEL} ${BUILD_EXTRA}"
-ARG CUDA_IMG_SUFFIX="-devel-ubuntu20.04"
+ARG CUDA_IMG_SUFFIX="-devel-ubuntu22.04"
 
 ### start compiler base images ###
 # there is no official container in the hub, but there is an official script
 # to install clang/llvm by version, installs a bit more than we need, but we
 # do not have to maintain it, so I'm alright with that
-FROM ghcr.io/rse-ops/clang-ubuntu-20.04:llvm-${VER} AS clang
+FROM ghcr.io/rse-ops/clang-ubuntu-22.04:llvm-${VER} AS clang
 ENV LD_LIBRARY_PATH=/opt/view/lib
 
 FROM gcc:${VER} AS gcc
 
 FROM nvidia/cuda:${VER}${CUDA_IMG_SUFFIX} AS nvcc
 
-FROM nvcr.io/nvidia/nvhpc:21.9-devel-cuda11.4-ubuntu20.04 AS nvhpc
+FROM nvcr.io/nvidia/nvhpc:23.3-devel-cuda12.0-ubuntu22.04 AS nvhpc
 
-FROM rocm/dev-ubuntu-20.04:${VER} AS rocm
+FROM rocm/dev-ubuntu-22.04:${VER} AS rocm
 
 # The intel-runtime container no longer works, use the fat one
 FROM intel/oneapi:${VER} AS oneapi
