@@ -23,7 +23,7 @@ ARG CUDA_IMG_SUFFIX="-devel-ubuntu22.04"
 # there is no official container in the hub, but there is an official script
 # to install clang/llvm by version, installs a bit more than we need, but we
 # do not have to maintain it, so I'm alright with that
-FROM ghcr.io/radiuss-docker/clang-${VER}-ubuntu-24.04 AS clang
+FROM ghcr.io/llnl/radiuss:clang-${VER}-ubuntu-24.04 AS clang
 ENV LD_LIBRARY_PATH=/opt/view/lib
 
 FROM gcc:${VER} AS gcc
