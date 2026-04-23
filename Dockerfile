@@ -17,13 +17,13 @@ ARG CMAKE_OPTIONS="-G Ninja -B build ${CMAKE_EXTRA} -DCMAKE_BUILD_TYPE=${BUILD_T
 ARG PARALLEL=4
 ARG BUILD_EXTRA=""
 ARG CMAKE_BUILD_OPTS="--build build --verbose --parallel ${PARALLEL} ${BUILD_EXTRA}"
-ARG CUDA_IMG_SUFFIX="-devel-ubuntu24.04"
+ARG CUDA_IMG_SUFFIX="-devel-ubuntu22.04"
 
 ### start compiler base images ###
 # there is no official container in the hub, but there is an official script
 # to install clang/llvm by version, installs a bit more than we need, but we
 # do not have to maintain it, so I'm alright with that
-FROM ghcr.io/rse-ops/clang-ubuntu-24.04:llvm-${VER} AS clang
+FROM ghcr.io/radiuss-docker/clang-${VER}-ubuntu-24.04 AS clang
 ENV LD_LIBRARY_PATH=/opt/view/lib
 
 FROM gcc:${VER} AS gcc
