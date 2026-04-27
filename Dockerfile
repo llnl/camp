@@ -60,7 +60,7 @@ ENV COMPILER=${COMPILER:-g++}
 RUN /bin/bash -lc '[[ -f ~/setup_env.sh ]] && source ~/setup_env.sh ; \
   CXX="${COMPILER:-g++}" ; \
   if [[ "${CMAKE_OPTIONS}" == *"sanitize=address"* ]]; then \
-    sudo apt-get install llvm-${VER}-dev libclang-${VER}-dev -fy; \
+    sudo apt-get install llvm-${VER}-runtime libclang-common-${VER}-dev -fy; \
   fi ; \
   ${PRE_CMD} && cmake ${CMAKE_OPTIONS} -DCMAKE_CXX_COMPILER="${CXX}" ..'
 RUN /bin/bash -c "[[ -f ~/setup_env.sh ]] && source ~/setup_env.sh ; ${PRE_CMD} && cmake ${CMAKE_BUILD_OPTS}"
