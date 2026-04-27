@@ -57,8 +57,14 @@ ARG CMAKE_OPTIONS
 ARG CMAKE_BUILD_OPTS
 ARG COMPILER
 ENV COMPILER=${COMPILER:-g++}
-RUN /bin/bash -c "[[ -f ~/setup_env.sh ]] && source ~/setup_env.sh ; ${PRE_CMD} && cmake ${CMAKE_OPTIONS} -DCMAKE_CXX_COMPILER=${COMPILER} .."
-RUN /bin/bash -c "[[ -f ~/setup_env.sh ]] && source ~/setup_env.sh ; ${PRE_CMD} && cmake ${CMAKE_BUILD_OPTS} .."
+RUN /bin/bash -lc '[[ -f ~/setup_env.sh ]] && source ~/setup_env.sh ; \
+  CXX="${COMPILER:-g++}" ; \
+  if [[ "${CMAKE_OPTIONS}" == *"sanitize=address"* ]]; then \
+    if [[ -x /opt/view/bin/clang++ && "$(basename "${CXX}")" == "clang++" ]]; then CXX=/opt/view/bin/clang++; fi ; \
+    bash scripts/ensure-clang-asan-runtime.sh "${CXX}" "${CMAKE_OPTIONS}" ; \
+  fi ; \
+  ${PRE_CMD} && cmake ${CMAKE_OPTIONS} -DCMAKE_CXX_COMPILER="${CXX}" ..'
+RUN /bin/bash -c "[[ -f ~/setup_env.sh ]] && source ~/setup_env.sh ; ${PRE_CMD} && cmake ${CMAKE_BUILD_OPTS}"
 RUN /bin/bash -c "[[ -f ~/setup_env.sh ]] && source ~/setup_env.sh ; ${PRE_CMD} && cd build && ctest ${CTEST_OPTIONS}"
 
 # this is here to stop azure from downloading oneapi for every test
