@@ -46,7 +46,7 @@ ENV GTEST_COLOR=1
 # Only install CMake/Ninja for images that don't reliably include them.
 # (gcc/clang radiuss images already provide a full toolchain.)
 COPY scripts/get-deps.sh /tmp/get-deps.sh
-RUN /bin/bash -lc 'if [[ "${BASE_IMG}" == "nvcc" || "${BASE_IMG}" == "rocm"  "${BASE_IMG}" == "oneapi" ]]; then bash /tmp/get-deps.sh; fi'
+RUN /bin/bash -lc 'if [[ "${BASE_IMG}" == "nvcc" || "${BASE_IMG}" == "rocm" || "${BASE_IMG}" == "oneapi" ]]; then bash /tmp/get-deps.sh; fi'
 COPY . /home/camp/workspace
 WORKDIR /home/camp/workspace/build
 
