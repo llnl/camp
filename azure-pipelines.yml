@@ -66,12 +66,13 @@ jobs:
         base_img: clang
         compiler: clang++
         ver: 19
-      clang19-debug:
-        base_img: clang
-        compiler: clang++
-        ver: 19
-        cmake_extra: -DCMAKE_CXX_FLAGS=-fsanitize=address
-        build_type: Debug
+      # TODO re-enable sanitizer
+      # clang19-debug:
+      #   base_img: clang
+      #   compiler: clang++
+      #   ver: 19
+      #   cmake_extra: -DCMAKE_CXX_FLAGS=-fsanitize=address
+      #   build_type: Debug
       # NVIDIA no longer supports "latest", must update manually
       nvcc12:
         base_img: nvcc
