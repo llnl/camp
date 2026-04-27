@@ -26,7 +26,7 @@ ARG CUDA_IMG_SUFFIX="-devel-ubuntu22.04"
 FROM ghcr.io/llnl/radiuss:clang-${VER}-ubuntu-24.04 AS clang
 ENV LD_LIBRARY_PATH=/opt/view/lib
 
-FROM gcc:${VER} AS gcc
+FROM ghcr.io/llnl/radiuss:gcc-${VER}-ubuntu-24.04 AS gcc
 
 FROM nvidia/cuda:${VER}${CUDA_IMG_SUFFIX} AS nvcc
 
@@ -43,8 +43,12 @@ FROM ${BASE_IMG} AS base
 ARG VER
 ARG BASE_IMG
 ENV GTEST_COLOR=1
+# Only install CMake/Ninja for images that don't reliably include them.
+# (gcc/clang radiuss images already provide a full toolchain.)
+COPY scripts/get-deps.sh /tmp/get-deps.sh
+RUN /bin/bash -lc 'if [[ "${BASE_IMG}" == "nvcc" || "${BASE_IMG}" == "rocm" ]]; then bash /tmp/get-deps.sh; fi'
 COPY . /home/camp/workspace
-WORKDIR /home/camp/workspace
+WORKDIR /home/camp/workspace/build
 
 FROM base AS test
 ARG PRE_CMD
