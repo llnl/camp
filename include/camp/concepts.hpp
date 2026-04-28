@@ -88,7 +88,7 @@ concept CONCEPT_NAME = EXPAND_AND(__VA_ARGS__);
   template<class T>                                                 \
   struct TTName : std::bool_constant<ConceptName<T>> {};            \
   template<class T>                                                 \
-  inline constexpr bool TTName##_v = is_iterator<T>::value;
+  inline constexpr bool TTName##_v = TTName<T>::value;
 
 namespace camp
 {
@@ -186,7 +186,7 @@ namespace concepts
   struct requires_ : detail::detected<Op, detail::TL<Args...>> {
   };
 
-  DefineConceptRequires(Swappable, swap(arg, arg);)
+  DefineConceptFromSTL(Swappable, std::swappable<T>)
   DefineConceptRequires(LessThanComparable, {arg < arg} -> std::convertible_to<bool>; )
   DefineConceptRequires(GreaterThanComparable, {arg > arg} -> std::convertible_to<bool>; )
   DefineConceptRequires(LessEqualComparable,  {arg <= arg} -> std::convertible_to<bool>; )
@@ -218,6 +218,10 @@ namespace concepts
   DefineConceptFromSTL(Signed, std::signed_integral<T>)
   DefineConceptFromSTL(Unsigned, std::unsigned_integral<T>)
 
+  // Note: std::weakly_incrementable is the closest C++ concept to Iterator, but differs
+  // in two important ways.  (1) std::weakly_incrementable requires and iterator be
+  // post-incrementable (arg_ref++) (2) std::weakly_incrementable does not requires
+  // not Integral
   DefineConceptBinary(Iterator, !Integral<T>, requires(T arg, T& arg_ref) {
     *arg;
     { ++arg_ref } -> std::same_as<T&>;
@@ -252,6 +256,7 @@ namespace concepts
   template <typename T>
   concept HasBeginEnd = requires(T arg) {
     std::begin(arg);
+    // std::ranges::end requires a sentinel
     std::end(arg);
   };
 
@@ -290,10 +295,10 @@ namespace type_traits
   DefineTypeTraitFromConcept(is_signed, camp::concepts::Signed);
   DefineTypeTraitFromConcept(is_unsigned, camp::concepts::Unsigned);
 
-  template<class T>
-  struct is_comparable_to : std::bool_constant<camp::concepts::ComparableTo<T, T>> {};
-  template<class T>
-  inline constexpr bool is_comparable_to_v = is_comparable_to<T>::value;
+  template<class T, class U>
+  struct is_comparable_to : std::bool_constant<camp::concepts::ComparableTo<T, U>> {};
+  template<class T, class U>
+  inline constexpr bool is_comparable_to_v = is_comparable_to<T, U>::value;
 
   template <typename T>
   using IterableValue = decltype(*std::begin(camp::val<T>()));
