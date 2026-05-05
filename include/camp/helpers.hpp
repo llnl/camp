@@ -288,7 +288,74 @@ namespace experimental
   }
 
 
+
 #ifdef CAMP_ENABLE_CUDA
+  
+#if CUDART_VERSION >= 13000
+  // Specialization of camp I/O for CUDA 13 cudaMemLocation.
+  //
+  // Invoking CUDA methods via CAMP_CUDA_API_INVOKE_AND_CHECK() may have
+  // cudaMemLocation arguments which require I/O for error reporting
+  // messages.  In CUDA < 13 these were simple int enum values but in CUDA
+  // 13 cudaMemLocation it is a struct.
+
+  //! Convert CUDA cudaMemLocationType to string
+  constexpr std::string_view to_string(cudaMemLocationType t)
+  {
+    switch (t) {
+      case cudaMemLocationTypeInvalid:
+	return "cudaMemLocationTypeInvalid";
+      case cudaMemLocationTypeDevice:
+	return "cudaMemLocationTypeDevice";
+      case cudaMemLocationTypeHost:
+	return "cudaMemLocationTypeHost";
+      case cudaMemLocationTypeHostNuma:
+	return "cudaMemLocationTypeHostNuma";
+      default:
+	return "Unknown";
+    }
+  }
+
+  //! Print helper for cudaMemLocation
+  inline std::ostream& print_cudaMemLocation(std::ostream& os,
+					     const cudaMemLocation& loc)
+  {
+    os << "{" <<  to_string(loc.type) << ", " << loc.id << "}";
+    return os;
+  }
+
+  //! Specialization for printing cudaMemLocation&
+  //
+  // Invoking CUDA methods via CAMP_CUDA_API_INVOKE_AND_CHECK() may
+  // have cudaMemLocation arguments which require I/O for error
+  // reporting messages.  CUDA does not supply an operator<< for
+  // cudaMemLocation.  Specialize the StreamInsertHelper rather than
+  // operator<< to avoid conflicts.
+  template <>
+  struct StreamInsertHelper<cudaMemLocation&> {
+    const cudaMemLocation& m_val;
+
+    std::ostream& operator()(std::ostream& str) const {
+      return print_cudaMemLocation(str, m_val);
+    }
+  };
+
+  //! Specialization for printing of const cudaMemLocation&
+  //
+  // Invoking CUDA methods via CAMP_CUDA_API_INVOKE_AND_CHECK() may
+  // have cudaMemLocation arguments which require I/O for error
+  // reporting messages.  CUDA does not supply an operator<< for
+  // cudaMemLocation.  Specialize the StreamInsertHelper rather than
+  // operator<< to avoid conflicts.
+  template <>
+  struct StreamInsertHelper<const cudaMemLocation&> {
+    const cudaMemLocation& m_val;
+
+    std::ostream& operator()(std::ostream& str) const {
+      return print_cudaMemLocation(str, m_val);
+    }
+  };
+#endif // CUDART_VERSION >= 13000
 
   //! Get the argument names for the given cuda API function name.
   //
