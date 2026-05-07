@@ -76,7 +76,7 @@ concept CONCEPT_NAME = requires(T arg) { expr };
 template<typename T> \
 concept CONCEPT_NAME = stl_concept;
 
-#define DefineConceptBinary(CONCEPT_NAME, expr1, expr2) \
+#define DefineConceptBinaryAnd(CONCEPT_NAME, expr1, expr2) \
 template<typename T> \
 concept CONCEPT_NAME = expr1 && expr2;
 
@@ -214,7 +214,7 @@ namespace concepts
 
   DefineConceptFromSTL(FloatingPoint, std::floating_point<T>)
   DefineConceptFromSTL(Integral, std::integral<T>)
-  DefineConceptFromSTL(Arithmetic, FloatingPoint<T> || Integral<T>)
+  DefineConceptFromSTL(Arithmetic, std::is_arithmetic_v<T>)
   DefineConceptFromSTL(Signed, std::signed_integral<T>)
   DefineConceptFromSTL(Unsigned, std::unsigned_integral<T>)
 
@@ -222,16 +222,16 @@ namespace concepts
   // in two important ways.  (1) std::weakly_incrementable requires and iterator be
   // post-incrementable (arg_ref++) (2) std::weakly_incrementable does not requires
   // not Integral
-  DefineConceptBinary(Iterator, !Integral<T>, requires(T arg, T& arg_ref) {
+  DefineConceptBinaryAnd(Iterator, !Integral<T>, requires(T arg, T& arg_ref) {
     *arg;
     { ++arg_ref } -> std::same_as<T&>;
   })
-  DefineConceptBinary(ForwardIterator, Iterator<T>, requires(T& arg) {
+  DefineConceptBinaryAnd(ForwardIterator, Iterator<T>, requires(T& arg) {
     arg++;
     *arg++;
   })
 
-  DefineConceptBinary(BidirectionalIterator, ForwardIterator<T>, requires(T& arg) {
+  DefineConceptBinaryAnd(BidirectionalIterator, ForwardIterator<T>, requires(T& arg) {
     { --arg } -> std::same_as<T&>;
     { arg-- } -> std::convertible_to<T const &>;
     *arg--;
@@ -254,18 +254,14 @@ namespace concepts
     };
 
   template <typename T>
-  concept HasBeginEnd = requires(T arg) {
-    std::begin(arg);
-    // std::ranges::end requires a sentinel
-    std::end(arg);
-  };
+  concept HasBeginEnd = std::ranges::range<T>;
 
-  DefineConceptBinary(Range,  HasBeginEnd<T>, Iterator<iterator_from<T>>)
-  DefineConceptBinary(ForwardRange,  HasBeginEnd<T>,
+  DefineConceptBinaryAnd(Range,  HasBeginEnd<T>, Iterator<iterator_from<T>>)
+  DefineConceptBinaryAnd(ForwardRange,  HasBeginEnd<T>,
     ForwardIterator<iterator_from<T>>)
-  DefineConceptBinary(BidirectionalRange,  HasBeginEnd<T>,
+  DefineConceptBinaryAnd(BidirectionalRange,  HasBeginEnd<T>,
     BidirectionalIterator<iterator_from<T>>)
-  DefineConceptBinary(RandomAccessRange, HasBeginEnd<T>,
+  DefineConceptBinaryAnd(RandomAccessRange, HasBeginEnd<T>,
     RandomAccessIterator<iterator_from<T>>)
 
 }  // end namespace concepts
