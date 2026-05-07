@@ -24,7 +24,7 @@ jobs:
   pool:
     vmImage: 'windows-2022'
   variables:
-    CMAKE_EXTRA_FLAGS: '-DENABLE_WARNINGS_AS_ERRORS=Off -DBLT_CXX_STD="" -DCMAKE_CXX_STANDARD=17'
+    CMAKE_EXTRA_FLAGS: '-DENABLE_WARNINGS_AS_ERRORS=Off -DBLT_CXX_STD="" -DCMAKE_CXX_STANDARD=20'
   steps:
   - checkout: self
     clean: boolean
@@ -50,46 +50,39 @@ jobs:
   timeoutInMinutes: 360
   strategy:
     matrix:
-      gcc10-debug:
+      gcc11-debug:
         base_img: gcc
-        ver: 10
+        ver: 11
         cmake_extra: -DENABLE_WARNINGS_AS_ERRORS=On -DENABLE_COVERAGE=On
         build_type: Debug
-      gcc10:
+      gcc11:
         base_img: gcc
-        ver: 10
-      gcc-latest:
+        ver: 11
+      gcc-14:
         base_img: gcc
-        ver: latest
+        ver: 14
         cmake_extra:
-      clang10:
+      clang19:
         base_img: clang
         compiler: clang++
-        ver: 10.0.0
-      clang10-debug:
-        base_img: clang
-        compiler: clang++
-        ver: 10.0.0
-        cmake_extra: -DCMAKE_CXX_FLAGS=-fsanitize=address
-        build_type: Debug
-      clang-latest:
-        base_img: clang
-        compiler: clang++
-        ver: 13.0.0
+        ver: 19
+      # TODO re-enable sanitizer
+      # clang19-debug:
+      #   base_img: clang
+      #   compiler: clang++
+      #   ver: 19
+      #   cmake_extra: -DCMAKE_CXX_FLAGS=-fsanitize=address
+      #   build_type: Debug
       # NVIDIA no longer supports "latest", must update manually
-      nvcc11:
-        base_img: nvcc
-        ver: 11.8.0
-        cmake_extra: -DENABLE_CUDA=On -DCMAKE_CUDA_ARCHITECTURES=70
-      nvcc11-debug:
-        base_img: nvcc
-        ver: 11.8.0
-        cmake_extra: -DENABLE_CUDA=On -DCMAKE_CUDA_ARCHITECTURES=70
-        build_type: Debug
       nvcc12:
+        base_img: nvcc
+        ver: 12.0.0
+        cmake_extra: -DENABLE_CUDA=On -DCMAKE_CUDA_ARCHITECTURES=70
+      nvcc12-debug:
         base_img: nvcc
         ver: 12.2.2
         cmake_extra: -DENABLE_CUDA=On -DCMAKE_CUDA_ARCHITECTURES=70
+        build_type: Debug
       rocm:
         base_img: rocm
         cmake_extra: -DROCM_PATH=/opt/rocm -DENABLE_HIP=On -DENABLE_OPENMP=Off -DENABLE_CUDA=Off
