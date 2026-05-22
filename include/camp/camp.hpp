@@ -44,7 +44,7 @@ struct prepend;
 
 template <typename... Elements, typename T>
 struct prepend<list<Elements...>, T> {
-  using type = list<Elements..., T>;
+  using type = list<T, Elements...>;
 };
 
 template <typename Seq, typename T>
