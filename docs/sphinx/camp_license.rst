@@ -7,7 +7,7 @@
 .. ## SPDX-License-Identifier: (BSD-3-Clause)
 .. ##
 
-.. _rajaperf-copyright:
+.. _camp-copyright:
 
 ==========================================================
 Camp Copyright and License Information

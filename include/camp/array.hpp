@@ -6,7 +6,6 @@
 //
 // SPDX-License-Identifier: (BSD-3-Clause)
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 // The implementation of camp::array follows the C++ standard but borrows
 // from the implementation of std::array in the LLVM project at:
 // https://github.com/llvm/llvm-project/blob/main/libcxx/include/array
