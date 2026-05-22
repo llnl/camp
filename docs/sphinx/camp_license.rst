@@ -13,7 +13,7 @@
 Camp Copyright and License Information
 ==========================================================
 
-.. include:: ../../LICENSE
+.. include:: ../../COPYRIGHT
 
-.. include:: ../../NOTICE
+.. include:: ../../LICENSE
 
