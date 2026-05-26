@@ -346,7 +346,7 @@ namespace resources
       size_t get_hash() const
       {
         const size_t sycl_type = size_t(get_platform()) << 32;
-        size_t stream_hash = std::hash<void*>{}(static_cast<void*>(qu));
+        size_t stream_hash = std::hash<sycl::queue>{}(qu);
         return sycl_type | (stream_hash & 0xFFFFFFFF);
       }
 
