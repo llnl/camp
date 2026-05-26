@@ -29,12 +29,15 @@ namespace resources
 {
   inline namespace v1
   {
+    class Sycl;
 
     class SyclEvent
     {
     public:
       // TODO: make this actually work
-      SyclEvent(sycl::queue* CAMP_UNUSED_ARG(qu)) { m_event = sycl::event(); }
+      SyclEvent(sycl::queue& CAMP_UNUSED_ARG(qu)) { m_event = sycl::event(); }
+
+      SyclEvent(Sycl& res);
 
       bool check() const { return true; }
 
@@ -252,9 +255,9 @@ namespace resources
       Platform get_platform() const { return Platform::sycl; }
 
       // Event
-      SyclEvent get_event() { return SyclEvent(get_queue()); }
+      SyclEvent get_event() { return SyclEvent(*this); }
 
-      Event get_event_erased() { return Event{SyclEvent(get_queue())}; }
+      Event get_event_erased() { return Event{SyclEvent(*this)}; }
 
       void wait() { qu.wait(); }
 
@@ -350,6 +353,10 @@ namespace resources
     private:
       sycl::queue qu;
     };
+
+    inline SyclEvent::SyclEvent(Sycl &res)
+      : SyclEvent(res.get_queue())
+    { }
 
   }  // namespace v1
 
