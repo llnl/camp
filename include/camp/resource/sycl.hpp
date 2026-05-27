@@ -29,12 +29,15 @@ namespace resources
 {
   inline namespace v1
   {
+    class Sycl;
 
     class SyclEvent
     {
     public:
       // TODO: make this actually work
-      SyclEvent(sycl::queue* CAMP_UNUSED_ARG(qu)) { m_event = sycl::event(); }
+      SyclEvent(sycl::queue& CAMP_UNUSED_ARG(qu)) { m_event = sycl::event(); }
+
+      SyclEvent(Sycl& res);
 
       bool check() const { return true; }
 
@@ -130,7 +133,7 @@ namespace resources
       }
 
     private:
-      static sycl::queue* get_a_queue(const sycl::context* syclContext, int num)
+      static sycl::queue& get_a_queue(const sycl::context* syclContext, int num)
       {
         static constexpr int num_queues = 16;
 
@@ -225,25 +228,19 @@ namespace resources
           if (num < 0) {
             int& previous = cachedContextIter->second.first;
             previous = (previous + 1) % num_queues;
-            return &cachedContextIter->second.second[previous];
+            return cachedContextIter->second.second[previous];
           }
         }
 
-        return &cachedContextIter->second.second[num % num_queues];
+        return cachedContextIter->second.second[num % num_queues];
       }
 
       // Private from-queue constructor
-      Sycl(sycl::queue& q) : qu(&q) {}
+      Sycl(sycl::queue& q) : qu(q) {}
 
     public:
       Sycl(int group = -1,
            sycl::context const& syclContext = get_thread_default_context())
-          : qu(get_a_queue(&syclContext, group))
-      {
-      }
-
-      [[deprecated]]
-      Sycl(sycl::context const& syclContext, int group = -1)
           : qu(get_a_queue(&syclContext, group))
       {
       }
@@ -258,11 +255,11 @@ namespace resources
       Platform get_platform() const { return Platform::sycl; }
 
       // Event
-      SyclEvent get_event() { return SyclEvent(get_queue()); }
+      SyclEvent get_event() { return SyclEvent(*this); }
 
-      Event get_event_erased() { return Event{SyclEvent(get_queue())}; }
+      Event get_event_erased() { return Event{SyclEvent(*this)}; }
 
-      void wait() { qu->wait(); }
+      void wait() { qu.wait(); }
 
       void wait_for(Event* e)
       {
@@ -280,17 +277,17 @@ namespace resources
       {
         T* ret = nullptr;
         if (size > 0) {
-          ret = sycl::malloc_shared<T>(size, *qu);
+          ret = sycl::malloc_shared<T>(size, qu);
           switch (ma) {
             case MemoryAccess::Unknown:
             case MemoryAccess::Device:
-              ret = sycl::malloc_device<T>(size, *qu);
+              ret = sycl::malloc_device<T>(size, qu);
               break;
             case MemoryAccess::Pinned:
-              ret = sycl::malloc_host<T>(size, *qu);
+              ret = sycl::malloc_host<T>(size, qu);
               break;
             case MemoryAccess::Managed:
-              ret = sycl::malloc_shared<T>(size, *qu);
+              ret = sycl::malloc_shared<T>(size, qu);
               break;
           }
         }
@@ -307,27 +304,27 @@ namespace resources
       void deallocate(void* p, MemoryAccess ma = MemoryAccess::Device)
       {
         CAMP_ALLOW_UNUSED_LOCAL(ma);
-        sycl::free(p, *qu);
+        sycl::free(p, qu);
       }
 
       void memcpy(void* dst, const void* src, size_t size)
       {
         if (size > 0) {
-          qu->memcpy(dst, src, size).wait();
+          qu.memcpy(dst, src, size).wait();
         }
       }
 
       void memset(void* p, int val, size_t size)
       {
         if (size > 0) {
-          qu->memset(p, val, size).wait();
+          qu.memset(p, val, size).wait();
         }
       }
 
       // implementation specific
-      sycl::queue* get_queue() { return qu; }
+      sycl::queue& get_queue() { return qu; }
 
-      sycl::queue const* get_queue() const { return qu; }
+      sycl::queue const& get_queue() const { return qu; }
 
       /*
        * \brief Compares two (Sycl) resources to see if they are equal
@@ -349,13 +346,17 @@ namespace resources
       size_t get_hash() const
       {
         const size_t sycl_type = size_t(get_platform()) << 32;
-        size_t stream_hash = std::hash<void*>{}(static_cast<void*>(qu));
+        size_t stream_hash = std::hash<sycl::queue>{}(qu);
         return sycl_type | (stream_hash & 0xFFFFFFFF);
       }
 
     private:
-      sycl::queue* qu;
+      sycl::queue qu;
     };
+
+    inline SyclEvent::SyclEvent(Sycl &res)
+      : SyclEvent(res.get_queue())
+    { }
 
   }  // namespace v1
 
