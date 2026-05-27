@@ -77,7 +77,7 @@ namespace resources
         if (!result) {
           return nullptr;
         }
-        return result->get();
+        return &result->get();
       }
 
       template <typename T>
