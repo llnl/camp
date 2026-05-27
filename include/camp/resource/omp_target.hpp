@@ -41,6 +41,24 @@ namespace resources
         }
       }
 
+      OmpEvent(OmpEvent const&) = delete;
+
+      OmpEvent(OmpEvent&& rhs) noexcept
+        : addr(std::exchange(rhs.addr, nullptr))
+        , dev(std::exchange(rhs.dev, -1))
+      {}
+
+      OmpEvent& operator=(OmpEvent const&) = delete;
+
+      OmpEvent& operator=(OmpEvent&& rhs) noexcept
+      {
+        addr = std::exchange(rhs.addr, nullptr);
+        dev = std::exchange(rhs.dev, -1);
+        return *this;
+      }
+
+      ~OmpEvent() = default;
+
       Platform get_platform() const { return Platform::omp_target; }
 
       bool check() const
@@ -79,8 +97,8 @@ namespace resources
       }
 
     private:
-      char *addr;
-      int dev;
+      char *addr = nullptr;
+      int dev = -1;
     };
 
     class Omp

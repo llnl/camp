@@ -26,7 +26,17 @@ namespace resources
     class HostEvent
     {
     public:
-      HostEvent() {}
+      HostEvent() = default;
+
+      HostEvent(HostEvent const&) = delete;
+
+      HostEvent(HostEvent&&) = default;
+
+      HostEvent& operator=(HostEvent const&) = delete;
+
+      HostEvent& operator=(HostEvent&&) = default;
+
+      ~HostEvent() = default;
 
       Platform get_platform() const { return Platform::host; }
 

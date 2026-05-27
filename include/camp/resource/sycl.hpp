@@ -49,6 +49,16 @@ namespace resources
 
       SyclEvent(Sycl& res);
 
+      SyclEvent(SyclEvent const&) = delete;
+
+      SyclEvent(SyclEvent&& rhs) = default;
+
+      SyclEvent& operator=(SyclEvent const&) = delete;
+
+      SyclEvent& operator=(SyclEvent&& rhs) = default;
+
+      ~SyclEvent() = default;
+
       Platform get_platform() const { return Platform::sycl; }
 
       bool check() const

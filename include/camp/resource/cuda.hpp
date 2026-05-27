@@ -60,9 +60,31 @@ namespace resources
     class CudaEvent
     {
     public:
-      CudaEvent(cudaStream_t stream) { init(stream); }
+      CudaEvent(cudaStream_t stream)
+        : m_event(init(stream))
+      {}
 
       CudaEvent(Cuda &res);
+
+      CudaEvent(CudaEvent const&) = delete;
+
+      CudaEvent(CudaEvent&& rhs) noexcept
+        : m_event(std::exchange(rhs.m_event, nullptr))
+      {}
+
+      CudaEvent& operator=(CudaEvent const&) = delete;
+
+      CudaEvent& operator=(CudaEvent&& rhs) noexcept
+      {
+        finalize(m_event);
+        m_event = std::exchange(rhs.m_event, nullptr);
+        return *this;
+      }
+
+      ~CudaEvent()
+      {
+        finalize(m_event);
+      }
 
       Platform get_platform() const { return Platform::cuda; }
 
@@ -96,14 +118,24 @@ namespace resources
 
     private:
       // note that cudaEvent_t is an alias for a pointer and is nullable
-      cudaEvent_t m_event;
+      cudaEvent_t m_event = nullptr;
 
-      void init(cudaStream_t stream)
+      static cudaEvent_t init(cudaStream_t stream)
       {
+        cudaEvent_t event;
         CAMP_CUDA_API_INVOKE_AND_CHECK(cudaEventCreateWithFlags,
-                                       &m_event,
+                                       &event,
                                        cudaEventDisableTiming);
         CAMP_CUDA_API_INVOKE_AND_CHECK(cudaEventRecord, m_event, stream);
+        return event;
+      }
+
+      static void finalize(cudaEvent_t& event)
+      {
+        if (event != nullptr) {
+          campCudaErrchk(cudaEventDestroy(event));
+          event = nullptr;
+        }
       }
     };
 
