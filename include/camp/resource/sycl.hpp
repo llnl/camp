@@ -51,7 +51,7 @@ namespace resources
             == sycl::info::event_command_status::complete;
       }
 
-      void wait() const { m_event.wait(); }
+      void wait() const { sycl::event(m_event).wait(); }
 
       sycl::event& getSyclEvent_t() { return m_event; }
 
