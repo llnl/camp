@@ -253,17 +253,7 @@ namespace resources
        *
        * \return True or false depending on if this is the same dev and addr ptr
        */
-      bool operator==(Omp const &o) const
-      {
-        return (dev == o.dev && addr == o.addr);
-      }
-
-      /*
-       * \brief Compares two (Omp) resources to see if they are NOT equal
-       *
-       * \return Negation of == operator
-       */
-      bool operator!=(Omp const &o) const { return !(*this == o); }
+      friend inline bool operator==(Omp const& lhs, Omp const& rhs) = default;
 
       size_t get_hash() const
       {

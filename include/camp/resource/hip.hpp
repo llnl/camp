@@ -288,17 +288,7 @@ namespace resources
        *
        * \return True or false depending on if this is the same stream
        */
-      bool operator==(Hip const &h) const
-      {
-        return (get_stream() == h.get_stream());
-      }
-
-      /*
-       * \brief Compares two (Hip) resources to see if they are NOT equal
-       *
-       * \return Negation of == operator
-       */
-      bool operator!=(Hip const &h) const { return !(*this == h); }
+      friend inline bool operator==(Hip const& lhs, Hip const& rhs) = default;
 
       size_t get_hash() const
       {

@@ -90,14 +90,10 @@ namespace resources
        *
        * \return Always return true since Host resources are always the same
        */
-      bool operator==(Host const &) const { return true; }
-
-      /*
-       * \brief Compares two (Host) resources to see if they are NOT equal
-       *
-       * \return Always return false. Host resources are always the same
-       */
-      bool operator!=(Host const &) const { return false; }
+      friend inline bool operator==(Host const& CAMP_UNUSED_ARG(lhs), Host const& CAMP_UNUSED_ARG(rhs))
+      {
+        return true;
+      }
 
       size_t get_hash() const
       {

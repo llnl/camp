@@ -142,20 +142,13 @@ namespace resources
        * \return True if they have the same platform and stream/queue, false
        * otherwise.
        */
-      bool operator==(Resource const &r) const
+      friend inline bool operator==(Resource const &lhs, Resource const &rhs)
       {
-        if (get_platform() == r.get_platform()) {
-          return (m_value->compare(r));
+        if (lhs.get_platform() == rhs.get_platform()) {
+          return lhs.m_value->compare(rhs);
         }
         return false;
       }
-
-      /*
-       * \brief Compares two Resources to see if they are NOT equal.
-       *
-       * \return Negation of == operator.
-       */
-      bool operator!=(Resource const &r) const { return !(*this == r); }
 
     private:
       friend struct std::hash<camp::resources::Resource>;

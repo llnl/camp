@@ -286,17 +286,7 @@ namespace resources
        *
        * \return True or false depending on if it is the same stream
        */
-      bool operator==(Cuda const &c) const
-      {
-        return (get_stream() == c.get_stream());
-      }
-
-      /*
-       * \brief Compares two (Cuda) resources to see if they are NOT equal
-       *
-       * \return Negation of == operator
-       */
-      bool operator!=(Cuda const &c) const { return !(*this == c); }
+      friend inline bool operator==(Cuda const& lhs, Cuda const& rhs) = default;
 
       size_t get_hash() const
       {
