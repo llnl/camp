@@ -159,7 +159,7 @@ namespace resources
           return m_modelVal.get_platform();
         }
 
-        bool compare(Resource const &e) const override
+        bool compare(Event const &e) const override
         {
           return m_modelVal == e.get<T>();
         }
