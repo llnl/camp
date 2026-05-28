@@ -49,6 +49,8 @@ namespace resources
 
       SyclEvent(Sycl& res);
 
+      Platform get_platform() const { return Platform::sycl; }
+
       bool check() const
       {
         return m_event.get_info<sycl::info::event::command_execution_status>()
@@ -60,6 +62,20 @@ namespace resources
       sycl::event& getSyclEvent_t() { return m_event; }
 
       sycl::event const& getSyclEvent_t() const { return m_event; }
+
+      /*
+       * \brief Compares two events to see if they are equal
+       *
+       * \return True or false depending on if this is the same event
+       */
+      friend inline bool operator==(SyclEvent const& lhs, SyclEvent const& rhs) = default;
+
+      size_t get_hash() const
+      {
+        const size_t sycl_type = size_t(get_platform()) << 32;
+        size_t stream_hash = std::hash<sycl::event>{}(m_event);
+        return sycl_type | (stream_hash & 0xFFFFFFFF);
+      }
 
     private:
       mutable sycl::event m_event; // mutable as use non-const member function
@@ -349,17 +365,7 @@ namespace resources
        *
        * \return True or false depending on if this is the same queue
        */
-      bool operator==(Sycl const& s) const
-      {
-        return (get_queue() == s.get_queue());
-      }
-
-      /*
-       * \brief Compares two (Sycl) resources to see if they are NOT equal
-       *
-       * \return Negation of == operator
-       */
-      bool operator!=(Sycl const& s) const { return !(*this == s); }
+      friend inline bool operator==(Sycl const& lhs, Sycl const& rhs) = default;
 
       size_t get_hash() const
       {
@@ -384,6 +390,26 @@ namespace resources
 }  // namespace resources
 }  // namespace camp
 
+namespace std
+{
+
+/*
+ * \brief Specialization of std::hash for camp::resources::SyclEvent
+ *
+ * Provides a hash function for sycl typed event objects, enabling their use
+ * as keys in unordered associative containers (std::unordered_map,
+ * std::unordered_set, etc.)
+ *
+ * \return A size_t hash value
+ */
+template <>
+struct hash<camp::resources::SyclEvent> {
+  std::size_t operator()(const camp::resources::SyclEvent& e) const
+  {
+    return e.get_hash();
+  }
+};
+
 /*
  * \brief Specialization of std::hash for camp::resources::Sycl
  *
@@ -393,8 +419,6 @@ namespace resources
  *
  * \return A size_t hash value
  */
-namespace std
-{
 template <>
 struct hash<camp::resources::Sycl> {
   std::size_t operator()(const camp::resources::Sycl& s) const
@@ -402,6 +426,7 @@ struct hash<camp::resources::Sycl> {
     return s.get_hash();
   }
 };
+
 }  // namespace std
 #endif  // #ifdef CAMP_ENABLE_SYCL
 

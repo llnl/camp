@@ -85,55 +85,164 @@ namespace resources
       template <typename T>
       T *try_get()
       {
+        if (!m_value) {
+          return nullptr;
+        }
         auto result = dynamic_cast<ContextModel<T> *>(m_value.get());
-        return result ? result->get() : nullptr;
+        if (!result) {
+          return nullptr;
+        }
+        return result->get();
       }
 
       template <typename T>
-      T get() const
+      T const*try_get() const
       {
+        if (!m_value) {
+          return nullptr;
+        }
         auto result = dynamic_cast<ContextModel<T> *>(m_value.get());
+        if (!result) {
+          return nullptr;
+        }
+        return result->get();
+      }
+
+      template <typename T>
+      T& get() &
+      {
+        T* result = try_get<T>();
         if (result == nullptr) {
           ::camp::throw_re("Incompatible Resource type get cast.");
         }
-        return *result->get();
+        return *result;
       }
 
-      Platform get_platform() const { return m_value->get_platform(); }
+      template <typename T>
+      T const& get() const&
+      {
+        T const* result = try_get<T>();
+        if (result == nullptr) {
+          ::camp::throw_re("Incompatible Resource type get cast.");
+        }
+        return *result;
+      }
+
+      template <typename T>
+      T get() &&
+      {
+        T* result = try_get<T>();
+        if (result == nullptr) {
+          ::camp::throw_re("Incompatible Resource type get cast.");
+        }
+        return std::move(*result);
+      }
+
+      template <typename T>
+      T get() const&&
+      {
+        T const* result = try_get<T>();
+        if (result == nullptr) {
+          ::camp::throw_re("Incompatible Resource type get cast.");
+        }
+        return std::move(*result);
+      }
+
+      Platform get_platform() const
+      {
+        return m_value ? m_value->get_platform() : Platform::undefined;
+      }
 
       template <typename T>
       T *allocate(size_t size, MemoryAccess ma = MemoryAccess::Device)
       {
+        if (size == 0) {
+          return nullptr;
+        }
+        if (!m_value) {
+          ::camp::throw_re("Empty Resource type allocate call.");
+        }
         return (T *)m_value->allocate(size * sizeof(T), ma);
       }
 
       void *calloc(size_t size, MemoryAccess ma = MemoryAccess::Device)
       {
+        if (size == 0) {
+          return nullptr;
+        }
+        if (!m_value) {
+          ::camp::throw_re("Empty Resource type calloc call.");
+        }
         return m_value->calloc(size, ma);
       }
 
       void deallocate(void *p, MemoryAccess ma = MemoryAccess::Device)
       {
+        if (p == nullptr) {
+          return;
+        }
+        if (!m_value) {
+          ::camp::throw_re("Empty Resource type deallocate call.");
+        }
         m_value->deallocate(p, ma);
       }
 
       void memcpy(void *dst, const void *src, size_t size)
       {
+        if (size == 0) {
+          return;
+        }
+        if (!m_value) {
+          ::camp::throw_re("Empty Resource type memcpy call.");
+        }
         m_value->memcpy(dst, src, size);
       }
 
       void memset(void *p, int val, size_t size)
       {
+        if (size == 0) {
+          return;
+        }
+        if (!m_value) {
+          ::camp::throw_re("Empty Resource type memset call.");
+        }
         m_value->memset(p, val, size);
       }
 
-      Event get_event() { return m_value->get_event(); }
+      Event get_event()
+      {
+        if (!m_value) {
+          return Event{};
+        }
+        return m_value->get_event();
+      }
 
-      Event get_event_erased() { return m_value->get_event_erased(); }
+      Event get_event_erased()
+      {
+        if (!m_value) {
+          return Event{};
+        }
+        return m_value->get_event_erased();
+      }
 
-      void wait_for(Event *e) { m_value->wait_for(e); }
+      void wait_for(Event *e)
+      {
+        if (!m_value) {
+          if (e) {
+            e->wait();
+          }
+          return;
+        }
+        m_value->wait_for(e);
+      }
 
-      void wait() { m_value->wait(); }
+      void wait()
+      {
+        if (!m_value) {
+          return;
+        }
+        m_value->wait();
+      }
 
       /*
        * \brief Compares two Resources to see if they are equal. Two Resources
@@ -142,20 +251,20 @@ namespace resources
        * \return True if they have the same platform and stream/queue, false
        * otherwise.
        */
-      bool operator==(Resource const &r) const
+      friend inline bool operator==(Resource const &lhs, Resource const &rhs)
       {
-        if (get_platform() == r.get_platform()) {
-          return (m_value->compare(r));
+        if (!lhs.m_value && !rhs.m_value) {
+          return true;
+        }
+        if ((!lhs.m_value && rhs.m_value) ||
+            (lhs.m_value && !rhs.m_value)) {
+          return false;
+        }
+        if (lhs.get_platform() == rhs.get_platform()) {
+          return lhs.m_value->compare(rhs);
         }
         return false;
       }
-
-      /*
-       * \brief Compares two Resources to see if they are NOT equal.
-       *
-       * \return Negation of == operator.
-       */
-      bool operator!=(Resource const &r) const { return !(*this == r); }
 
     private:
       friend struct std::hash<camp::resources::Resource>;
@@ -169,7 +278,7 @@ namespace resources
        * platform and stream/queue combination.
        *
        */
-      size_t get_hash() const { return m_value->get_hash(); }
+      size_t get_hash() const { return m_value ? m_value->get_hash() : 0u; }
 
       class ContextInterface
       {
@@ -253,6 +362,7 @@ namespace resources
 
         void wait() override { m_modelVal.wait(); }
 
+        T const*get() const { return &m_modelVal; }
         T *get() { return &m_modelVal; }
 
       private:
@@ -349,6 +459,9 @@ namespace resources
 }  // namespace resources
 }  // namespace camp
 
+namespace std
+{
+
 /*
  * \brief Specialization of std::hash for camp::resources::Resource
  *
@@ -358,8 +471,6 @@ namespace resources
  *
  * \return A size_t hash value
  */
-namespace std
-{
 template <>
 struct hash<camp::resources::Resource> {
   std::size_t operator()(const camp::resources::Resource &r) const
@@ -367,6 +478,7 @@ struct hash<camp::resources::Resource> {
     return r.get_hash();
   }
 };
+
 }  // namespace std
 
 #endif /* __CAMP_RESOURCE_HPP */

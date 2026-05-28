@@ -172,6 +172,28 @@ TEST(CampResource, GetPlatform)
 #endif
 }
 
+TEST(CampEvent, GetPlatform)
+{
+  ASSERT_EQ(static_cast<const Event>(Host().get_event_erased()).get_platform(),
+            Platform::host);
+#ifdef CAMP_HAVE_CUDA
+  ASSERT_EQ(static_cast<const Event>(Cuda().get_event_erased()).get_platform(),
+            Platform::cuda);
+#endif
+#ifdef CAMP_HAVE_HIP
+  ASSERT_EQ(static_cast<const Event>(Hip().get_event_erased()).get_platform(),
+            Platform::hip);
+#endif
+#ifdef CAMP_HAVE_OMP_OFFLOAD
+  ASSERT_EQ(static_cast<const Event>(Omp().get_event_erased()).get_platform(),
+            Platform::omp_target);
+#endif
+#ifdef CAMP_HAVE_SYCL
+  ASSERT_EQ(static_cast<const Event>(Sycl().get_event_erased()).get_platform(),
+            Platform::sycl);
+#endif
+}
+
 template <typename Res>
 void test_map_key(Resource& h)
 {
@@ -209,41 +231,64 @@ void test_map_key(Resource& h)
 
   // Verify using Resource as a key to find entries works
   // Generic
-  ASSERT_EQ(map.count(h), 1);
-  ASSERT_EQ(multimap.count(h), 2);
-  ASSERT_EQ(map.count(d1), 1);
-  ASSERT_EQ(multimap.count(d1), 1);
-  ASSERT_EQ(map.count(d2), 1);
-  ASSERT_EQ(multimap.count(d2), 2);
+  if constexpr (std::same_as<Res, Host>) {
+    ASSERT_EQ(map.count(h), 1);
+    ASSERT_EQ(multimap.count(h), 5);
+    ASSERT_EQ(map.count(d1), 1);
+    ASSERT_EQ(multimap.count(d1), 5);
+    ASSERT_EQ(map.count(d2), 1);
+    ASSERT_EQ(multimap.count(d2), 5);
+  } else {
+    ASSERT_EQ(map.count(h), 1);
+    ASSERT_EQ(multimap.count(h), 2);
+    ASSERT_EQ(map.count(d1), 1);
+    ASSERT_EQ(multimap.count(d1), 1);
+    ASSERT_EQ(map.count(d2), 1);
+    ASSERT_EQ(multimap.count(d2), 2);
+  }
 
   // Typed
-  ASSERT_EQ(rmap.count(r1), 1);
-  ASSERT_EQ(rmultimap.count(r1), 1);
-  ASSERT_EQ(rmap.count(r2), 1);
-  ASSERT_EQ(rmultimap.count(r2), 2);
+  if constexpr (std::same_as<Res, Host>) {
+    ASSERT_EQ(rmap.count(r1), 1);
+    ASSERT_EQ(rmultimap.count(r1), 3);
+    ASSERT_EQ(rmap.count(r2), 1);
+    ASSERT_EQ(rmultimap.count(r2), 3);
+  } else {
+    ASSERT_EQ(rmap.count(r1), 1);
+    ASSERT_EQ(rmultimap.count(r1), 1);
+    ASSERT_EQ(rmap.count(r2), 1);
+    ASSERT_EQ(rmultimap.count(r2), 2);
+  }
 
   // Verify equal_range works
   // Generic
   auto range = map.equal_range(h);
   auto range2 = multimap.equal_range(d2);
-  ASSERT_EQ(std::distance(range.first, range.second), 1);
-  ASSERT_EQ(std::distance(range2.first, range2.second), 2);
+  if constexpr (std::same_as<Res, Host>) {
+    ASSERT_EQ(std::distance(range.first, range.second), 1);
+    ASSERT_EQ(std::distance(range2.first, range2.second), 5);
+  } else {
+    ASSERT_EQ(std::distance(range.first, range.second), 1);
+    ASSERT_EQ(std::distance(range2.first, range2.second), 2);
+  }
 
   // Typed
+  auto rrange = rmap.equal_range(r1);
   auto rrange2 = rmultimap.equal_range(r2);
-  ASSERT_EQ(std::distance(rrange2.first, rrange2.second), 2);
+  if constexpr (std::same_as<Res, Host>) {
+    ASSERT_EQ(std::distance(rrange.first, rrange.second), 1);
+    ASSERT_EQ(std::distance(rrange2.first, rrange2.second), 3);
+  } else {
+    ASSERT_EQ(std::distance(rrange.first, rrange.second), 1);
+    ASSERT_EQ(std::distance(rrange2.first, rrange2.second), 2);
+  }
 }
 
 //
 TEST(CampResource, UnorderedMapKey)
 {
-#if !defined(CAMP_HAVE_CUDA) && !defined(CAMP_HAVE_HIP) \
-    && !defined(CAMP_HAVE_OMP_OFFLOAD) && !defined(CAMP_HAVE_SYCL)
-  // If only the Host is enabled, it doesn't make sense to use a map
-  GTEST_SKIP() << "No device backend available (CUDA/HIP/OMP/SYCL)";
-#else
-
   Resource h{Host()};
+  test_map_key<Host>(h);
 #if defined(CAMP_HAVE_CUDA)
   test_map_key<Cuda>(h);
 #elif defined(CAMP_HAVE_HIP)
@@ -253,7 +298,111 @@ TEST(CampResource, UnorderedMapKey)
 #elif defined(CAMP_HAVE_SYCL)
   test_map_key<Sycl>(h);
 #endif
+}
 
+template <typename Res>
+void test_map_key(Event& he)
+{
+  // Generic
+  std::unordered_map<Event, size_t> map;
+  std::unordered_multimap<Event, size_t> multimap;
+  Event d1{Res().get_event_erased()};
+  Event d2{Res().get_event_erased()};
+
+  // Typed
+  auto e1{Res().get_event()};
+  auto e2{Res().get_event()};
+  std::unordered_map<decltype(e1), size_t> rmap;
+  std::unordered_multimap<decltype(e2), size_t> rmultimap;
+
+  // Generic
+  map.insert({he, 10});
+  multimap.insert({he, 10});
+  map.insert({he, 20});
+  multimap.insert({he, 20});
+  map.insert({d1, 30});
+  multimap.insert({d1, 30});
+  map.insert({d2, 40});
+  multimap.insert({d2, 40});
+  map.insert({d2, 50});
+  multimap.insert({d2, 50});
+
+  // Typed
+  rmap.insert({e1, 30});
+  rmultimap.insert({e1, 30});
+  rmap.insert({e2, 40});
+  rmultimap.insert({e2, 40});
+  rmap.insert({e2, 50});
+  rmultimap.insert({e2, 50});
+
+  // Verify using Event as a key to find entries works
+  // Generic
+  if constexpr (std::same_as<Res, Host>) {
+    ASSERT_EQ(map.count(he), 1);
+    ASSERT_EQ(multimap.count(he), 5);
+    ASSERT_EQ(map.count(d1), 1);
+    ASSERT_EQ(multimap.count(d1), 5);
+    ASSERT_EQ(map.count(d2), 1);
+    ASSERT_EQ(multimap.count(d2), 5);
+  } else {
+    ASSERT_EQ(map.count(he), 1);
+    ASSERT_EQ(multimap.count(he), 2);
+    ASSERT_EQ(map.count(d1), 1);
+    ASSERT_EQ(multimap.count(d1), 1);
+    ASSERT_EQ(map.count(d2), 1);
+    ASSERT_EQ(multimap.count(d2), 2);
+  }
+
+  // Typed
+  if constexpr (std::same_as<Res, Host>) {
+    ASSERT_EQ(rmap.count(e1), 1);
+    ASSERT_EQ(rmultimap.count(e1), 3);
+    ASSERT_EQ(rmap.count(e2), 1);
+    ASSERT_EQ(rmultimap.count(e2), 3);
+  } else {
+    ASSERT_EQ(rmap.count(e1), 1);
+    ASSERT_EQ(rmultimap.count(e1), 1);
+    ASSERT_EQ(rmap.count(e2), 1);
+    ASSERT_EQ(rmultimap.count(e2), 2);
+  }
+
+  // Verify equal_range works
+  // Generic
+  auto range = map.equal_range(he);
+  auto range2 = multimap.equal_range(d2);
+  if constexpr (std::same_as<Res, Host>) {
+    ASSERT_EQ(std::distance(range.first, range.second), 1);
+    ASSERT_EQ(std::distance(range2.first, range2.second), 5);
+  } else {
+    ASSERT_EQ(std::distance(range.first, range.second), 1);
+    ASSERT_EQ(std::distance(range2.first, range2.second), 2);
+  }
+
+  // Typed
+  auto rrange = rmap.equal_range(e1);
+  auto rrange2 = rmultimap.equal_range(e2);
+  if constexpr (std::same_as<Res, Host>) {
+    ASSERT_EQ(std::distance(rrange.first, rrange.second), 1);
+    ASSERT_EQ(std::distance(rrange2.first, rrange2.second), 3);
+  } else {
+    ASSERT_EQ(std::distance(rrange.first, rrange.second), 1);
+    ASSERT_EQ(std::distance(rrange2.first, rrange2.second), 2);
+  }
+}
+
+//
+TEST(CampEvent, UnorderedMapKey)
+{
+  Event he{Host().get_event_erased()};
+  test_map_key<Host>(he);
+#if defined(CAMP_HAVE_CUDA)
+  test_map_key<Cuda>(he);
+#elif defined(CAMP_HAVE_HIP)
+  test_map_key<Hip>(he);
+#elif defined(CAMP_HAVE_OMP_OFFLOAD)
+  test_map_key<Omp>(he);
+#elif defined(CAMP_HAVE_SYCL)
+  test_map_key<Sycl>(he);
 #endif
 }
 
@@ -331,6 +480,80 @@ TEST(CampResource, HostCompare)
   ASSERT_TRUE(h2 == h3);
   ASSERT_TRUE(h3 == h1);
   ASSERT_TRUE(h3 == h2);
+}
+
+
+template <typename Res>
+void test_id_compare(Event& he)
+{
+  Event e1{Res().get_event()};
+  auto te = Res().get_event();
+  Event e2{te};
+
+  ASSERT_TRUE(e1 == e1);
+  ASSERT_TRUE(e2 == e2);
+  ASSERT_TRUE(e1 != e2);
+  ASSERT_TRUE(e2 != e1);
+  ASSERT_TRUE(te == te);
+
+  ASSERT_FALSE(e1 != e1);
+  ASSERT_FALSE(e2 != e2);
+  ASSERT_FALSE(e1 == e2);
+  ASSERT_FALSE(e2 == e1);
+  ASSERT_FALSE(te!= te);
+
+  ASSERT_TRUE(e1 != he);
+  ASSERT_TRUE(he != e1);
+
+  ASSERT_FALSE(e1 == he);
+  ASSERT_FALSE(he == e1);
+}
+
+//
+TEST(CampEvent, Compare)
+{
+  Event e1{Host().get_event_erased()};
+  auto te = Host().get_event();
+  Event e2{te};
+
+  ASSERT_TRUE(e1 == e1);
+  ASSERT_TRUE(e2 == e2);
+  ASSERT_TRUE(e1 == e2);
+  ASSERT_TRUE(e2 == e1);
+  ASSERT_TRUE(te == te);
+
+  ASSERT_FALSE(e1 != e1);
+  ASSERT_FALSE(e2 != e2);
+  ASSERT_FALSE(e1 != e2);
+  ASSERT_FALSE(e2 != e1);
+  ASSERT_FALSE(te != te);
+
+#ifdef CAMP_HAVE_CUDA
+  test_id_compare<Cuda>(e1);
+#endif
+#ifdef CAMP_HAVE_HIP
+  test_id_compare<Hip>(e1);
+#endif
+#ifdef CAMP_HAVE_OMP_OFFLOAD
+  test_id_compare<Omp>(e1);
+#endif
+#ifdef CAMP_HAVE_SYCL
+  test_id_compare<Sycl>(e1);
+#endif
+}
+
+TEST(CampEvent, HostEventCompare)
+{
+  HostEvent te = Host().get_default().get_event();
+  Event e2{Host().get_event()};
+  Event e3{Host().get_event_erased()};
+
+  ASSERT_TRUE(Event{te} == e2);
+  ASSERT_TRUE(Event{te} == e3);
+  ASSERT_TRUE(e2 == te);
+  ASSERT_TRUE(e2 == e3);
+  ASSERT_TRUE(e3 == te);
+  ASSERT_TRUE(e3 == e2);
 }
 
 template <typename Res>

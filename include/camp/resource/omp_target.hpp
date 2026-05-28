@@ -41,6 +41,8 @@ namespace resources
         }
       }
 
+      Platform get_platform() const { return Platform::omp_target; }
+
       bool check() const
       {
         // think up a way to do something better portably
@@ -58,6 +60,21 @@ namespace resources
       }
 
       void *getEventAddr() const { return addr; }
+
+      /*
+       * \brief Compares two events to see if they are equal
+       *
+       * \return True or false depending on if this is the same event
+       */
+      friend inline bool operator==(OmpEvent const& lhs, OmpEvent const& rhs) = default;
+
+      size_t get_hash() const
+      {
+        const size_t platform_type = size_t(get_platform()) << 32;
+        size_t hash = std::hash<char *>{}(addr);
+        hash ^= std::hash<int>{}(dev) + 0x9E3779B9 + (hash << 6) + (hash >> 2);
+        return platform_type | (hash & 0xFFFFFFFF);
+      }
 
     private:
       char *addr;
@@ -253,17 +270,7 @@ namespace resources
        *
        * \return True or false depending on if this is the same dev and addr ptr
        */
-      bool operator==(Omp const &o) const
-      {
-        return (dev == o.dev && addr == o.addr);
-      }
-
-      /*
-       * \brief Compares two (Omp) resources to see if they are NOT equal
-       *
-       * \return Negation of == operator
-       */
-      bool operator!=(Omp const &o) const { return !(*this == o); }
+      friend inline bool operator==(Omp const& lhs, Omp const& rhs) = default;
 
       size_t get_hash() const
       {
@@ -292,6 +299,26 @@ namespace resources
 }  // namespace resources
 }  // namespace camp
 
+namespace std
+{
+
+/*
+ * \brief Specialization of std::hash for camp::resources::OmpEvent
+ *
+ * Provides a hash function for omp typed event objects, enabling their use
+ * as keys in unordered associative containers (std::unordered_map,
+ * std::unordered_set, etc.)
+ *
+ * \return A size_t hash value
+ */
+template <>
+struct hash<camp::resources::OmpEvent> {
+  std::size_t operator()(const camp::resources::OmpEvent& e) const
+  {
+    return e.get_hash();
+  }
+};
+
 /*
  * \brief Specialization of std::hash for camp::resources::Omp
  *
@@ -301,8 +328,6 @@ namespace resources
  *
  * \return A size_t hash value
  */
-namespace std
-{
 template <>
 struct hash<camp::resources::Omp> {
   std::size_t operator()(const camp::resources::Omp &o) const
@@ -310,6 +335,7 @@ struct hash<camp::resources::Omp> {
     return o.get_hash();
   }
 };
+
 }  // namespace std
 #endif  // #ifdef CAMP_ENABLE_TARGET_OPENMP
 

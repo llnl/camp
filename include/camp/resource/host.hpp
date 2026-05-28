@@ -28,9 +28,24 @@ namespace resources
     public:
       HostEvent() {}
 
+      Platform get_platform() const { return Platform::host; }
+
       bool check() const { return true; }
 
       void wait() const {}
+
+      /*
+       * \brief Compares two events to see if they are equal
+       *
+       * \return True or false depending on if this is the same event
+       */
+      friend inline bool operator==(HostEvent const& lhs, HostEvent const& rhs) = default;
+
+      size_t get_hash() const
+      {
+        const size_t platform_type = size_t(get_platform()) << 32;
+        return platform_type;
+      }
     };
 
     class Host
@@ -90,14 +105,10 @@ namespace resources
        *
        * \return Always return true since Host resources are always the same
        */
-      bool operator==(Host const &) const { return true; }
-
-      /*
-       * \brief Compares two (Host) resources to see if they are NOT equal
-       *
-       * \return Always return false. Host resources are always the same
-       */
-      bool operator!=(Host const &) const { return false; }
+      friend inline bool operator==(Host const& CAMP_UNUSED_ARG(lhs), Host const& CAMP_UNUSED_ARG(rhs))
+      {
+        return true;
+      }
 
       size_t get_hash() const
       {
@@ -114,6 +125,26 @@ namespace resources
 }  // namespace resources
 }  // namespace camp
 
+namespace std
+{
+
+/*
+ * \brief Specialization of std::hash for camp::resources::HostEvent
+ *
+ * Provides a hash function for host typed event objects, enabling their use
+ * as keys in unordered associative containers (std::unordered_map,
+ * std::unordered_set, etc.)
+ *
+ * \return Hash value for the host (always the value of get_platform())
+ */
+template <>
+struct hash<camp::resources::HostEvent> {
+  std::size_t operator()(const camp::resources::HostEvent &e) const
+  {
+    return e.get_hash();
+  }
+};
+
 /*
  * \brief Specialization of std::hash for camp::resources::Host
  *
@@ -123,8 +154,6 @@ namespace resources
  *
  * \return Hash value for the host (always the value of get_platform())
  */
-namespace std
-{
 template <>
 struct hash<camp::resources::Host> {
   std::size_t operator()(const camp::resources::Host &h) const
@@ -132,5 +161,6 @@ struct hash<camp::resources::Host> {
     return h.get_hash();
   }
 };
+
 }  // namespace std
 #endif /* __CAMP_DEVICES_HPP */

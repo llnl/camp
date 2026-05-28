@@ -64,6 +64,8 @@ namespace resources
 
       HipEvent(Hip &res);
 
+      Platform get_platform() const { return Platform::hip; }
+
       bool check() const
       {
         return (CAMP_HIP_API_INVOKE_AND_CHECK_RETURN(hipEventQuery, m_event)
@@ -76,6 +78,20 @@ namespace resources
       }
 
       hipEvent_t getHipEvent_t() const { return m_event; }
+
+      /*
+       * \brief Compares two events to see if they are equal
+       *
+       * \return True or false depending on if this is the same event
+       */
+      friend inline bool operator==(HipEvent const& lhs, HipEvent const& rhs) = default;
+
+      size_t get_hash() const
+      {
+        const size_t platform_type = size_t(get_platform()) << 32;
+        size_t hash = std::hash<hipEvent_t>{}(m_event);
+        return platform_type | (hash & 0xFFFFFFFF);
+      }
 
     private:
       hipEvent_t m_event;
@@ -288,17 +304,7 @@ namespace resources
        *
        * \return True or false depending on if this is the same stream
        */
-      bool operator==(Hip const &h) const
-      {
-        return (get_stream() == h.get_stream());
-      }
-
-      /*
-       * \brief Compares two (Hip) resources to see if they are NOT equal
-       *
-       * \return Negation of == operator
-       */
-      bool operator!=(Hip const &h) const { return !(*this == h); }
+      friend inline bool operator==(Hip const& lhs, Hip const& rhs) = default;
 
       size_t get_hash() const
       {
@@ -326,6 +332,26 @@ namespace resources
 }  // namespace resources
 }  // namespace camp
 
+namespace std
+{
+
+/*
+ * \brief Specialization of std::hash for camp::resources::HipEvent
+ *
+ * Provides a hash function for hip typed event objects, enabling their use
+ * as keys in unordered associative containers (std::unordered_map,
+ * std::unordered_set, etc.)
+ *
+ * \return A size_t hash value
+ */
+template <>
+struct hash<camp::resources::HipEvent> {
+  std::size_t operator()(const camp::resources::HipEvent &e) const
+  {
+    return e.get_hash();
+  }
+};
+
 /*
  * \brief Specialization of std::hash for camp::resources::Hip
  *
@@ -335,8 +361,6 @@ namespace resources
  *
  * \return A size_t hash value
  */
-namespace std
-{
 template <>
 struct hash<camp::resources::Hip> {
   std::size_t operator()(const camp::resources::Hip &h) const
@@ -344,6 +368,7 @@ struct hash<camp::resources::Hip> {
     return h.get_hash();
   }
 };
+
 }  // namespace std
 
 #endif  // #ifdef CAMP_ENABLE_HIP
