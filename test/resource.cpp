@@ -281,8 +281,8 @@ void test_map_key(Event& he)
   // Generic
   std::unordered_map<Event, size_t> map;
   std::unordered_multimap<Event, size_t> multimap;
-  Event d1{Res().get_erased_event()};
-  Event d2{Res().get_erased_event()};
+  Event d1{Res().get_event_erased()};
+  Event d2{Res().get_event_erased()};
 
   // Typed
   auto e1{Res().get_event()};
@@ -346,7 +346,7 @@ TEST(CampEvent, UnorderedMapKey)
   GTEST_SKIP() << "No device backend available (CUDA/HIP/OMP/SYCL)";
 #else
 
-  Event he{Host().get_erased_event()};
+  Event he{Host().get_event_erased()};
 #if defined(CAMP_HAVE_CUDA)
   test_map_key<Cuda>(he);
 #elif defined(CAMP_HAVE_HIP)
@@ -466,7 +466,7 @@ void test_id_compare(Event& he)
 //
 TEST(CampEvent, Compare)
 {
-  Event e1{Host().get_erased_event()};
+  Event e1{Host().get_event_erased()};
   auto te = Host().get_event();
   Event e2{te};
 
@@ -500,7 +500,7 @@ TEST(CampEvent, HostEventCompare)
 {
   HostEvent te = Host().get_default().get_event();
   Event e2{Host().get_event()};
-  Event e3{Host().get_erased_event()};
+  Event e3{Host().get_event_erased()};
 
   ASSERT_TRUE(Event{te} == e2);
   ASSERT_TRUE(Event{te} == e3);
