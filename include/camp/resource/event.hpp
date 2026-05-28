@@ -106,10 +106,10 @@ namespace resources
       void wait() const { m_value->wait(); }
 
       /*
-       * \brief Compares two Resources to see if they are equal. Two Resources
-       * are equal if they have the platform and same stream/queue
+       * \brief Compares two Events to see if they are equal. Two Events
+       * are equal if they have the platform and same event
        *
-       * \return True if they have the same platform and stream/queue, false
+       * \return True if they have the same platform and event, false
        * otherwise.
        */
       friend inline bool operator==(Event const &lhs, Event const &rhs)
