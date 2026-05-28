@@ -55,14 +55,14 @@ namespace resources
             == sycl::info::event_command_status::complete;
       }
 
-      void wait() const { sycl::event(m_event).wait(); }
+      void wait() const { m_event.wait(); } // sycl::event::wait is non-const
 
       sycl::event& getSyclEvent_t() { return m_event; }
 
       sycl::event const& getSyclEvent_t() const { return m_event; }
 
     private:
-      sycl::event m_event;
+      mutable sycl::event m_event; // mutable as use non-const member function
     };
 
     class Sycl
