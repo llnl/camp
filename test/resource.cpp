@@ -333,6 +333,80 @@ TEST(CampResource, HostCompare)
   ASSERT_TRUE(h3 == h2);
 }
 
+
+template <typename Res>
+void test_id_compare(Event& he)
+{
+  Event e1{Res().get_event()};
+  auto te = Res().get_event();
+  Event e2{te};
+
+  ASSERT_TRUE(e1 == e1);
+  ASSERT_TRUE(e2 == e2);
+  ASSERT_TRUE(e1 != e2);
+  ASSERT_TRUE(e2 != e1);
+  ASSERT_TRUE(te == te);
+
+  ASSERT_FALSE(e1 != e1);
+  ASSERT_FALSE(e2 != e2);
+  ASSERT_FALSE(e1 == e2);
+  ASSERT_FALSE(e2 == e1);
+  ASSERT_FALSE(te!= te);
+
+  ASSERT_TRUE(e1 != he);
+  ASSERT_TRUE(he != e1);
+
+  ASSERT_FALSE(e1 == he);
+  ASSERT_FALSE(he == e1);
+}
+
+//
+TEST(CampEvent, Compare)
+{
+  Event e1{Host().get_erased_event()};
+  auto te = Host().get_event();
+  Event e2{te};
+
+  ASSERT_TRUE(e1 == e1);
+  ASSERT_TRUE(e2 == e2);
+  ASSERT_TRUE(e1 == e2);
+  ASSERT_TRUE(e2 == e1);
+  ASSERT_TRUE(te == te);
+
+  ASSERT_FALSE(e1 != e1);
+  ASSERT_FALSE(e2 != e2);
+  ASSERT_FALSE(e1 != e2);
+  ASSERT_FALSE(e2 != e1);
+  ASSERT_FALSE(te != te);
+
+#ifdef CAMP_HAVE_CUDA
+  test_id_compare<Cuda>(e1);
+#endif
+#ifdef CAMP_HAVE_HIP
+  test_id_compare<Hip>(e1);
+#endif
+#ifdef CAMP_HAVE_OMP_OFFLOAD
+  test_id_compare<Omp>(e1);
+#endif
+#ifdef CAMP_HAVE_SYCL
+  test_id_compare<Sycl>(e1);
+#endif
+}
+
+TEST(CampEvent, HostEventCompare)
+{
+  HostEvent te = Host().get_default().get_event();
+  Event e2{Host().get_event()};
+  Event e3{Host().get_erased_event()};
+
+  ASSERT_TRUE(Event{te} == e2);
+  ASSERT_TRUE(Event{te} == e3);
+  ASSERT_TRUE(e2 == te);
+  ASSERT_TRUE(e2 == e3);
+  ASSERT_TRUE(e3 == te);
+  ASSERT_TRUE(e3 == e2);
+}
+
 template <typename Res>
 void test_reassignment()
 {
