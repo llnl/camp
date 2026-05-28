@@ -45,6 +45,7 @@ namespace resources
       template <
           typename T,
           typename std::enable_if<
+              !std::is_same_v<typename std::decay_t<T>, Event> &&
               !(std::is_convertible<typename std::decay<T>::type *,
                                     ::camp::resources::detail::EventProxyBase
                                         *>::value)>::type * = nullptr>
