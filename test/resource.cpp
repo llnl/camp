@@ -231,29 +231,57 @@ void test_map_key(Resource& h)
 
   // Verify using Resource as a key to find entries works
   // Generic
-  ASSERT_EQ(map.count(h), 1);
-  ASSERT_EQ(multimap.count(h), 2);
-  ASSERT_EQ(map.count(d1), 1);
-  ASSERT_EQ(multimap.count(d1), 1);
-  ASSERT_EQ(map.count(d2), 1);
-  ASSERT_EQ(multimap.count(d2), 2);
+  if constexpr (std::same_as<Res, Host>) {
+    ASSERT_EQ(map.count(h), 1);
+    ASSERT_EQ(multimap.count(h), 5);
+    ASSERT_EQ(map.count(d1), 1);
+    ASSERT_EQ(multimap.count(d1), 5);
+    ASSERT_EQ(map.count(d2), 1);
+    ASSERT_EQ(multimap.count(d2), 5);
+  } else {
+    ASSERT_EQ(map.count(h), 1);
+    ASSERT_EQ(multimap.count(h), 2);
+    ASSERT_EQ(map.count(d1), 1);
+    ASSERT_EQ(multimap.count(d1), 1);
+    ASSERT_EQ(map.count(d2), 1);
+    ASSERT_EQ(multimap.count(d2), 2);
+  }
 
   // Typed
-  ASSERT_EQ(rmap.count(r1), 1);
-  ASSERT_EQ(rmultimap.count(r1), 1);
-  ASSERT_EQ(rmap.count(r2), 1);
-  ASSERT_EQ(rmultimap.count(r2), 2);
+  if constexpr (std::same_as<Res, Host>) {
+    ASSERT_EQ(rmap.count(r1), 1);
+    ASSERT_EQ(rmultimap.count(r1), 3);
+    ASSERT_EQ(rmap.count(r2), 1);
+    ASSERT_EQ(rmultimap.count(r2), 3);
+  } else {
+    ASSERT_EQ(rmap.count(r1), 1);
+    ASSERT_EQ(rmultimap.count(r1), 1);
+    ASSERT_EQ(rmap.count(r2), 1);
+    ASSERT_EQ(rmultimap.count(r2), 2);
+  }
 
   // Verify equal_range works
   // Generic
   auto range = map.equal_range(h);
   auto range2 = multimap.equal_range(d2);
-  ASSERT_EQ(std::distance(range.first, range.second), 1);
-  ASSERT_EQ(std::distance(range2.first, range2.second), 2);
+  if constexpr (std::same_as<Res, Host>) {
+    ASSERT_EQ(std::distance(range.first, range.second), 1);
+    ASSERT_EQ(std::distance(range2.first, range2.second), 5);
+  } else {
+    ASSERT_EQ(std::distance(range.first, range.second), 1);
+    ASSERT_EQ(std::distance(range2.first, range2.second), 2);
+  }
 
   // Typed
+  auto rrange = rmap.equal_range(r1);
   auto rrange2 = rmultimap.equal_range(r2);
-  ASSERT_EQ(std::distance(rrange2.first, rrange2.second), 2);
+  if constexpr (std::same_as<Res, Host>) {
+    ASSERT_EQ(std::distance(rrange.first, rrange.second), 1);
+    ASSERT_EQ(std::distance(rrange2.first, rrange2.second), 3);
+  } else {
+    ASSERT_EQ(std::distance(rrange.first, rrange.second), 1);
+    ASSERT_EQ(std::distance(rrange2.first, rrange2.second), 2);
+  }
 }
 
 //
@@ -309,29 +337,57 @@ void test_map_key(Event& he)
 
   // Verify using Event as a key to find entries works
   // Generic
-  ASSERT_EQ(map.count(he), 1);
-  ASSERT_EQ(multimap.count(he), 2);
-  ASSERT_EQ(map.count(d1), 1);
-  ASSERT_EQ(multimap.count(d1), 1);
-  ASSERT_EQ(map.count(d2), 1);
-  ASSERT_EQ(multimap.count(d2), 2);
+  if constexpr (std::same_as<Res, Host>) {
+    ASSERT_EQ(map.count(he), 1);
+    ASSERT_EQ(multimap.count(he), 5);
+    ASSERT_EQ(map.count(d1), 1);
+    ASSERT_EQ(multimap.count(d1), 5);
+    ASSERT_EQ(map.count(d2), 1);
+    ASSERT_EQ(multimap.count(d2), 5);
+  } else {
+    ASSERT_EQ(map.count(he), 1);
+    ASSERT_EQ(multimap.count(he), 2);
+    ASSERT_EQ(map.count(d1), 1);
+    ASSERT_EQ(multimap.count(d1), 1);
+    ASSERT_EQ(map.count(d2), 1);
+    ASSERT_EQ(multimap.count(d2), 2);
+  }
 
   // Typed
-  ASSERT_EQ(rmap.count(e1), 1);
-  ASSERT_EQ(rmultimap.count(e1), 1);
-  ASSERT_EQ(rmap.count(e2), 1);
-  ASSERT_EQ(rmultimap.count(e2), 2);
+  if constexpr (std::same_as<Res, Host>) {
+    ASSERT_EQ(rmap.count(e1), 1);
+    ASSERT_EQ(rmultimap.count(e1), 3);
+    ASSERT_EQ(rmap.count(e2), 1);
+    ASSERT_EQ(rmultimap.count(e2), 3);
+  } else {
+    ASSERT_EQ(rmap.count(e1), 1);
+    ASSERT_EQ(rmultimap.count(e1), 1);
+    ASSERT_EQ(rmap.count(e2), 1);
+    ASSERT_EQ(rmultimap.count(e2), 2);
+  }
 
   // Verify equal_range works
   // Generic
   auto range = map.equal_range(he);
   auto range2 = multimap.equal_range(d2);
-  ASSERT_EQ(std::distance(range.first, range.second), 1);
-  ASSERT_EQ(std::distance(range2.first, range2.second), 2);
+  if constexpr (std::same_as<Res, Host>) {
+    ASSERT_EQ(std::distance(range.first, range.second), 1);
+    ASSERT_EQ(std::distance(range2.first, range2.second), 5);
+  } else {
+    ASSERT_EQ(std::distance(range.first, range.second), 1);
+    ASSERT_EQ(std::distance(range2.first, range2.second), 2);
+  }
 
   // Typed
+  auto rrange = rmap.equal_range(e1);
   auto rrange2 = rmultimap.equal_range(e2);
-  ASSERT_EQ(std::distance(rrange2.first, rrange2.second), 2);
+  if constexpr (std::same_as<Res, Host>) {
+    ASSERT_EQ(std::distance(rrange.first, rrange.second), 1);
+    ASSERT_EQ(std::distance(rrange2.first, rrange2.second), 3);
+  } else {
+    ASSERT_EQ(std::distance(rrange.first, rrange.second), 1);
+    ASSERT_EQ(std::distance(rrange2.first, rrange2.second), 2);
+  }
 }
 
 //
