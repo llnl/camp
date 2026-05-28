@@ -174,19 +174,23 @@ TEST(CampResource, GetPlatform)
 
 TEST(CampEvent, GetPlatform)
 {
-  ASSERT_EQ(static_cast<const Event>(Host()).get_platform(), Platform::host);
+  ASSERT_EQ(static_cast<const Event>(Host().get_event_erased()).get_platform(),
+            Platform::host);
 #ifdef CAMP_HAVE_CUDA
-  ASSERT_EQ(static_cast<const Event>(Cuda()).get_platform(), Platform::cuda);
+  ASSERT_EQ(static_cast<const Event>(Cuda().get_event_erased()).get_platform(),
+            Platform::cuda);
 #endif
 #ifdef CAMP_HAVE_HIP
-  ASSERT_EQ(static_cast<const Event>(Hip()).get_platform(), Platform::hip);
+  ASSERT_EQ(static_cast<const Event>(Hip().get_event_erased()).get_platform(),
+            Platform::hip);
 #endif
 #ifdef CAMP_HAVE_OMP_OFFLOAD
-  ASSERT_EQ(static_cast<const Event>(Omp()).get_platform(),
+  ASSERT_EQ(static_cast<const Event>(Omp().get_event_erased()).get_platform(),
             Platform::omp_target);
 #endif
 #ifdef CAMP_HAVE_SYCL
-  ASSERT_EQ(static_cast<const Event>(Sycl()).get_platform(), Platform::sycl);
+  ASSERT_EQ(static_cast<const Event>(Sycl().get_event_erased()).get_platform(),
+            Platform::sycl);
 #endif
 }
 
