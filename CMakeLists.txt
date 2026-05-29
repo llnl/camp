@@ -121,6 +121,11 @@ endif ()
 
 option(CAMP_USE_PLATFORM_DEFAULT_STREAM "Whether CAMP should use the default device streams (On) or create separate streams (Off)" Off)
 
+set(CAMP_USE_PLATFORM_DEFAULT_STREAM_NUM 0)
+if(CAMP_USE_PLATFORM_DEFAULT_STREAM)
+  set(CAMP_USE_PLATFORM_DEFAULT_STREAM_NUM 1)
+endif()
+
 # Configure the config header file to allow config time options
 configure_file(${PROJECT_SOURCE_DIR}/include/camp/config.in.hpp
   ${PROJECT_BINARY_DIR}/include/camp/config.hpp)
