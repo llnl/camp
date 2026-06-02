@@ -233,6 +233,18 @@ namespace resources
         return false;
       }
 
+      template < camp::concepts::ConcreteResource Res >
+      friend inline bool operator==(Resource const &lhs, Res const &rhs)
+      {
+        if (!lhs.m_value) {
+          return false;
+        }
+        if (lhs.get_platform() == rhs.get_platform()) {
+          return lhs.get<Res>() == rhs;
+        }
+        return false;
+      }
+
     private:
       friend struct std::hash<camp::resources::Resource>;
 

@@ -148,6 +148,18 @@ namespace resources
         return false;
       }
 
+      template < camp::concepts::ConcreteEvent Evt >
+      friend inline bool operator==(Event const &lhs, Evt const &rhs)
+      {
+        if (!lhs.m_value) {
+          return false;
+        }
+        if (lhs.get_platform() == rhs.get_platform()) {
+          return lhs.get<Evt>() == rhs;
+        }
+        return false;
+      }
+
     private:
       friend struct std::hash<camp::resources::Event>;
 
