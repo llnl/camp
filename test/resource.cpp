@@ -439,40 +439,64 @@ TEST(CampResource, UnorderedMapKey)
 #endif
 }
 
+struct ref_hash {
+  template <typename T>
+  std::size_t operator()(std::reference_wrapper<T> const& ref) const {
+    return std::hash<T>()(ref.get());
+  }
+};
+
+struct ref_equal {
+  template <typename T>
+  bool operator()(std::reference_wrapper<T> const& lhs,
+                  std::reference_wrapper<T> const& rhs) const {
+    return lhs.get() == rhs.get();
+  }
+};
+
 template <typename Res>
 void test_map_key(Event& he)
 {
-  // Generic
-  std::unordered_map<Event, size_t> map;
-  std::unordered_multimap<Event, size_t> multimap;
-  Event d1{Res().get_event_erased()};
-  Event d2{Res().get_event_erased()};
+  using typed_event = typename Res::event_type;
 
-  // Typed
-  auto e1{Res().get_event()};
-  auto e2{Res().get_event()};
-  std::unordered_map<decltype(e1), size_t> rmap;
-  std::unordered_multimap<decltype(e2), size_t> rmultimap;
+  using erased_event_ref = std::reference_wrapper<Event>;
+  using typed_event_ref = std::reference_wrapper<typed_event>;
 
   // Generic
-  map.insert({he, 10});
-  multimap.insert({he, 10});
-  map.insert({he, 20});
-  multimap.insert({he, 20});
-  map.insert({d1, 30});
-  multimap.insert({d1, 30});
-  map.insert({d2, 40});
-  multimap.insert({d2, 40});
-  map.insert({d2, 50});
-  multimap.insert({d2, 50});
+  Event d1_ = Res().get_event_erased();
+  Event d2_ = Res().get_event_erased();
+  erased_event_ref d1(d1_);
+  erased_event_ref d2(d2_);
+  std::unordered_map<erased_event_ref, size_t, ref_hash, ref_equal> map;
+  std::unordered_multimap<erased_event_ref, size_t, ref_hash, ref_equal> multimap;
 
   // Typed
-  rmap.insert({e1, 30});
-  rmultimap.insert({e1, 30});
-  rmap.insert({e2, 40});
-  rmultimap.insert({e2, 40});
-  rmap.insert({e2, 50});
-  rmultimap.insert({e2, 50});
+  typed_event e1_ = Res().get_event();
+  typed_event e2_ = Res().get_event();
+  typed_event_ref e1(e1_);
+  typed_event_ref e2(e2_);
+  std::unordered_map<typed_event_ref, size_t, ref_hash, ref_equal> rmap;
+  std::unordered_multimap<typed_event_ref, size_t, ref_hash, ref_equal> rmultimap;
+
+  // Generic
+  map.emplace(he, 10);
+  multimap.emplace(he, 10);
+  map.emplace(he, 20);
+  multimap.emplace(he, 20);
+  map.emplace(d1, 30);
+  multimap.emplace(d1, 30);
+  map.emplace(d2, 40);
+  multimap.emplace(d2, 40);
+  map.emplace(d2, 50);
+  multimap.emplace(d2, 50);
+
+  // Typed
+  rmap.emplace(e1, 30);
+  rmultimap.emplace(e1, 30);
+  rmap.emplace(e2, 40);
+  rmultimap.emplace(e2, 40);
+  rmap.emplace(e2, 50);
+  rmultimap.emplace(e2, 50);
 
   // Verify using Event as a key to find entries works
   // Generic
@@ -532,7 +556,7 @@ void test_map_key(Event& he)
 //
 TEST(CampEvent, UnorderedMapKey)
 {
-  Event he{Host().get_event_erased()};
+  Event he = Host().get_event_erased();
   test_map_key<Host>(he);
 #if defined(CAMP_HAVE_CUDA)
   test_map_key<Cuda>(he);
