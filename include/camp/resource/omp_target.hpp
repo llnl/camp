@@ -112,8 +112,8 @@ namespace resources
       }
 
     private:
-      char *addr = nullptr;
-      int dev = -1;
+      char *addr;
+      int dev;
     };
 
     class Omp

@@ -112,7 +112,24 @@ namespace resources
 
       hipEvent_t getHipEvent_t() const { return m_event; }
 
+      /*
+       * \brief Compares two events to see if they represent the same underlying
+       *        cuda event.
+       *
+       * \return True if both refer to the same cuda event, false otherwise.
+       */
+      friend inline bool operator==(HipEvent const& lhs, HipEvent const& rhs) = default;
+
+      size_t get_hash() const
+      {
+        const size_t platform_type = size_t(get_platform()) << 32;
+        size_t hash = std::hash<hipEvent_t>{}(m_event);
+        return platform_type | (hash & 0xFFFFFFFF);
+      }
+
+
     private:
+      // note that hipEvent_t is an alias for a pointer and is nullable
       hipEvent_t m_event;
 
       void init(hipStream_t stream)
@@ -121,6 +138,14 @@ namespace resources
                                       &m_event,
                                       hipEventDisableTiming);
         CAMP_HIP_API_INVOKE_AND_CHECK(hipEventRecord, m_event, stream);
+      }
+
+      static void finalize(hipEvent_t& event)
+      {
+        if (event != nullptr) {
+          CAMP_CUDA_API_INVOKE_AND_CHECK(hipEventDestroy, event);
+          event = nullptr;
+        }
       }
     };
 

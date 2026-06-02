@@ -145,7 +145,7 @@ namespace resources
       static void finalize(cudaEvent_t& event)
       {
         if (event != nullptr) {
-          campCudaErrchk(cudaEventDestroy(event));
+          CAMP_CUDA_API_INVOKE_AND_CHECK(cudaEventDestroy, event);
           event = nullptr;
         }
       }
