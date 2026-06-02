@@ -29,6 +29,21 @@ namespace resources
 {
   inline namespace v1
   {
+    class OmpEvent;
+    class Omp;
+
+    template <>
+    struct resource_from_platform<Platform::omp_target> {
+      using type = ::camp::resources::Omp;
+    };
+
+    template <>
+    struct is_concrete_event_impl<OmpEvent> : std::true_type {
+    };
+
+    template <>
+    struct is_concrete_resource_impl<Omp> : std::true_type {
+    };
 
     class OmpEvent
     {
@@ -313,9 +328,7 @@ namespace resources
 
   }  // namespace v1
 
-  template <>
-  struct is_concrete_resource_impl<Omp> : std::true_type {
-  };
+
 }  // namespace resources
 }  // namespace camp
 

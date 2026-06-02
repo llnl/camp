@@ -30,7 +30,21 @@ namespace resources
 {
   inline namespace v1
   {
+    class CudaEvent;
     class Cuda;
+
+    template <>
+    struct resource_from_platform<Platform::cuda> {
+      using type = ::camp::resources::Cuda;
+    };
+
+    template <>
+    struct is_concrete_event_impl<CudaEvent> : std::true_type {
+    };
+
+    template <>
+    struct is_concrete_resource_impl<Cuda> : std::true_type {
+    };
 
     namespace
     {
@@ -350,17 +364,7 @@ namespace resources
       int device;
     };
 
-    inline CudaEvent::CudaEvent(Cuda &res)
-    {
-      auto d{device_guard(res.get_device())};
-      init(res.get_stream());
-    }
-
   }  // namespace v1
-
-  template <>
-  struct is_concrete_resource_impl<Cuda> : std::true_type {
-  };
 
 }  // namespace resources
 }  // namespace camp

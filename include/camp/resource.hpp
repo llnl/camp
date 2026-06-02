@@ -20,40 +20,7 @@
 #include "camp/defines.hpp"
 #include "camp/helpers.hpp"
 
-namespace camp
-{
-namespace resources
-{
-  template <typename T>
-  struct is_concrete_resource_impl : std::false_type {
-  };
-
-  template <typename T>
-  struct is_concrete_resource
-      : is_concrete_resource_impl<typename std::decay_t<T>> {
-  };
-
-  template <typename T>
-  inline constexpr bool is_concrete_resource_v = is_concrete_resource<T>::value;
-}  // namespace resources
-}  // namespace camp
-
 #include "camp/resource/event.hpp"
-#include "camp/resource/host.hpp"
-
-#if defined(CAMP_HAVE_CUDA)
-#include "camp/resource/cuda.hpp"
-#endif
-#if defined(CAMP_HAVE_HIP)
-#include "camp/resource/hip.hpp"
-#endif
-#if defined(CAMP_HAVE_SYCL)
-#include "camp/resource/sycl.hpp"
-#endif
-
-#if defined(CAMP_HAVE_OMP_OFFLOAD)
-#include "camp/resource/omp_target.hpp"
-#endif
 
 // last to ensure we don't hide breakage in the others
 #include "camp/resource/platform.hpp"
@@ -373,38 +340,6 @@ namespace resources
       std::shared_ptr<ContextInterface> m_value;
     };
 
-    template <Platform p>
-    struct resource_from_platform;
-
-    template <>
-    struct resource_from_platform<Platform::host> {
-      using type = ::camp::resources::Host;
-    };
-#if defined(CAMP_HAVE_CUDA)
-    template <>
-    struct resource_from_platform<Platform::cuda> {
-      using type = ::camp::resources::Cuda;
-    };
-#endif
-#if defined(CAMP_HAVE_HIP)
-    template <>
-    struct resource_from_platform<Platform::hip> {
-      using type = ::camp::resources::Hip;
-    };
-#endif
-#if defined(CAMP_HAVE_SYCL)
-    template <>
-    struct resource_from_platform<Platform::sycl> {
-      using type = ::camp::resources::Sycl;
-    };
-#endif
-#if defined(CAMP_HAVE_OMP_OFFLOAD)
-    template <>
-    struct resource_from_platform<Platform::omp_target> {
-      using type = ::camp::resources::Omp;
-    };
-#endif
-
     namespace detail
     {
       template <typename Res>
@@ -481,5 +416,21 @@ struct hash<camp::resources::Resource> {
 };
 
 }  // namespace std
+
+#include "camp/resource/host.hpp"
+
+#if defined(CAMP_HAVE_CUDA)
+#include "camp/resource/cuda.hpp"
+#endif
+#if defined(CAMP_HAVE_HIP)
+#include "camp/resource/hip.hpp"
+#endif
+#if defined(CAMP_HAVE_SYCL)
+#include "camp/resource/sycl.hpp"
+#endif
+
+#if defined(CAMP_HAVE_OMP_OFFLOAD)
+#include "camp/resource/omp_target.hpp"
+#endif
 
 #endif /* __CAMP_RESOURCE_HPP */

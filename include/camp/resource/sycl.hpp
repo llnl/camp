@@ -29,7 +29,21 @@ namespace resources
 {
   inline namespace v1
   {
+    class SyclEvent;
     class Sycl;
+
+    template <>
+    struct resource_from_platform<Platform::sycl> {
+      using type = ::camp::resources::Sycl;
+    };
+
+    template <>
+    struct is_concrete_event_impl<SyclEvent> : std::true_type {
+    };
+
+    template <>
+    struct is_concrete_resource_impl<Sycl> : std::true_type {
+    };
 
     class SyclEvent
     {
@@ -389,15 +403,8 @@ namespace resources
       sycl::queue qu;
     };
 
-    inline SyclEvent::SyclEvent(Sycl &res)
-      : SyclEvent(res.get_queue())
-    {}
-
   }  // namespace v1
 
-  template <>
-  struct is_concrete_resource_impl<Sycl> : std::true_type {
-  };
 }  // namespace resources
 }  // namespace camp
 

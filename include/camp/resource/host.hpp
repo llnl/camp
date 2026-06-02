@@ -23,6 +23,22 @@ namespace resources
   inline namespace v1
   {
 
+    class HostEvent;
+    class Host;
+
+    template <>
+    struct resource_from_platform<Platform::host> {
+      using type = ::camp::resources::Host;
+    };
+
+    template <>
+    struct is_concrete_event_impl<HostEvent> : std::true_type {
+    };
+
+    template <>
+    struct is_concrete_resource_impl<Host> : std::true_type {
+    };
+
     class HostEvent
     {
     public:
@@ -128,10 +144,6 @@ namespace resources
     };
 
   }  // namespace v1
-
-  template <>
-  struct is_concrete_resource_impl<Host> : std::true_type {
-  };
 
 }  // namespace resources
 }  // namespace camp

@@ -30,7 +30,21 @@ namespace resources
 {
   inline namespace v1
   {
+    class HipEvent;
     class Hip;
+
+    template <>
+    struct resource_from_platform<Platform::hip> {
+      using type = ::camp::resources::Hip;
+    };
+
+    template <>
+    struct is_concrete_event_impl<HipEvent> : std::true_type {
+    };
+
+    template <>
+    struct is_concrete_resource_impl<Hip> : std::true_type {
+    };
 
     namespace
     {
@@ -335,17 +349,8 @@ namespace resources
       int device;
     };
 
-    inline HipEvent::HipEvent(Hip &res)
-    {
-      auto d{device_guard(res.get_device())};
-      init(res.get_stream());
-    }
-
   }  // namespace v1
 
-  template <>
-  struct is_concrete_resource_impl<Hip> : std::true_type {
-  };
 }  // namespace resources
 }  // namespace camp
 

@@ -27,6 +27,10 @@ namespace resources
     };
 
     enum class MemoryAccess { Unknown, Device, Pinned, Managed };
+
+    template <Platform p>
+    struct resource_from_platform;
+
   }  // namespace v1
 }  // namespace resources
 }  // namespace camp
