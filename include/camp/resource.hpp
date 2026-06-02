@@ -34,6 +34,8 @@ namespace resources
     class Resource
     {
     public:
+      using event_type = Event;
+
       Resource(Resource &&) = default;
       Resource(Resource const &) = default;
       Resource &operator=(Resource &&) = default;
@@ -340,20 +342,10 @@ namespace resources
       std::shared_ptr<ContextInterface> m_value;
     };
 
-    namespace detail
-    {
-      template <typename Res>
-      using get_event_type =
-          typename std::decay<decltype(std::declval<Res>().get_event())>::type;
-
-      template <typename T>
-      using is_erased_resource_or_proxy =
-          typename std::is_same<get_event_type<T>, Event>::type;
-    }  // namespace detail
-
     template <typename Res>
-    struct EventProxy : ::camp::resources::detail::EventProxyBase {
-      using native_event = ::camp::resources::detail::get_event_type<Res>;
+    struct EventProxy : ::camp::resources::detail::EventProxyBase
+    {
+      using native_event = typename Res::event_type;
 
       EventProxy(EventProxy &&) = default;
       EventProxy(EventProxy const &) = delete;
@@ -362,31 +354,28 @@ namespace resources
 
       EventProxy(Res r) : resource_{move(r)} {}
 
-      template <typename T = Res>
-      typename std::enable_if<!detail::is_erased_resource_or_proxy<T>::value,
-                              native_event>::type
-      get()
+      native_event get()
+      requires (!std::same_as<native_event, Event>)
       {
         return resource_.get_event();
       }
 
-      template <typename T = Res>
-      typename std::enable_if<detail::is_erased_resource_or_proxy<T>::value,
-                              Event>::type
-      get()
+      Event get()
+      requires (std::same_as<native_event, Event>)
       {
         return resource_.get_event_erased();
       }
 
-      template <typename T = Res>
-      operator typename std::enable_if<
-          !detail::is_erased_resource_or_proxy<T>::value,
-          native_event>::type()
+      operator native_event()
+      requires (!std::same_as<native_event, Event>)
       {
         return resource_.get_event();
       }
 
-      operator Event() { return resource_.get_event_erased(); }
+      operator Event()
+      {
+        return resource_.get_event_erased();
+      }
 
       Res resource_;
     };

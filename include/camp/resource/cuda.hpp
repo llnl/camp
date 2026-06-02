@@ -206,6 +206,8 @@ namespace resources
       }
 
     public:
+      using event_type = CudaEvent;
+
       Cuda(int group = -1, int dev = 0)
           : stream(get_a_stream(group)), device(dev)
       {

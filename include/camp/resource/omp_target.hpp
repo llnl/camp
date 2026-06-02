@@ -150,6 +150,8 @@ namespace resources
       }
 
     public:
+      using event_type = OmpEvent;
+
       Omp(int group = -1, int device = omp_get_default_device())
           : addr(get_addr(group)), dev(device)
       {

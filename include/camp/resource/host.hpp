@@ -78,6 +78,8 @@ namespace resources
     class Host
     {
     public:
+      using event_type = HostEvent;
+
       Host(int /* group */ = -1) {}
 
       // Methods

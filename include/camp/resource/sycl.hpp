@@ -152,6 +152,8 @@ namespace resources
       }
 
     public:
+      using event_type = SyclEvent;
+
       /*
        * \brief Get the camp managed sycl context.
        *
