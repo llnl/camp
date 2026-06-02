@@ -74,9 +74,7 @@ namespace resources
     class HipEvent
     {
     public:
-      HipEvent(hipStream_t stream) { init(stream); }
-
-      HipEvent(Hip &res);
+      explicit HipEvent(hipStream_t stream) { init(stream); }
 
       HipEvent(HipEvent const&) = delete;
 

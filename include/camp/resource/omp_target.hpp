@@ -48,7 +48,7 @@ namespace resources
     class OmpEvent
     {
     public:
-      OmpEvent(char *addr_in, int device = omp_get_default_device())
+      explicit OmpEvent(char *addr_in, int device = omp_get_default_device())
           : addr(addr_in), dev(device)
       {
 #pragma omp target device(dev) depend(inout : addr_in[0]) nowait

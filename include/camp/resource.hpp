@@ -276,7 +276,7 @@ namespace resources
       class ContextModel final : public ContextInterface
       {
       public:
-        ContextModel(T const &modelVal) : m_modelVal(modelVal) {}
+        explicit ContextModel(T const &modelVal) : m_modelVal(modelVal) {}
 
         Platform get_platform() const override
         {

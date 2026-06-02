@@ -180,7 +180,7 @@ namespace resources
       class EventModel final : public EventInterface
       {
       public:
-        EventModel(T modelVal)
+        explicit EventModel(T modelVal)
           : m_modelVal(std::move(modelVal))
         {}
 

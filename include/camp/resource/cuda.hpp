@@ -74,11 +74,9 @@ namespace resources
     class CudaEvent
     {
     public:
-      CudaEvent(cudaStream_t stream)
+      explicit CudaEvent(cudaStream_t stream)
         : m_event(init(stream))
       {}
-
-      CudaEvent(Cuda &res);
 
       CudaEvent(CudaEvent const&) = delete;
 

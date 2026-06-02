@@ -53,15 +53,13 @@ namespace resources
       {}
 
       // TODO: see what overhead an empty submit has
-      SyclEvent(sycl::queue& qu)
+      explicit SyclEvent(sycl::queue& qu)
       {
         if (!qu.is_in_order()) {
           ::camp::throw_re("Queue is not in_order.");
         }
         m_event = qu.submit([&](::sycl::handler& CAMP_UNUSED_ARG(h)) {});
       }
-
-      SyclEvent(Sycl& res);
 
       SyclEvent(SyclEvent const&) = delete;
 
