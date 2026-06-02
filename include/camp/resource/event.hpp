@@ -130,11 +130,12 @@ namespace resources
       void wait() const { if (m_value) { m_value->wait(); } }
 
       /*
-       * \brief Compares two Events to see if they are equal. Two Events
-       * are equal if they have the platform and same event
+       * \brief Compares two Events to see if they represent the same underlying
+       *        typed event. Two Events are equal if they have the platform and
+       *        equivalent typed events.
        *
-       * \return True if they have the same platform and event, false
-       * otherwise.
+       * \return True if they have the same platform and equivalent underlying
+       *         typed events, false otherwise.
        */
       friend inline bool operator==(Event const &lhs, Event const &rhs)
       {

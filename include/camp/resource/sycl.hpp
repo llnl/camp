@@ -64,9 +64,10 @@ namespace resources
       sycl::event const& getSyclEvent_t() const { return m_event; }
 
       /*
-       * \brief Compares two events to see if they are equal
+       * \brief Compares two events to see if they represent the same underlying
+       *        sycl event.
        *
-       * \return True or false depending on if this is the same event
+       * \return True if both refer to equivalent sycl events, false otherwise.
        */
       friend inline bool operator==(SyclEvent const& lhs, SyclEvent const& rhs) = default;
 

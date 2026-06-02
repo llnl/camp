@@ -35,9 +35,10 @@ namespace resources
       void wait() const {}
 
       /*
-       * \brief Compares two events to see if they are equal
+       * \brief Compares two events to see if they represent the same underlying
+       *        host event.
        *
-       * \return True or false depending on if this is the same event
+       * \return True (Host is always synchronous so host events are trivial)
        */
       friend inline bool operator==(HostEvent const& lhs, HostEvent const& rhs) = default;
 

@@ -62,9 +62,11 @@ namespace resources
       void *getEventAddr() const { return addr; }
 
       /*
-       * \brief Compares two events to see if they are equal
+       * \brief Compares two events to see if they represent the same underlying
+       *        openmp target event.
        *
-       * \return True or false depending on if this is the same event
+       * \return True if both refer to the same address and device, false
+       *         otherwise.
        */
       friend inline bool operator==(OmpEvent const& lhs, OmpEvent const& rhs) = default;
 

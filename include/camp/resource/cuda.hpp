@@ -80,9 +80,10 @@ namespace resources
       cudaEvent_t getCudaEvent_t() const { return m_event; }
 
       /*
-       * \brief Compares two events to see if they are equal
+       * \brief Compares two events to see if they represent the same underlying
+       *        cuda event.
        *
-       * \return True or false depending on if this is the same event
+       * \return True if both refer to the same cuda event, false otherwise.
        */
       friend inline bool operator==(CudaEvent const& lhs, CudaEvent const& rhs) = default;
 
@@ -94,6 +95,7 @@ namespace resources
       }
 
     private:
+      // note that cudaEvent_t is an alias for a pointer and is nullable
       cudaEvent_t m_event;
 
       void init(cudaStream_t stream)
