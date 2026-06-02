@@ -19,6 +19,8 @@ using namespace camp::resources;
 // compatible but different resource for conversion test
 struct Host2 : Host {
 };
+struct HostEvent2 : HostEvent {
+};
 #ifdef CAMP_HAVE_CUDA
 struct Cuda2 : Cuda {
 };
@@ -43,10 +45,15 @@ namespace resources
   template <>
   struct is_concrete_resource_impl<Host2> : std::true_type {
   };
+  template <>
+  struct is_concrete_event_impl<HostEvent2> : std::true_type {
+  };
 }  // namespace resources
 }  // namespace camp
 
 struct NotAResource { };
+
+struct NotAnEvent { };
 
 template <typename Res>
 void test_construct()
@@ -1155,4 +1162,47 @@ TEST(CampResourceTypeTraits, ConcreteResource)
   ASSERT_FALSE(is_concrete_resource<NotAResource>::value);
   // Host2 has an overload of is_concrete_resource_impl
   ASSERT_TRUE(is_concrete_resource<Host2>::value);
+}
+
+template <typename Evt>
+void test_concrete_event_trait()
+{
+  ASSERT_TRUE(is_concrete_event<Evt>::value);
+  ASSERT_TRUE(is_concrete_event<Evt&>::value);
+  ASSERT_TRUE(is_concrete_event<const Evt>::value);
+  ASSERT_TRUE(is_concrete_event<const Evt&>::value);
+  ASSERT_TRUE(is_concrete_event<Evt&&>::value);
+}
+//
+TEST(CampResourceTypeTraits, ConcreteEvent)
+{
+  test_concrete_event_trait<HostEvent>();
+
+#ifdef CAMP_HAVE_CUDA
+  test_concrete_event_trait<CudaEvent>();
+#endif
+
+#ifdef CAMP_HAVE_HIP
+  test_concrete_event_trait<HipEvent>();
+#endif
+
+#ifdef CAMP_HAVE_SYCL
+  test_concrete_event_trait<SyclEvent>();
+#endif
+
+#ifdef CAMP_HAVE_OMP_OFFLOAD
+  test_concrete_event_trait<OmpEvent>();
+#endif
+
+  // Event is not a concrete event
+  ASSERT_FALSE(is_concrete_event<Event>::value);
+  // Test is_concrete_event with non-event types
+  ASSERT_FALSE(is_concrete_event<int>::value);
+  ASSERT_FALSE(is_concrete_event<float>::value);
+  ASSERT_FALSE(is_concrete_event<double>::value);
+  ASSERT_FALSE(is_concrete_event<void*>::value);
+  ASSERT_FALSE(is_concrete_event<char*>::value);
+  ASSERT_FALSE(is_concrete_event<NotAnEvent>::value);
+  // Host2 has an overload of is_concrete_event_impl
+  ASSERT_TRUE(is_concrete_event<HostEvent2>::value);
 }
