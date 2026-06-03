@@ -9,6 +9,7 @@
 
 #include "camp/resource.hpp"
 
+#include <array>
 #include <type_traits>
 
 #include "camp/camp.hpp"
@@ -1365,3 +1366,109 @@ TEST(CampResourceTypeTraits, ConcreteEvent)
   // Host2 has an overload of is_concrete_event_impl
   ASSERT_TRUE(is_concrete_event<HostEvent2>::value);
 }
+
+template <typename Res>
+void verify_bytes_roundtrip(Res& r, unsigned char* ptr)
+{
+  constexpr size_t N = 32;
+  std::array<unsigned char, N> expected{};
+  std::array<unsigned char, N> actual{};
+
+  for (size_t i = 0; i < N; ++i) {
+    expected[i] = static_cast<unsigned char>(i * 7 + 3);
+  }
+
+  r.memcpy(ptr, expected.data(), N);
+  r.wait();
+  actual.fill(0);
+  r.memcpy(actual.data(), ptr, N);
+  r.wait();
+  ASSERT_EQ(actual, expected);
+}
+
+template <typename Res>
+void verify_zero_initialized(Res& r, void* ptr)
+{
+  constexpr size_t N = 32;
+  std::array<unsigned char, N> actual{};
+  actual.fill(0xFF);
+  r.memcpy(actual.data(), ptr, N);
+  r.wait();
+  for (auto value : actual) {
+    ASSERT_EQ(value, 0u);
+  }
+}
+
+template <typename Res>
+void verify_memset_value(Res& r, void* ptr, unsigned char value)
+{
+  constexpr size_t N = 32;
+  std::array<unsigned char, N> actual{};
+  r.memset(ptr, value, N);
+  r.wait();
+  actual.fill(0);
+  r.memcpy(actual.data(), ptr, N);
+  r.wait();
+  for (auto byte : actual) {
+    ASSERT_EQ(byte, value);
+  }
+}
+
+template <typename Res>
+void test_memory_ops(MemoryAccess access)
+{
+  constexpr size_t N = 32;
+  Res r;
+  auto* ptr = r.template allocate<unsigned char>(N, access);
+  ASSERT_NE(ptr, nullptr);
+  verify_memset_value(r, ptr, 0x5A);
+  verify_bytes_roundtrip(r, ptr);
+
+  void* zeroed = r.calloc(N, access);
+  ASSERT_NE(zeroed, nullptr);
+  verify_zero_initialized(r, zeroed);
+
+  r.deallocate(ptr, access);
+  r.deallocate(zeroed, access);
+}
+
+TEST(CampResourceMemory, Host)
+{
+  test_memory_ops<Host>(MemoryAccess::Device);
+}
+#ifdef CAMP_HAVE_CUDA
+TEST(CampResourceMemory, Cuda)
+{
+  test_memory_ops<Cuda>(MemoryAccess::Unknown);
+  test_memory_ops<Cuda>(MemoryAccess::Device);
+  test_memory_ops<Cuda>(MemoryAccess::Pinned);
+  test_memory_ops<Cuda>(MemoryAccess::Managed);
+}
+#endif
+
+#ifdef CAMP_HAVE_HIP
+TEST(CampResourceMemory, Hip)
+{
+  test_memory_ops<Hip>(MemoryAccess::Unknown);
+  test_memory_ops<Hip>(MemoryAccess::Device);
+  test_memory_ops<Hip>(MemoryAccess::Pinned);
+  test_memory_ops<Hip>(MemoryAccess::Managed);
+}
+#endif
+
+#ifdef CAMP_HAVE_OMP_OFFLOAD
+TEST(CampResourceMemory, Omp)
+{
+  test_memory_ops<Omp>(MemoryAccess::Device);
+}
+#endif
+
+#ifdef CAMP_HAVE_SYCL
+TEST(CampResourceMemory, Sycl)
+{
+  test_memory_ops<Sycl>(MemoryAccess::Unknown);
+  test_memory_ops<Sycl>(MemoryAccess::Device);
+  test_memory_ops<Sycl>(MemoryAccess::Pinned);
+  test_memory_ops<Sycl>(MemoryAccess::Managed);
+}
+#endif
