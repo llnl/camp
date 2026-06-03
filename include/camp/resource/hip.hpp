@@ -256,27 +256,32 @@ namespace resources
         CAMP_HIP_API_INVOKE_AND_CHECK(hipStreamSynchronize, stream);
       }
 
-      void wait_for(std::nullptr_t) {}
-
-      void wait_for(HipEvent *e)
+      void wait_for(HipEvent& e)
       {
-        if (!e) {
-          return;
-        }
         auto d{device_guard(device)};
         CAMP_HIP_API_INVOKE_AND_CHECK(hipStreamWaitEvent,
                                       get_stream(),
-                                      e->getHipEvent_t(),
+                                      e.getHipEvent_t(),
                                       0);
       }
 
+      void wait_for(Event& e)
+      {
+        if (auto hip_event = e.try_get<HipEvent>()) {
+          wait_for(*hip_event);
+        } else {
+          e.wait();
+        }
+      }
+
+      [[deprecated]]
       void wait_for(Event *e)
       {
         if (!e) {
           return;
         }
         if (auto hip_event = e->try_get<HipEvent>()) {
-          wait_for(hip_event);
+          wait_for(*hip_event);
         } else {
           e->wait();
         }

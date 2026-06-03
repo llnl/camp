@@ -98,23 +98,28 @@ namespace resources
 
       void wait() {}
 
-      void wait_for(std::nullptr_t) {}
-
-      void wait_for(HostEvent *e)
+      void wait_for(HostEvent& e)
       {
-        if (!e) {
-          return;
-        }
-        e->wait();
+        e.wait();
       }
 
+      void wait_for(Event& e)
+      {
+        if (auto host_event = e.try_get<HostEvent>()) {
+          wait_for(*host_event);
+        } else {
+          e.wait();
+        }
+      }
+
+      [[deprecated]]
       void wait_for(Event *e)
       {
         if (!e) {
           return;
         }
         if (auto host_event = e->try_get<HostEvent>()) {
-          wait_for(host_event);
+          wait_for(*host_event);
         } else {
           e->wait();
         }

@@ -319,25 +319,30 @@ namespace resources
 
       void wait() { qu.wait(); }
 
-      void wait_for(std::nullptr_t) {}
-
-      void wait_for(SyclEvent* e)
+      void wait_for(SyclEvent& e)
       {
-        if (!e) {
-          return;
-        }
         qu.submit([&](::sycl::handler& h) {
-          h.depends_on(e->getSyclEvent_t());
+          h.depends_on(e.getSyclEvent_t());
         });
       }
 
+      void wait_for(Event &e)
+      {
+        if (auto sycl_event = e.try_get<SyclEvent>()) {
+          wait_for(*sycl_event);
+        } else {
+          e.wait();
+        }
+      }
+
+      [[deprecated]]
       void wait_for(Event* e)
       {
         if (!e) {
           return;
         }
         if (auto sycl_event = e->try_get<SyclEvent>()) {
-          wait_for(sycl_event);
+          wait_for(*sycl_event);
         } else {
           e->wait();
         }

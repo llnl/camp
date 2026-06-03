@@ -192,15 +192,10 @@ namespace resources
         }
       }
 
-      void wait_for(std::nullptr_t) {}
-
-      void wait_for(OmpEvent *e)
+      void wait_for(OmpEvent& e)
       {
-        if (!e) {
-          return;
-        }
         char *local_addr = addr;
-        char *other_addr = (char *)e->getEventAddr();
+        char *other_addr = (char *)e.getEventAddr();
         CAMP_ALLOW_UNUSED_LOCAL(local_addr);
         CAMP_ALLOW_UNUSED_LOCAL(other_addr);
 #pragma omp target depend(inout : local_addr[0]) depend(in : other_addr[0]) \
@@ -209,13 +204,23 @@ namespace resources
         }
       }
 
+      void wait_for(Event& e)
+      {
+        if (auto omp_event = e.try_get<OmpEvent>()) {
+          wait_for(*omp_event);
+        } else {
+          e.wait();
+        }
+      }
+
+      [[deprecated]]
       void wait_for(Event *e)
       {
         if (!e) {
           return;
         }
         if (auto omp_event = e->try_get<OmpEvent>()) {
-          wait_for(omp_event);
+          wait_for(*omp_event);
         } else {
           e->wait();
         }

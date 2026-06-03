@@ -255,27 +255,32 @@ namespace resources
         CAMP_CUDA_API_INVOKE_AND_CHECK(cudaStreamSynchronize, stream);
       }
 
-      void wait_for(std::nullptr_t) {}
-
-      void wait_for(CudaEvent *e)
+      void wait_for(CudaEvent& e)
       {
-        if (!e) {
-          return;
-        }
         auto d{device_guard(device)};
         CAMP_CUDA_API_INVOKE_AND_CHECK(cudaStreamWaitEvent,
                                        get_stream(),
-                                       e->getCudaEvent_t(),
+                                       e.getCudaEvent_t(),
                                        0);
       }
 
+      void wait_for(Event& e)
+      {
+        if (auto cuda_event = e.try_get<CudaEvent>()) {
+          wait_for(*cuda_event);
+        } else {
+          e.wait();
+        }
+      }
+
+      [[deprecated]]
       void wait_for(Event *e)
       {
         if (!e) {
           return;
         }
         if (auto cuda_event = e->try_get<CudaEvent>()) {
-          wait_for(cuda_event);
+          wait_for(*cuda_event);
         } else {
           e->wait();
         }
