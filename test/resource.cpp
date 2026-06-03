@@ -1432,10 +1432,21 @@ void test_memory_ops(MemoryAccess access)
   r.deallocate(zeroed, access);
 }
 
+template <typename Res>
+void test_inferred_deallocate(MemoryAccess access)
+{
+  Res r;
+  auto* ptr = r.template allocate<unsigned char>(32, access);
+  ASSERT_NE(ptr, nullptr);
+  verify_memset_value(r, ptr, 0x3C);
+  r.deallocate(ptr);
+}
+
 TEST(CampResourceMemory, Host)
 {
   test_memory_ops<Host>(MemoryAccess::Device);
 }
+
 #ifdef CAMP_HAVE_CUDA
 TEST(CampResourceMemory, Cuda)
 {
@@ -1443,6 +1454,10 @@ TEST(CampResourceMemory, Cuda)
   test_memory_ops<Cuda>(MemoryAccess::Device);
   test_memory_ops<Cuda>(MemoryAccess::Pinned);
   test_memory_ops<Cuda>(MemoryAccess::Managed);
+
+  test_inferred_deallocate<Cuda>(MemoryAccess::Device);
+  test_inferred_deallocate<Cuda>(MemoryAccess::Pinned);
+  test_inferred_deallocate<Cuda>(MemoryAccess::Managed);
 }
 #endif
 
@@ -1453,6 +1468,10 @@ TEST(CampResourceMemory, Hip)
   test_memory_ops<Hip>(MemoryAccess::Device);
   test_memory_ops<Hip>(MemoryAccess::Pinned);
   test_memory_ops<Hip>(MemoryAccess::Managed);
+
+  test_inferred_deallocate<Hip>(MemoryAccess::Device);
+  test_inferred_deallocate<Hip>(MemoryAccess::Pinned);
+  test_inferred_deallocate<Hip>(MemoryAccess::Managed);
 }
 #endif
 
