@@ -864,6 +864,31 @@ TEST(CampResource, Get)
 #endif
 }
 
+template <typename Res>
+void test_get_rvalue()
+{
+  Resource dev_res{Res()};
+  auto moved_res = std::move(dev_res).get<Res>();
+  ASSERT_EQ(typeid(moved_res), typeid(Res{}));
+}
+
+TEST(CampResource, GetRValue)
+{
+  test_get_rvalue<Host>();
+#ifdef CAMP_HAVE_CUDA
+  test_get_rvalue<Cuda>();
+#endif
+#ifdef CAMP_HAVE_HIP
+  test_get_rvalue<Hip>();
+#endif
+#ifdef CAMP_HAVE_OMP_OFFLOAD
+  test_get_rvalue<Omp>();
+#endif
+#ifdef CAMP_HAVE_SYCL
+  test_get_rvalue<Sycl>();
+#endif
+}
+
 template <typename Res, typename ResEvent, typename... EventArgs>
 void test_get_event(EventArgs&&... eventArgs)
 {
