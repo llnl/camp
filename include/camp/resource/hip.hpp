@@ -256,7 +256,7 @@ namespace resources
         CAMP_HIP_API_INVOKE_AND_CHECK(hipStreamSynchronize, stream);
       }
 
-      void wait_for(HipEvent& e)
+      void wait_for(HipEvent const& e)
       {
         auto d{device_guard(device)};
         CAMP_HIP_API_INVOKE_AND_CHECK(hipStreamWaitEvent,
@@ -265,7 +265,7 @@ namespace resources
                                       0);
       }
 
-      void wait_for(Event& e)
+      void wait_for(Event const& e)
       {
         if (auto hip_event = e.try_get<HipEvent>()) {
           wait_for(*hip_event);

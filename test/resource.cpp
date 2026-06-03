@@ -285,7 +285,6 @@ TEST(CampResource, EmptyBehavior)
   empty.memcpy(&value, &value, 0);
   empty.memset(&value, 0, 0);
   empty.wait();
-  empty.wait_for(nullptr);
 
   ASSERT_THROW((void)empty.get<Host>(), std::runtime_error);
   ASSERT_FALSE(empty.try_get<Host>());
@@ -302,7 +301,8 @@ TEST(CampResource, EmptyBehavior)
   ASSERT_EQ(empty_event, empty_erased_event);
 
   Event host_event = Host().get_event_erased();
-  empty.wait_for(&host_event);
+  empty.wait_for(empty_event);
+  empty.wait_for(host_event);
 }
 
 TEST(CampEvent, EmptyBehavior)
@@ -948,9 +948,10 @@ void test_get_default(Platform platform)
   ASSERT_EQ(erased_event.get_platform(), platform);
   ASSERT_TRUE(erased_event);
 
-  d1.wait_for(nullptr);
-  d1.wait_for(&typed_event);
-  d1.wait_for(&erased_event);
+  Event empty_event;
+  d1.wait_for(empty_event);
+  d1.wait_for(typed_event);
+  d1.wait_for(erased_event);
   d1.wait();
   typed_event.wait();
   erased_event.wait();
@@ -1465,13 +1466,14 @@ void test_wait()
 {
   auto r = Res();
   r.wait();
-  r.wait_for(nullptr);
+  Event empty_event;
+  r.wait_for(empty_event);
   Event erased_event = r.get_event_erased();
-  r.wait_for(&erased_event);
+  r.wait_for(erased_event);
   auto typed_event = r.get_event();
-  r.wait_for(&typed_event);
+  r.wait_for(typed_event);
   Event host_event = Host().get_event_erased();
-  r.wait_for(&host_event);
+  r.wait_for(host_event);
   Resource er(r);
   er.wait();
 }

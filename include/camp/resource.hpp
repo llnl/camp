@@ -181,7 +181,7 @@ namespace resources
         return m_value->get_event_erased();
       }
 
-      void wait_for(Event& e)
+      void wait_for(Event const& e)
       {
         if (!m_value) {
             e.wait();
@@ -280,7 +280,7 @@ namespace resources
 
         virtual Event get_event() = 0;
         virtual Event get_event_erased() = 0;
-        virtual void wait_for(Event& e) = 0;
+        virtual void wait_for(Event const& e) = 0;
         virtual void wait() = 0;
       };
 
@@ -337,7 +337,7 @@ namespace resources
           return m_modelVal.get_event_erased();
         }
 
-        void wait_for(Event& e) override { m_modelVal.wait_for(e); }
+        void wait_for(Event const& e) override { m_modelVal.wait_for(e); }
 
         void wait() override { m_modelVal.wait(); }
 

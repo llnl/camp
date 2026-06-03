@@ -255,7 +255,7 @@ namespace resources
         CAMP_CUDA_API_INVOKE_AND_CHECK(cudaStreamSynchronize, stream);
       }
 
-      void wait_for(CudaEvent& e)
+      void wait_for(CudaEvent const& e)
       {
         auto d{device_guard(device)};
         CAMP_CUDA_API_INVOKE_AND_CHECK(cudaStreamWaitEvent,
@@ -264,7 +264,7 @@ namespace resources
                                        0);
       }
 
-      void wait_for(Event& e)
+      void wait_for(Event const& e)
       {
         if (auto cuda_event = e.try_get<CudaEvent>()) {
           wait_for(*cuda_event);

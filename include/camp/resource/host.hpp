@@ -98,12 +98,12 @@ namespace resources
 
       void wait() {}
 
-      void wait_for(HostEvent& e)
+      void wait_for(HostEvent const& e)
       {
         e.wait();
       }
 
-      void wait_for(Event& e)
+      void wait_for(Event const& e)
       {
         if (auto host_event = e.try_get<HostEvent>()) {
           wait_for(*host_event);

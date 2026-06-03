@@ -192,7 +192,7 @@ namespace resources
         }
       }
 
-      void wait_for(OmpEvent& e)
+      void wait_for(OmpEvent const& e)
       {
         char *local_addr = addr;
         char *other_addr = (char *)e.getEventAddr();
@@ -204,7 +204,7 @@ namespace resources
         }
       }
 
-      void wait_for(Event& e)
+      void wait_for(Event const& e)
       {
         if (auto omp_event = e.try_get<OmpEvent>()) {
           wait_for(*omp_event);
