@@ -240,7 +240,9 @@ namespace resources
           return false;
         }
         if (lhs.get_platform() == rhs.get_platform()) {
-          return lhs.get<Res>() == rhs;
+          if (auto lhs_res = lhs.try_get<Res>()) {
+            return *lhs_res == rhs;
+          }
         }
         return false;
       }

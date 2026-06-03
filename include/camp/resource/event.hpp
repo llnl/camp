@@ -155,7 +155,9 @@ namespace resources
           return false;
         }
         if (lhs.get_platform() == rhs.get_platform()) {
-          return lhs.get<Evt>() == rhs;
+          if (auto lhs_event = lhs.try_get<Evt>()) {
+            return *lhs_event == rhs;
+          }
         }
         return false;
       }
