@@ -201,6 +201,28 @@ TEST(CampEvent, GetPlatform)
 #endif
 }
 
+TEST(CampPlatform, ResourceFromPlatform)
+{
+  ASSERT_TRUE((std::is_same_v<resource_from_platform<Platform::host>::type,
+                              Host>));
+#ifdef CAMP_HAVE_CUDA
+  ASSERT_TRUE((std::is_same_v<resource_from_platform<Platform::cuda>::type,
+                              Cuda>));
+#endif
+#ifdef CAMP_HAVE_HIP
+  ASSERT_TRUE((std::is_same_v<resource_from_platform<Platform::hip>::type,
+                              Hip>));
+#endif
+#ifdef CAMP_HAVE_OMP_OFFLOAD
+  ASSERT_TRUE(
+      (std::is_same_v<resource_from_platform<Platform::omp_target>::type, Omp>));
+#endif
+#ifdef CAMP_HAVE_SYCL
+  ASSERT_TRUE((std::is_same_v<resource_from_platform<Platform::sycl>::type,
+                              Sycl>));
+#endif
+}
+
 template <typename Res>
 void test_zero_size_memory_ops()
 {
