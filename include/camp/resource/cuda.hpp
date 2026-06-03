@@ -132,7 +132,7 @@ namespace resources
 
     private:
       // note that cudaEvent_t is an alias for a pointer and is nullable
-      cudaEvent_t m_event = nullptr;
+      cudaEvent_t m_event;
 
       static cudaEvent_t init(cudaStream_t stream)
       {
