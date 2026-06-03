@@ -335,19 +335,6 @@ namespace resources
         }
       }
 
-      [[deprecated]]
-      void wait_for(Event* e)
-      {
-        if (!e) {
-          return;
-        }
-        if (auto sycl_event = e->try_get<SyclEvent>()) {
-          wait_for(*sycl_event);
-        } else {
-          e->wait();
-        }
-      }
-
       // Memory
       template <typename T>
       T* allocate(size_t size, MemoryAccess ma = MemoryAccess::Device)

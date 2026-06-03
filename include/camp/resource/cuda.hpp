@@ -273,19 +273,6 @@ namespace resources
         }
       }
 
-      [[deprecated]]
-      void wait_for(Event *e)
-      {
-        if (!e) {
-          return;
-        }
-        if (auto cuda_event = e->try_get<CudaEvent>()) {
-          wait_for(*cuda_event);
-        } else {
-          e->wait();
-        }
-      }
-
       // Memory
       template <typename T>
       T *allocate(size_t size, MemoryAccess ma = MemoryAccess::Device)

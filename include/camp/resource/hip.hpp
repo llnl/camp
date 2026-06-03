@@ -274,19 +274,6 @@ namespace resources
         }
       }
 
-      [[deprecated]]
-      void wait_for(Event *e)
-      {
-        if (!e) {
-          return;
-        }
-        if (auto hip_event = e->try_get<HipEvent>()) {
-          wait_for(*hip_event);
-        } else {
-          e->wait();
-        }
-      }
-
       // Memory
       template <typename T>
       T *allocate(size_t size, MemoryAccess ma = MemoryAccess::Device)

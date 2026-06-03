@@ -190,15 +190,6 @@ namespace resources
         m_value->wait_for(e);
       }
 
-      [[deprecated]]
-      void wait_for(Event *e)
-      {
-        if (!e) {
-          return;
-        }
-        wait_for(*e);
-      }
-
       void wait()
       {
         if (!m_value) {

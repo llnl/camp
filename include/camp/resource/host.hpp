@@ -112,19 +112,6 @@ namespace resources
         }
       }
 
-      [[deprecated]]
-      void wait_for(Event *e)
-      {
-        if (!e) {
-          return;
-        }
-        if (auto host_event = e->try_get<HostEvent>()) {
-          wait_for(*host_event);
-        } else {
-          e->wait();
-        }
-      }
-
       // Memory
       template <typename T>
       T *allocate(size_t n, MemoryAccess = MemoryAccess::Device)
