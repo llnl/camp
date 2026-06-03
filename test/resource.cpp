@@ -202,6 +202,36 @@ TEST(CampEvent, GetPlatform)
 }
 
 template <typename Res>
+void test_zero_size_memory_ops()
+{
+  Resource r{Res()};
+  int value = 13;
+
+  ASSERT_EQ(r.allocate<int>(0), nullptr);
+  ASSERT_EQ(r.calloc(0), nullptr);
+  r.deallocate(nullptr);
+  r.memcpy(&value, &value, 0);
+  r.memset(&value, 0, 0);
+}
+
+TEST(CampResource, ZeroSizeMemory)
+{
+  test_zero_size_memory_ops<Host>();
+#ifdef CAMP_HAVE_CUDA
+  test_zero_size_memory_ops<Cuda>();
+#endif
+#ifdef CAMP_HAVE_HIP
+  test_zero_size_memory_ops<Hip>();
+#endif
+#ifdef CAMP_HAVE_OMP_OFFLOAD
+  test_zero_size_memory_ops<Omp>();
+#endif
+#ifdef CAMP_HAVE_SYCL
+  test_zero_size_memory_ops<Sycl>();
+#endif
+}
+
+template <typename Res>
 void test_vector(Resource& h)
 {
   // Generic
