@@ -784,6 +784,55 @@ TEST(CampResource, HostCompare)
   ASSERT_TRUE(h3 == h2);
 }
 
+template <typename Res>
+void test_get_default(Platform platform)
+{
+  auto d1 = Res::get_default();
+  auto d2 = Res::get_default();
+
+  ASSERT_EQ(d1.get_platform(), platform);
+  ASSERT_EQ(d2.get_platform(), platform);
+  ASSERT_EQ(d1, d2);
+  ASSERT_EQ(std::hash<Res>{}(d1), std::hash<Res>{}(d2));
+
+  Resource r1{d1};
+  Resource r2{d2};
+  ASSERT_EQ(r1.get_platform(), platform);
+  ASSERT_EQ(r2.get_platform(), platform);
+  ASSERT_EQ(r1, r2);
+  ASSERT_EQ(std::hash<Resource>{}(r1), std::hash<Resource>{}(r2));
+
+  typename Res::event_type typed_event = d1.get_event();
+  Event erased_event = d1.get_event_erased();
+  ASSERT_EQ(typed_event.get_platform(), platform);
+  ASSERT_EQ(erased_event.get_platform(), platform);
+  ASSERT_TRUE(erased_event);
+
+  d1.wait_for(nullptr);
+  d1.wait_for(&typed_event);
+  d1.wait_for(&erased_event);
+  d1.wait();
+  typed_event.wait();
+  erased_event.wait();
+}
+
+TEST(CampResource, GetDefault)
+{
+  test_get_default<Host>(Platform::host);
+#ifdef CAMP_HAVE_CUDA
+  test_get_default<Cuda>(Platform::cuda);
+#endif
+#ifdef CAMP_HAVE_HIP
+  test_get_default<Hip>(Platform::hip);
+#endif
+#ifdef CAMP_HAVE_OMP_OFFLOAD
+  test_get_default<Omp>(Platform::omp_target);
+#endif
+#ifdef CAMP_HAVE_SYCL
+  test_get_default<Sycl>(Platform::sycl);
+#endif
+}
+
 
 template <typename Res>
 void test_id_compare(Event& he)
