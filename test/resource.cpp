@@ -109,6 +109,67 @@ TEST(CampResource, Copy)
 #endif
 }
 
+template <typename Res>
+void test_copy_assignment()
+{
+  Resource src{Res()};
+  Resource dst;
+
+  dst = src;
+
+  ASSERT_TRUE(src);
+  ASSERT_TRUE(dst);
+  ASSERT_TRUE(dst.try_get<Res>());
+  ASSERT_EQ(src, dst);
+}
+
+TEST(CampResource, CopyAssignment)
+{
+  test_copy_assignment<Host>();
+#ifdef CAMP_HAVE_CUDA
+  test_copy_assignment<Cuda>();
+#endif
+#ifdef CAMP_HAVE_HIP
+  test_copy_assignment<Hip>();
+#endif
+#ifdef CAMP_HAVE_OMP_OFFLOAD
+  test_copy_assignment<Omp>();
+#endif
+#ifdef CAMP_HAVE_SYCL
+  test_copy_assignment<Sycl>();
+#endif
+}
+
+template <typename Res>
+void test_move_assignment()
+{
+  Resource src{Res()};
+  Resource dst;
+
+  dst = std::move(src);
+
+  ASSERT_FALSE(src);
+  ASSERT_TRUE(dst);
+  ASSERT_TRUE(dst.try_get<Res>());
+}
+
+TEST(CampResource, MoveAssignment)
+{
+  test_move_assignment<Host>();
+#ifdef CAMP_HAVE_CUDA
+  test_move_assignment<Cuda>();
+#endif
+#ifdef CAMP_HAVE_HIP
+  test_move_assignment<Hip>();
+#endif
+#ifdef CAMP_HAVE_OMP_OFFLOAD
+  test_move_assignment<Omp>();
+#endif
+#ifdef CAMP_HAVE_SYCL
+  test_move_assignment<Sycl>();
+#endif
+}
+
 template <typename Res, typename Res2>
 void test_convert_fails()
 {
@@ -264,6 +325,71 @@ TEST(CampEvent, EmptyBehavior)
   ASSERT_TRUE(host_event.try_get<HostEvent>());
   ASSERT_FALSE(host_event.try_get<HostEvent2>());
   ASSERT_THROW((void)host_event.get<HostEvent2>(), std::runtime_error);
+}
+
+template <typename Res>
+void test_event_copy_assignment()
+{
+  using ResEvent = typename Res::event_type;
+
+  Event src = Res().get_event_erased();
+  Event dst;
+
+  dst = src;
+
+  ASSERT_TRUE(src);
+  ASSERT_TRUE(dst);
+  ASSERT_TRUE(dst.try_get<ResEvent>());
+  ASSERT_EQ(src, dst);
+}
+
+TEST(CampEvent, CopyAssignment)
+{
+  test_event_copy_assignment<Host>();
+#ifdef CAMP_HAVE_CUDA
+  test_event_copy_assignment<Cuda>();
+#endif
+#ifdef CAMP_HAVE_HIP
+  test_event_copy_assignment<Hip>();
+#endif
+#ifdef CAMP_HAVE_OMP_OFFLOAD
+  test_event_copy_assignment<Omp>();
+#endif
+#ifdef CAMP_HAVE_SYCL
+  test_event_copy_assignment<Sycl>();
+#endif
+}
+
+template <typename Res>
+void test_event_move_assignment()
+{
+  using ResEvent = typename Res::event_type;
+
+  Event src = Res().get_event_erased();
+  Event dst;
+
+  dst = std::move(src);
+
+  ASSERT_FALSE(src);
+  ASSERT_TRUE(dst);
+  ASSERT_TRUE(dst.try_get<ResEvent>());
+}
+
+TEST(CampEvent, MoveAssignment)
+{
+  test_event_move_assignment<Host>();
+#ifdef CAMP_HAVE_CUDA
+  test_event_move_assignment<Cuda>();
+#endif
+#ifdef CAMP_HAVE_HIP
+  test_event_move_assignment<Hip>();
+#endif
+#ifdef CAMP_HAVE_OMP_OFFLOAD
+  test_event_move_assignment<Omp>();
+#endif
+#ifdef CAMP_HAVE_SYCL
+  test_event_move_assignment<Sycl>();
+#endif
 }
 
 TEST(CampPlatform, ResourceFromPlatform)
