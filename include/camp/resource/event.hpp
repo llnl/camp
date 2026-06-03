@@ -58,7 +58,7 @@ namespace resources
         if (!result) {
           return nullptr;
         }
-        return &result->get();
+        return result->get();
       }
 
       template <typename T>
@@ -71,7 +71,7 @@ namespace resources
         if (!result) {
           return nullptr;
         }
-        return &result->get();
+        return result->get();
       }
 
       template <typename T>
@@ -95,19 +95,9 @@ namespace resources
       }
 
       template <typename T>
-      T && get() &&
+      T get() &&
       {
         T* result = try_get<T>();
-        if (result == nullptr) {
-          ::camp::throw_re("Incompatible Event type get cast.");
-        }
-        return std::move(*result);
-      }
-
-      template <typename T>
-      T const&& get() const&&
-      {
-        T const* result = try_get<T>();
         if (result == nullptr) {
           ::camp::throw_re("Incompatible Event type get cast.");
         }
@@ -220,13 +210,9 @@ namespace resources
           m_modelVal.wait();
         }
 
-        T const& get() const& { return m_modelVal; }
+        T const* get() const { return &m_modelVal; }
 
-        T& get() & { return m_modelVal; }
-
-        T const&& get() const&& { return m_modelVal; }
-
-        T&& get() && { return m_modelVal; }
+        T* get() { return &m_modelVal; }
 
       private:
         T m_modelVal;

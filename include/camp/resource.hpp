@@ -48,7 +48,7 @@ namespace resources
       }
 
       template <typename T>
-      T *try_get()
+      T* try_get()
       {
         if (!m_value) {
           return nullptr;
@@ -61,7 +61,7 @@ namespace resources
       }
 
       template <typename T>
-      T const*try_get() const
+      T const* try_get() const
       {
         if (!m_value) {
           return nullptr;
@@ -97,16 +97,6 @@ namespace resources
       T get() &&
       {
         T* result = try_get<T>();
-        if (result == nullptr) {
-          ::camp::throw_re("Incompatible Resource type get cast.");
-        }
-        return std::move(*result);
-      }
-
-      template <typename T>
-      T get() const&&
-      {
-        T const* result = try_get<T>();
         if (result == nullptr) {
           ::camp::throw_re("Incompatible Resource type get cast.");
         }
