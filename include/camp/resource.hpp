@@ -20,40 +20,7 @@
 #include "camp/defines.hpp"
 #include "camp/helpers.hpp"
 
-namespace camp
-{
-namespace resources
-{
-  template <typename T>
-  struct is_concrete_resource_impl : std::false_type {
-  };
-
-  template <typename T>
-  struct is_concrete_resource
-      : is_concrete_resource_impl<typename std::decay_t<T>> {
-  };
-
-  template <typename T>
-  inline constexpr bool is_concrete_resource_v = is_concrete_resource<T>::value;
-}  // namespace resources
-}  // namespace camp
-
 #include "camp/resource/event.hpp"
-#include "camp/resource/host.hpp"
-
-#if defined(CAMP_HAVE_CUDA)
-#include "camp/resource/cuda.hpp"
-#endif
-#if defined(CAMP_HAVE_HIP)
-#include "camp/resource/hip.hpp"
-#endif
-#if defined(CAMP_HAVE_SYCL)
-#include "camp/resource/sycl.hpp"
-#endif
-
-#if defined(CAMP_HAVE_OMP_OFFLOAD)
-#include "camp/resource/omp_target.hpp"
-#endif
 
 // last to ensure we don't hide breakage in the others
 #include "camp/resource/platform.hpp"
@@ -67,23 +34,22 @@ namespace resources
     class Resource
     {
     public:
+      using event_type = Event;
+
+      Resource() = default;
       Resource(Resource &&) = default;
       Resource(Resource const &) = default;
       Resource &operator=(Resource &&) = default;
       Resource &operator=(Resource const &) = default;
 
-      template <typename T,
-                typename = typename std::enable_if_t<
-                    !std::is_same_v<typename std::decay_t<T>, Resource>
-                    && is_concrete_resource_v<T>>
-                >
+      template <camp::concepts::ConcreteResource T>
       Resource(T &&value)
       {
         m_value.reset(new ContextModel<type::ref::rem<T>>(forward<T>(value)));
       }
 
       template <typename T>
-      T *try_get()
+      T* try_get()
       {
         if (!m_value) {
           return nullptr;
@@ -96,7 +62,7 @@ namespace resources
       }
 
       template <typename T>
-      T const*try_get() const
+      T const* try_get() const
       {
         if (!m_value) {
           return nullptr;
@@ -132,16 +98,6 @@ namespace resources
       T get() &&
       {
         T* result = try_get<T>();
-        if (result == nullptr) {
-          ::camp::throw_re("Incompatible Resource type get cast.");
-        }
-        return std::move(*result);
-      }
-
-      template <typename T>
-      T get() const&&
-      {
-        T const* result = try_get<T>();
         if (result == nullptr) {
           ::camp::throw_re("Incompatible Resource type get cast.");
         }
@@ -225,12 +181,10 @@ namespace resources
         return m_value->get_event_erased();
       }
 
-      void wait_for(Event *e)
+      void wait_for(Event const& e)
       {
         if (!m_value) {
-          if (e) {
-            e->wait();
-          }
+            e.wait();
           return;
         }
         m_value->wait_for(e);
@@ -243,6 +197,8 @@ namespace resources
         }
         m_value->wait();
       }
+
+      explicit operator bool() const { return static_cast<bool>(m_value); }
 
       /*
        * \brief Compares two Resources to see if they are equal. Two Resources
@@ -262,6 +218,20 @@ namespace resources
         }
         if (lhs.get_platform() == rhs.get_platform()) {
           return lhs.m_value->compare(rhs);
+        }
+        return false;
+      }
+
+      template < camp::concepts::ConcreteResource Res >
+      friend inline bool operator==(Resource const &lhs, Res const &rhs)
+      {
+        if (!lhs.m_value) {
+          return false;
+        }
+        if (lhs.get_platform() == rhs.get_platform()) {
+          if (auto lhs_res = lhs.try_get<Res>()) {
+            return *lhs_res == rhs;
+          }
         }
         return false;
       }
@@ -301,7 +271,7 @@ namespace resources
 
         virtual Event get_event() = 0;
         virtual Event get_event_erased() = 0;
-        virtual void wait_for(Event *e) = 0;
+        virtual void wait_for(Event const& e) = 0;
         virtual void wait() = 0;
       };
 
@@ -309,7 +279,7 @@ namespace resources
       class ContextModel final : public ContextInterface
       {
       public:
-        ContextModel(T const &modelVal) : m_modelVal(modelVal) {}
+        explicit ContextModel(T const &modelVal) : m_modelVal(modelVal) {}
 
         Platform get_platform() const override
         {
@@ -358,7 +328,7 @@ namespace resources
           return m_modelVal.get_event_erased();
         }
 
-        void wait_for(Event *e) override { m_modelVal.wait_for(e); }
+        void wait_for(Event const& e) override { m_modelVal.wait_for(e); }
 
         void wait() override { m_modelVal.wait(); }
 
@@ -373,52 +343,10 @@ namespace resources
       std::shared_ptr<ContextInterface> m_value;
     };
 
-    template <Platform p>
-    struct resource_from_platform;
-
-    template <>
-    struct resource_from_platform<Platform::host> {
-      using type = ::camp::resources::Host;
-    };
-#if defined(CAMP_HAVE_CUDA)
-    template <>
-    struct resource_from_platform<Platform::cuda> {
-      using type = ::camp::resources::Cuda;
-    };
-#endif
-#if defined(CAMP_HAVE_HIP)
-    template <>
-    struct resource_from_platform<Platform::hip> {
-      using type = ::camp::resources::Hip;
-    };
-#endif
-#if defined(CAMP_HAVE_SYCL)
-    template <>
-    struct resource_from_platform<Platform::sycl> {
-      using type = ::camp::resources::Sycl;
-    };
-#endif
-#if defined(CAMP_HAVE_OMP_OFFLOAD)
-    template <>
-    struct resource_from_platform<Platform::omp_target> {
-      using type = ::camp::resources::Omp;
-    };
-#endif
-
-    namespace detail
-    {
-      template <typename Res>
-      using get_event_type =
-          typename std::decay<decltype(std::declval<Res>().get_event())>::type;
-
-      template <typename T>
-      using is_erased_resource_or_proxy =
-          typename std::is_same<get_event_type<T>, Event>::type;
-    }  // namespace detail
-
     template <typename Res>
-    struct EventProxy : ::camp::resources::detail::EventProxyBase {
-      using native_event = ::camp::resources::detail::get_event_type<Res>;
+    struct EventProxy : ::camp::resources::detail::EventProxyBase
+    {
+      using native_event = typename Res::event_type;
 
       EventProxy(EventProxy &&) = default;
       EventProxy(EventProxy const &) = delete;
@@ -427,31 +355,28 @@ namespace resources
 
       EventProxy(Res r) : resource_{move(r)} {}
 
-      template <typename T = Res>
-      typename std::enable_if<!detail::is_erased_resource_or_proxy<T>::value,
-                              native_event>::type
-      get()
+      native_event get()
+      requires (!std::same_as<native_event, Event>)
       {
         return resource_.get_event();
       }
 
-      template <typename T = Res>
-      typename std::enable_if<detail::is_erased_resource_or_proxy<T>::value,
-                              Event>::type
-      get()
+      Event get()
+      requires (std::same_as<native_event, Event>)
       {
         return resource_.get_event_erased();
       }
 
-      template <typename T = Res>
-      operator typename std::enable_if<
-          !detail::is_erased_resource_or_proxy<T>::value,
-          native_event>::type()
+      operator native_event()
+      requires (!std::same_as<native_event, Event>)
       {
         return resource_.get_event();
       }
 
-      operator Event() { return resource_.get_event_erased(); }
+      operator Event()
+      {
+        return resource_.get_event_erased();
+      }
 
       Res resource_;
     };
@@ -481,5 +406,21 @@ struct hash<camp::resources::Resource> {
 };
 
 }  // namespace std
+
+#include "camp/resource/host.hpp"
+
+#if defined(CAMP_HAVE_CUDA)
+#include "camp/resource/cuda.hpp"
+#endif
+#if defined(CAMP_HAVE_HIP)
+#include "camp/resource/hip.hpp"
+#endif
+#if defined(CAMP_HAVE_SYCL)
+#include "camp/resource/sycl.hpp"
+#endif
+
+#if defined(CAMP_HAVE_OMP_OFFLOAD)
+#include "camp/resource/omp_target.hpp"
+#endif
 
 #endif /* __CAMP_RESOURCE_HPP */

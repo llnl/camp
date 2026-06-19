@@ -14,6 +14,7 @@
 
 #ifdef CAMP_ENABLE_SYCL
 
+#include <cstddef>
 #include <array>
 #include <map>
 #include <mutex>
@@ -29,7 +30,21 @@ namespace resources
 {
   inline namespace v1
   {
+    class SyclEvent;
     class Sycl;
+
+    template <>
+    struct resource_from_platform<Platform::sycl> {
+      using type = ::camp::resources::Sycl;
+    };
+
+    template <>
+    struct is_concrete_event_impl<SyclEvent> : std::true_type {
+    };
+
+    template <>
+    struct is_concrete_resource_impl<Sycl> : std::true_type {
+    };
 
     class SyclEvent
     {
@@ -39,7 +54,7 @@ namespace resources
       {}
 
       // TODO: see what overhead an empty submit has
-      SyclEvent(sycl::queue& qu)
+      explicit SyclEvent(sycl::queue& qu)
       {
         if (!qu.is_in_order()) {
           ::camp::throw_re("Queue is not in_order.");
@@ -47,7 +62,15 @@ namespace resources
         m_event = qu.submit([&](::sycl::handler& CAMP_UNUSED_ARG(h)) {});
       }
 
-      SyclEvent(Sycl& res);
+      SyclEvent(SyclEvent const&) = delete;
+
+      SyclEvent(SyclEvent&& rhs) = default;
+
+      SyclEvent& operator=(SyclEvent const&) = delete;
+
+      SyclEvent& operator=(SyclEvent&& rhs) = default;
+
+      ~SyclEvent() = default;
 
       Platform get_platform() const { return Platform::sycl; }
 
@@ -128,6 +151,8 @@ namespace resources
       }
 
     public:
+      using event_type = SyclEvent;
+
       /*
        * \brief Get the camp managed sycl context.
        *
@@ -288,21 +313,25 @@ namespace resources
       Platform get_platform() const { return Platform::sycl; }
 
       // Event
-      SyclEvent get_event() { return SyclEvent(*this); }
+      SyclEvent get_event() { return SyclEvent(get_queue()); }
 
-      Event get_event_erased() { return Event{SyclEvent(*this)}; }
+      Event get_event_erased() { return Event{get_event()}; }
 
       void wait() { qu.wait(); }
 
-      void wait_for(Event* e)
+      void wait_for(SyclEvent const& e)
       {
-        auto* sycl_event = e->try_get<SyclEvent>();
-        if (sycl_event) {
-          qu.submit([&](::sycl::handler& h) {
-            h.depends_on(sycl_event->getSyclEvent_t());
-          });
+        qu.submit([&](::sycl::handler& h) {
+          h.depends_on(e.getSyclEvent_t());
+        });
+      }
+
+      void wait_for(Event const& e)
+      {
+        if (auto sycl_event = e.try_get<SyclEvent>()) {
+          wait_for(*sycl_event);
         } else {
-          e->wait();
+          e.wait();
         }
       }
 
@@ -379,15 +408,8 @@ namespace resources
       sycl::queue qu;
     };
 
-    inline SyclEvent::SyclEvent(Sycl &res)
-      : SyclEvent(res.get_queue())
-    {}
-
   }  // namespace v1
 
-  template <>
-  struct is_concrete_resource_impl<Sycl> : std::true_type {
-  };
 }  // namespace resources
 }  // namespace camp
 

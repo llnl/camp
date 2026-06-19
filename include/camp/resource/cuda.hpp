@@ -16,8 +16,10 @@
 
 #include <cuda_runtime.h>
 
+#include <cstddef>
 #include <array>
 #include <mutex>
+#include <utility>
 
 #include "camp/defines.hpp"
 #include "camp/helpers.hpp"
@@ -30,7 +32,21 @@ namespace resources
 {
   inline namespace v1
   {
+    class CudaEvent;
     class Cuda;
+
+    template <>
+    struct resource_from_platform<Platform::cuda> {
+      using type = ::camp::resources::Cuda;
+    };
+
+    template <>
+    struct is_concrete_event_impl<CudaEvent> : std::true_type {
+    };
+
+    template <>
+    struct is_concrete_resource_impl<Cuda> : std::true_type {
+    };
 
     namespace
     {
@@ -60,9 +76,29 @@ namespace resources
     class CudaEvent
     {
     public:
-      CudaEvent(cudaStream_t stream) { init(stream); }
+      explicit CudaEvent(cudaStream_t stream)
+        : m_event(init(stream))
+      {}
 
-      CudaEvent(Cuda &res);
+      CudaEvent(CudaEvent const&) = delete;
+
+      CudaEvent(CudaEvent&& rhs) noexcept
+        : m_event(std::exchange(rhs.m_event, nullptr))
+      {}
+
+      CudaEvent& operator=(CudaEvent const&) = delete;
+
+      CudaEvent& operator=(CudaEvent&& rhs) noexcept
+      {
+        finalize(m_event);
+        m_event = std::exchange(rhs.m_event, nullptr);
+        return *this;
+      }
+
+      ~CudaEvent()
+      {
+        finalize(m_event);
+      }
 
       Platform get_platform() const { return Platform::cuda; }
 
@@ -98,12 +134,22 @@ namespace resources
       // note that cudaEvent_t is an alias for a pointer and is nullable
       cudaEvent_t m_event;
 
-      void init(cudaStream_t stream)
+      static cudaEvent_t init(cudaStream_t stream)
       {
+        cudaEvent_t event;
         CAMP_CUDA_API_INVOKE_AND_CHECK(cudaEventCreateWithFlags,
-                                       &m_event,
+                                       &event,
                                        cudaEventDisableTiming);
-        CAMP_CUDA_API_INVOKE_AND_CHECK(cudaEventRecord, m_event, stream);
+        CAMP_CUDA_API_INVOKE_AND_CHECK(cudaEventRecord, event, stream);
+        return event;
+      }
+
+      static void finalize(cudaEvent_t& event)
+      {
+        if (event != nullptr) {
+          CAMP_CUDA_API_INVOKE_AND_CHECK(cudaEventDestroy, event);
+          event = nullptr;
+        }
       }
     };
 
@@ -160,6 +206,8 @@ namespace resources
       }
 
     public:
+      using event_type = CudaEvent;
+
       Cuda(int group = -1, int dev = 0)
           : stream(get_a_stream(group)), device(dev)
       {
@@ -193,9 +241,13 @@ namespace resources
         return c;
       }
 
-      CudaEvent get_event() { return CudaEvent(*this); }
+      CudaEvent get_event()
+      {
+        auto d{device_guard(get_device())};
+        return CudaEvent(get_stream());
+      }
 
-      Event get_event_erased() { return Event{CudaEvent(*this)}; }
+      Event get_event_erased() { return Event{get_event()}; }
 
       void wait()
       {
@@ -203,17 +255,21 @@ namespace resources
         CAMP_CUDA_API_INVOKE_AND_CHECK(cudaStreamSynchronize, stream);
       }
 
-      void wait_for(Event *e)
+      void wait_for(CudaEvent const& e)
       {
-        auto *cuda_event = e->try_get<CudaEvent>();
-        if (cuda_event) {
-          auto d{device_guard(device)};
-          CAMP_CUDA_API_INVOKE_AND_CHECK(cudaStreamWaitEvent,
-                                         get_stream(),
-                                         cuda_event->getCudaEvent_t(),
-                                         0);
+        auto d{device_guard(device)};
+        CAMP_CUDA_API_INVOKE_AND_CHECK(cudaStreamWaitEvent,
+                                       get_stream(),
+                                       e.getCudaEvent_t(),
+                                       0);
+      }
+
+      void wait_for(Event const& e)
+      {
+        if (auto cuda_event = e.try_get<CudaEvent>()) {
+          wait_for(*cuda_event);
         } else {
-          e->wait();
+          e.wait();
         }
       }
 
@@ -228,19 +284,19 @@ namespace resources
             case MemoryAccess::Unknown:
             case MemoryAccess::Device:
               CAMP_CUDA_API_INVOKE_AND_CHECK(cudaMalloc,
-                                             &ret,
+                                             (void **)&ret,
                                              sizeof(T) * size);
               break;
             case MemoryAccess::Pinned:
               // TODO: do a test here for whether managed is *actually* shared
               // so we can use the better performing memory
               CAMP_CUDA_API_INVOKE_AND_CHECK(cudaMallocHost,
-                                             &ret,
+                                             (void **)&ret,
                                              sizeof(T) * size);
               break;
             case MemoryAccess::Managed:
               CAMP_CUDA_API_INVOKE_AND_CHECK(cudaMallocManaged,
-                                             &ret,
+                                             (void **)&ret,
                                              sizeof(T) * size);
               break;
           }
@@ -275,6 +331,7 @@ namespace resources
             break;
           case MemoryAccess::Unknown:
             ::camp::throw_re("Unknown memory access type, cannot free");
+            break;
         }
       }
 
@@ -318,17 +375,7 @@ namespace resources
       int device;
     };
 
-    inline CudaEvent::CudaEvent(Cuda &res)
-    {
-      auto d{device_guard(res.get_device())};
-      init(res.get_stream());
-    }
-
   }  // namespace v1
-
-  template <>
-  struct is_concrete_resource_impl<Cuda> : std::true_type {
-  };
 
 }  // namespace resources
 }  // namespace camp

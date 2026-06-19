@@ -10,6 +10,7 @@
 #ifndef __CAMP_HOST_HPP
 #define __CAMP_HOST_HPP
 
+#include <cstddef>
 #include <cstdlib>
 #include <cstring>
 
@@ -23,10 +24,36 @@ namespace resources
   inline namespace v1
   {
 
+    class HostEvent;
+    class Host;
+
+    template <>
+    struct resource_from_platform<Platform::host> {
+      using type = ::camp::resources::Host;
+    };
+
+    template <>
+    struct is_concrete_event_impl<HostEvent> : std::true_type {
+    };
+
+    template <>
+    struct is_concrete_resource_impl<Host> : std::true_type {
+    };
+
     class HostEvent
     {
     public:
-      HostEvent() {}
+      HostEvent() = default;
+
+      HostEvent(HostEvent const&) = delete;
+
+      HostEvent(HostEvent&&) = default;
+
+      HostEvent& operator=(HostEvent const&) = delete;
+
+      HostEvent& operator=(HostEvent&&) = default;
+
+      ~HostEvent() = default;
 
       Platform get_platform() const { return Platform::host; }
 
@@ -52,6 +79,8 @@ namespace resources
     class Host
     {
     public:
+      using event_type = HostEvent;
+
       Host(int /* group */ = -1) {}
 
       // Methods
@@ -65,15 +94,23 @@ namespace resources
 
       HostEvent get_event() { return HostEvent(); }
 
-      Event get_event_erased()
-      {
-        Event e{HostEvent()};
-        return e;
-      }
+      Event get_event_erased() { return Event{get_event()}; }
 
       void wait() {}
 
-      void wait_for(Event *e) { e->wait(); }
+      void wait_for(HostEvent const& e)
+      {
+        e.wait();
+      }
+
+      void wait_for(Event const& e)
+      {
+        if (auto host_event = e.try_get<HostEvent>()) {
+          wait_for(*host_event);
+        } else {
+          e.wait();
+        }
+      }
 
       // Memory
       template <typename T>
@@ -118,10 +155,6 @@ namespace resources
     };
 
   }  // namespace v1
-
-  template <>
-  struct is_concrete_resource_impl<Host> : std::true_type {
-  };
 
 }  // namespace resources
 }  // namespace camp

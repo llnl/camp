@@ -16,8 +16,10 @@
 
 #include <hip/hip_runtime.h>
 
+#include <cstddef>
 #include <array>
 #include <mutex>
+#include <utility>
 
 #include "camp/defines.hpp"
 #include "camp/helpers.hpp"
@@ -30,7 +32,21 @@ namespace resources
 {
   inline namespace v1
   {
+    class HipEvent;
     class Hip;
+
+    template <>
+    struct resource_from_platform<Platform::hip> {
+      using type = ::camp::resources::Hip;
+    };
+
+    template <>
+    struct is_concrete_event_impl<HipEvent> : std::true_type {
+    };
+
+    template <>
+    struct is_concrete_resource_impl<Hip> : std::true_type {
+    };
 
     namespace
     {
@@ -60,9 +76,28 @@ namespace resources
     class HipEvent
     {
     public:
-      HipEvent(hipStream_t stream) { init(stream); }
+      explicit HipEvent(hipStream_t stream) : m_event(init(stream)) {}
 
-      HipEvent(Hip &res);
+      HipEvent(HipEvent const&) = delete;
+
+      HipEvent(HipEvent&& rhs) noexcept
+        : m_event(std::exchange(rhs.m_event, nullptr))
+      {}
+
+      HipEvent& operator=(HipEvent const&) = delete;
+
+
+      HipEvent& operator=(HipEvent&& rhs) noexcept
+      {
+        finalize(m_event);
+        m_event = std::exchange(rhs.m_event, nullptr);
+        return *this;
+      }
+
+      ~HipEvent()
+      {
+        finalize(m_event);
+      }
 
       Platform get_platform() const { return Platform::hip; }
 
@@ -94,16 +129,27 @@ namespace resources
         return platform_type | (hash & 0xFFFFFFFF);
       }
 
+
     private:
-      // note that cudaEvent_t is an alias for a pointer and is nullable
+      // note that hipEvent_t is an alias for a pointer and is nullable
       hipEvent_t m_event;
 
-      void init(hipStream_t stream)
+      static hipEvent_t init(hipStream_t stream)
       {
+        hipEvent_t event;
         CAMP_HIP_API_INVOKE_AND_CHECK(hipEventCreateWithFlags,
-                                      &m_event,
+                                      &event,
                                       hipEventDisableTiming);
-        CAMP_HIP_API_INVOKE_AND_CHECK(hipEventRecord, m_event, stream);
+        CAMP_HIP_API_INVOKE_AND_CHECK(hipEventRecord, event, stream);
+        return event;
+      }
+
+      static void finalize(hipEvent_t& event)
+      {
+        if (event != nullptr) {
+          CAMP_HIP_API_INVOKE_AND_CHECK(hipEventDestroy, event);
+          event = nullptr;
+        }
       }
     };
 
@@ -161,6 +207,8 @@ namespace resources
       }
 
     public:
+      using event_type = HipEvent;
+
       Hip(int group = -1, int dev = 0)
           : stream(get_a_stream(group)), device(dev)
       {
@@ -194,9 +242,13 @@ namespace resources
         return h;
       }
 
-      HipEvent get_event() { return HipEvent(*this); }
+      HipEvent get_event()
+      {
+        auto d{device_guard(get_device())};
+        return HipEvent(get_stream());
+      }
 
-      Event get_event_erased() { return Event{HipEvent(*this)}; }
+      Event get_event_erased() { return Event{get_event()}; }
 
       void wait()
       {
@@ -204,17 +256,21 @@ namespace resources
         CAMP_HIP_API_INVOKE_AND_CHECK(hipStreamSynchronize, stream);
       }
 
-      void wait_for(Event *e)
+      void wait_for(HipEvent const& e)
       {
-        auto *hip_event = e->try_get<HipEvent>();
-        if (hip_event) {
-          auto d{device_guard(device)};
-          CAMP_HIP_API_INVOKE_AND_CHECK(hipStreamWaitEvent,
-                                        get_stream(),
-                                        hip_event->getHipEvent_t(),
-                                        0);
+        auto d{device_guard(device)};
+        CAMP_HIP_API_INVOKE_AND_CHECK(hipStreamWaitEvent,
+                                      get_stream(),
+                                      e.getHipEvent_t(),
+                                      0);
+      }
+
+      void wait_for(Event const& e)
+      {
+        if (auto hip_event = e.try_get<HipEvent>()) {
+          wait_for(*hip_event);
         } else {
-          e->wait();
+          e.wait();
         }
       }
 
@@ -320,17 +376,8 @@ namespace resources
       int device;
     };
 
-    inline HipEvent::HipEvent(Hip &res)
-    {
-      auto d{device_guard(res.get_device())};
-      init(res.get_stream());
-    }
-
   }  // namespace v1
 
-  template <>
-  struct is_concrete_resource_impl<Hip> : std::true_type {
-  };
 }  // namespace resources
 }  // namespace camp
 

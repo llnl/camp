@@ -42,20 +42,14 @@ namespace resources
       Event &operator=(Event const &e) = default;
       Event &operator=(Event &&e) = default;
 
-      template <
-          typename T,
-          typename std::enable_if<
-              !std::is_same_v<typename std::decay_t<T>, Event> &&
-              !(std::is_convertible<typename std::decay<T>::type *,
-                                    ::camp::resources::detail::EventProxyBase
-                                        *>::value)>::type * = nullptr>
+      template <camp::concepts::ConcreteEvent T>
       Event(T &&value)
       {
-        m_value.reset(new EventModel<type::ref::rem<T>>(value));
+        m_value.reset(new EventModel<type::ref::rem<T>>(std::forward<T>(value)));
       }
 
       template <typename T>
-      T *try_get()
+      T* try_get()
       {
         if (!m_value) {
           return nullptr;
@@ -68,7 +62,7 @@ namespace resources
       }
 
       template <typename T>
-      T const*try_get() const
+      T const* try_get() const
       {
         if (!m_value) {
           return nullptr;
@@ -110,16 +104,6 @@ namespace resources
         return std::move(*result);
       }
 
-      template <typename T>
-      T get() const&&
-      {
-        T const* result = try_get<T>();
-        if (result == nullptr) {
-          ::camp::throw_re("Incompatible Event type get cast.");
-        }
-        return std::move(*result);
-      }
-
       Platform get_platform() const
       {
         return m_value ? m_value->get_platform() : Platform::undefined;
@@ -128,6 +112,8 @@ namespace resources
       bool check() const { return m_value ? m_value->check() : true; }
 
       void wait() const { if (m_value) { m_value->wait(); } }
+
+      explicit operator bool() const { return static_cast<bool>(m_value); }
 
       /*
        * \brief Compares two Events to see if they represent the same underlying
@@ -148,6 +134,20 @@ namespace resources
         }
         if (lhs.get_platform() == rhs.get_platform()) {
           return lhs.m_value->compare(rhs);
+        }
+        return false;
+      }
+
+      template < camp::concepts::ConcreteEvent Evt >
+      friend inline bool operator==(Event const &lhs, Evt const &rhs)
+      {
+        if (!lhs.m_value) {
+          return false;
+        }
+        if (lhs.get_platform() == rhs.get_platform()) {
+          if (auto lhs_event = lhs.try_get<Evt>()) {
+            return *lhs_event == rhs;
+          }
         }
         return false;
       }
@@ -181,10 +181,12 @@ namespace resources
       };
 
       template <typename T>
-      class EventModel : public EventInterface
+      class EventModel final : public EventInterface
       {
       public:
-        EventModel(T const &modelVal) : m_modelVal(modelVal) {}
+        explicit EventModel(T modelVal)
+          : m_modelVal(std::move(modelVal))
+        {}
 
         Platform get_platform() const override
         {
@@ -198,11 +200,17 @@ namespace resources
 
         size_t get_hash() const override { return m_modelVal.get_hash(); }
 
-        bool check() const override { return m_modelVal.check(); }
+        bool check() const override
+        {
+          return m_modelVal.check();
+        }
 
-        void wait() const override { m_modelVal.wait(); }
+        void wait() const override
+        {
+          m_modelVal.wait();
+        }
 
-        const T* get() const { return &m_modelVal; }
+        T const* get() const { return &m_modelVal; }
 
         T* get() { return &m_modelVal; }
 

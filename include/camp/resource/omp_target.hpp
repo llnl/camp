@@ -16,9 +16,11 @@
 
 #include <omp.h>
 
+#include <cstddef>
 #include <map>
 #include <memory>
 #include <mutex>
+#include <utility>
 
 #include "camp/resource/event.hpp"
 #include "camp/resource/platform.hpp"
@@ -29,17 +31,50 @@ namespace resources
 {
   inline namespace v1
   {
+    class OmpEvent;
+    class Omp;
+
+    template <>
+    struct resource_from_platform<Platform::omp_target> {
+      using type = ::camp::resources::Omp;
+    };
+
+    template <>
+    struct is_concrete_event_impl<OmpEvent> : std::true_type {
+    };
+
+    template <>
+    struct is_concrete_resource_impl<Omp> : std::true_type {
+    };
 
     class OmpEvent
     {
     public:
-      OmpEvent(char *addr_in, int device = omp_get_default_device())
+      explicit OmpEvent(char *addr_in, int device = omp_get_default_device())
           : addr(addr_in), dev(device)
       {
 #pragma omp target device(dev) depend(inout : addr_in[0]) nowait
         {
         }
       }
+
+      OmpEvent(OmpEvent const&) = delete;
+
+      OmpEvent(OmpEvent&& rhs) noexcept
+        : addr(std::exchange(rhs.addr, nullptr))
+        , dev(std::exchange(rhs.dev, -1))
+      {}
+
+      OmpEvent& operator=(OmpEvent const&) = delete;
+
+      OmpEvent& operator=(OmpEvent&& rhs) noexcept
+      {
+        addr = std::exchange(rhs.addr, nullptr);
+        dev = std::exchange(rhs.dev, -1);
+        return *this;
+      }
+
+      ~OmpEvent() = default;
 
       Platform get_platform() const { return Platform::omp_target; }
 
@@ -117,6 +152,8 @@ namespace resources
       }
 
     public:
+      using event_type = OmpEvent;
+
       Omp(int group = -1, int device = omp_get_default_device())
           : addr(get_addr(group)), dev(device)
       {
@@ -155,20 +192,24 @@ namespace resources
         }
       }
 
-      void wait_for(Event *e)
+      void wait_for(OmpEvent const& e)
       {
-        OmpEvent *oe = e->try_get<OmpEvent>();
-        if (oe) {
-          char *local_addr = addr;
-          char *other_addr = (char *)oe->getEventAddr();
-          CAMP_ALLOW_UNUSED_LOCAL(local_addr);
-          CAMP_ALLOW_UNUSED_LOCAL(other_addr);
+        char *local_addr = addr;
+        char *other_addr = (char *)e.getEventAddr();
+        CAMP_ALLOW_UNUSED_LOCAL(local_addr);
+        CAMP_ALLOW_UNUSED_LOCAL(other_addr);
 #pragma omp target depend(inout : local_addr[0]) depend(in : other_addr[0]) \
-    nowait
-          {
-          }
+  nowait
+        {
+        }
+      }
+
+      void wait_for(Event const& e)
+      {
+        if (auto omp_event = e.try_get<OmpEvent>()) {
+          wait_for(*omp_event);
         } else {
-          e->wait();
+          e.wait();
         }
       }
 
@@ -193,10 +234,7 @@ namespace resources
       void deallocate(void *p, MemoryAccess ma = MemoryAccess::Device)
       {
         check_ma(ma);
-#pragma omp critical(camp_register_ptr)
-        {
-          get_dev_register().erase(p);
-        }
+        deregister_ptr_dev(p);
         omp_target_free(p, dev);
       }
 
@@ -226,6 +264,14 @@ namespace resources
 #pragma omp critical(camp_register_ptr)
         {
           get_dev_register()[p] = device;
+        }
+      }
+
+      void deregister_ptr_dev(void const *p)
+      {
+#pragma omp critical(camp_register_ptr)
+        {
+          get_dev_register().erase(p);
         }
       }
 
@@ -295,9 +341,7 @@ namespace resources
 
   }  // namespace v1
 
-  template <>
-  struct is_concrete_resource_impl<Omp> : std::true_type {
-  };
+
 }  // namespace resources
 }  // namespace camp
 

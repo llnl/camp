@@ -356,6 +356,51 @@ namespace type_traits
   };
 
 }  // end namespace type_traits
+
+namespace resources
+{
+  inline namespace v1
+  {
+
+    template <typename T>
+    struct is_concrete_event_impl : std::false_type {
+    };
+
+    template <typename T>
+    struct is_concrete_event
+        : is_concrete_event_impl<typename std::remove_cvref_t<T>> {
+    };
+
+    template <typename T>
+    inline constexpr bool is_concrete_event_v = is_concrete_event<T>::value;
+
+
+    template <typename T>
+    struct is_concrete_resource_impl : std::false_type {
+    };
+
+    template <typename T>
+    struct is_concrete_resource
+        : is_concrete_resource_impl<typename std::remove_cvref_t<T>> {
+    };
+
+    template <typename T>
+    inline constexpr bool is_concrete_resource_v = is_concrete_resource<T>::value;
+
+  }  // namespace v1
+}  // namespace resources
+
+namespace concepts
+{
+
+  template < typename T >
+  concept ConcreteEvent = ::camp::resources::is_concrete_event_v<T>;
+
+  template < typename T >
+  concept ConcreteResource = ::camp::resources::is_concrete_resource_v<T>;
+
+}  // namespace concepts
+
 }  // namespace camp
 
 #endif /* CAMP_CONCEPTS_HPP */
