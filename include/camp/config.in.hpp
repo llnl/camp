@@ -40,16 +40,10 @@
 
 // stuff that should always be only defined once
 
-// supports backwards compatibility if users were previously manually defining
-// CAMP_USE_PLATFORM_DEFAULT_STREAM, but only if it matches how RAJA was configured to be built
-#cmakedefine01 CAMP_USE_PLATFORM_DEFAULT_STREAM_INTERNAL_CHECK
 #ifdef CAMP_USE_PLATFORM_DEFAULT_STREAM
-#if CAMP_USE_PLATFORM_DEFAULT_STREAM != CAMP_USE_PLATFORM_DEFAULT_STREAM_INTERNAL_CHECK
-#error "CAMP_USE_PLATFORM_DEFAULT_STREAM mismatch, potential ODR violation"
+#error "Manually defining CAMP_USE_PLATFORM_DEFAULT_STREAM is not allowed because of the potential for ODR violations. CAMP now supports a CMake configuration option that should be used instead."
 #endif
-#else
+
 #cmakedefine01 CAMP_USE_PLATFORM_DEFAULT_STREAM
-#endif
-#undef CAMP_USE_PLATFORM_DEFAULT_STREAM_INTERNAL_CHECK
 
 #endif

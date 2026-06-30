@@ -120,7 +120,6 @@ endif ()
 # end backends
 
 option(CAMP_USE_PLATFORM_DEFAULT_STREAM "Whether CAMP should use the default device streams (On) or create separate streams (Off)" Off)
-set(CAMP_USE_PLATFORM_DEFAULT_STREAM_INTERNAL_CHECK ${CAMP_USE_PLATFORM_DEFAULT_STREAM})
 
 # Configure the config header file to allow config time options
 configure_file(${PROJECT_SOURCE_DIR}/include/camp/config.in.hpp
