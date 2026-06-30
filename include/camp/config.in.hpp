@@ -15,15 +15,6 @@
 #cmakedefine CAMP_ENABLE_HIP
 #cmakedefine CAMP_ENABLE_SYCL
 #cmakedefine CAMP_WIN_STATIC_BUILD
-#ifndef CAMP_USE_PLATFORM_DEFAULT_STREAM
-#cmakedefine01 CAMP_USE_PLATFORM_DEFAULT_STREAM
-#else
-#cmakedefine01 CAMP_USE_PLATFORM_DEFAULT_STREAM_INTERNAL_CHECK
-#if CAMP_USE_PLATFORM_DEFAULT_STREAM != CAMP_USE_PLATFORM_DEFAULT_STREAM_INTERNAL_CHECK
-#error "CAMP_USE_PLATFORM_DEFAULT_STREAM mismatch, potential ODR violation"
-#endif
-#undef CAMP_USE_PLATFORM_DEFAULT_STREAM_INTERNAL_CHECK
-#endif
 #endif
 
 #define CAMP_VERSION_MAJOR @camp_VERSION_MAJOR@
@@ -42,4 +33,23 @@
 #endif
 #else
 #define CAMP_DLL_EXPORT
+#endif
+
+#ifndef CAMP_CONFIG_HPP
+#define CAMP_CONFIG_HPP
+
+// stuff that should always be only defined once
+
+// supports backwards compatibility if users were previously manually defining
+// CAMP_USE_PLATFORM_DEFAULT_STREAM, but only if it matches how RAJA was configured to be built
+#cmakedefine01 CAMP_USE_PLATFORM_DEFAULT_STREAM_INTERNAL_CHECK
+#ifdef CAMP_USE_PLATFORM_DEFAULT_STREAM
+#if CAMP_USE_PLATFORM_DEFAULT_STREAM != CAMP_USE_PLATFORM_DEFAULT_STREAM_INTERNAL_CHECK
+#error "CAMP_USE_PLATFORM_DEFAULT_STREAM mismatch, potential ODR violation"
+#endif
+#else
+#cmakedefine01 CAMP_USE_PLATFORM_DEFAULT_STREAM
+#endif
+#undef CAMP_USE_PLATFORM_DEFAULT_STREAM_INTERNAL_CHECK
+
 #endif
