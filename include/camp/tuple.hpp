@@ -55,10 +55,6 @@ template <typename... Args>
 struct tuple_size<tuple<Args...>> : ::camp::num<sizeof...(Args)> {
 };
 
-template <typename T, size_t N>
-struct tuple_size<array<T, N>> : ::camp::num<N> {
-};
-
 template <typename L, typename... Args>
 struct tuple_size<tagged_tuple<L, Args...>> : ::camp::num<sizeof...(Args)> {
 };
