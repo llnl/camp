@@ -75,18 +75,22 @@ struct ResourceAllocator
     }
 
     [[nodiscard]]
-    Resource const& get_resource() const { return m_res; }
+    Resource const& get_resource() const noexcept { return m_res; }
 
     [[nodiscard]]
-    Resource get_resource() { return m_res; }
+    Resource get_resource() noexcept { return m_res; }
 
     [[nodiscard]]
-    camp::resources::MemoryAccess get_mem_access() const { return m_mem_type; }
+    camp::resources::MemoryAccess get_mem_access() const noexcept
+    {
+      return m_mem_type;
+    }
 
     template<typename U>
     friend inline bool operator==(allocator const& lhs, allocator<U> const& rhs)
     {
-      return lhs.get_resource() == rhs.get_resource() && lhs.get_mem_access() == rhs.get_mem_access();
+      return lhs.get_resource() == rhs.get_resource() &&
+             lhs.get_mem_access() == rhs.get_mem_access();
     }
 
   private:
