@@ -83,9 +83,6 @@ struct ResourceAllocator
     [[nodiscard]]
     camp::resources::MemoryAccess get_mem_access() const { return m_mem_type; }
 
-    [[nodiscard]]
-    camp::resources::MemoryAccess get_mem_access() { return m_mem_type; }
-
     template<typename U>
     friend inline bool operator==(allocator const& lhs, allocator<U> const& rhs)
     {
