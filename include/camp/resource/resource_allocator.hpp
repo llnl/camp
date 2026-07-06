@@ -13,7 +13,7 @@
 #include <cstddef>
 
 #include "camp/config.hpp"
-#include "camp/resources/platform.hpp"
+#include "camp/resource/platform.hpp"
 
 namespace camp
 {
