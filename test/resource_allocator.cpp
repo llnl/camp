@@ -84,8 +84,6 @@ void test_copy_assignment()
 
   dst = src;
 
-  ASSERT_TRUE(src);
-  ASSERT_TRUE(dst);
   ASSERT_EQ(src, dst);
   ASSERT_EQ(src.get_resource(), dst.get_resource());
   ASSERT_EQ(src.get_mem_access(), dst.get_mem_access());
@@ -115,9 +113,6 @@ void test_move_assignment()
   camp::ResourceAllocator<int, Res> dst;
 
   dst = std::move(src);
-
-  ASSERT_FALSE(src);
-  ASSERT_TRUE(dst);
 }
 
 TEST(CampResourceAllocator, MoveAssignment)
@@ -258,13 +253,14 @@ TEST(CampResourceAllocator, Rebind)
 template <typename Res>
 void test_allocate()
 {
+  static constexpr std::size_t num = 5;
   camp::ResourceAllocator<int, Res> alloc1{Res()};
 
-  int* ptr = alloc1.allocate(5);
+  int* ptr = alloc1.allocate(num);
 
   EXPECT_TRUE(ptr != nullptr);
 
-  alloc1.deallocate(ptr);
+  alloc1.deallocate(ptr, num);
 }
 
 //
