@@ -24,6 +24,7 @@
 
 // last to ensure we don't hide breakage in the others
 #include "camp/resource/platform.hpp"
+#include "camp/resource/resource_allocator.hpp"
 
 namespace camp
 {
