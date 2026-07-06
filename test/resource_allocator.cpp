@@ -9,8 +9,8 @@
 
 #include "camp/resource.hpp"
 
-#include <array>
-#include <type_traits>
+#include <numeric>
+#include <vector>
 
 #include "camp/camp.hpp"
 #include "gtest/gtest.h"
@@ -268,6 +268,41 @@ void test_allocate()
 
 //
 TEST(CampResourceAllocator, Allocate)
+{
+  test_allocate<Host>();
+#ifdef CAMP_HAVE_CUDA
+  test_allocate<Cuda>();
+#endif
+#ifdef CAMP_HAVE_HIP
+  test_allocate<Hip>();
+#endif
+#ifdef CAMP_HAVE_OMP_OFFLOAD
+  test_allocate<Omp>();
+#endif
+#ifdef CAMP_HAVE_SYCL
+  test_allocate<Sycl>();
+#endif
+}
+
+template <typename Res>
+void test_vector()
+{
+  static constexpr std::size_t num = 5;
+  camp::ResourceAllocator<int, Res> alloc{Res(), MemoryAccess::Pinned};
+
+  std::vector vec(num, alloc);
+  std::iota(vec.begin(), vec.end(), num);
+
+  EXPECT_TRUE(vec.data() != nullptr);
+  EXPECT_TRUE(vec.size() == num);
+
+  for (std::size_t i = 0; i < vec.size(); ++i) {
+    EXPECT_TRUE(vec[i] == static_cast<int>(i));
+  }
+}
+
+//
+TEST(CampResourceAllocator, Vector)
 {
   test_allocate<Host>();
 #ifdef CAMP_HAVE_CUDA
