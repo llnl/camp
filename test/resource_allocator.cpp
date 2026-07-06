@@ -17,26 +17,6 @@
 
 using namespace camp::resources;
 
-// compatible but different resource for conversion test
-struct Host2 : Host {
-};
-#ifdef CAMP_HAVE_CUDA
-struct Cuda2 : Cuda {
-};
-#endif
-#ifdef CAMP_HAVE_HIP
-struct Hip2 : Hip {
-};
-#endif
-#ifdef CAMP_HAVE_OMP_OFFLOAD
-struct Omp2 : Omp {
-};
-#endif
-#ifdef CAMP_HAVE_SYCL
-struct Sycl2 : Sycl {
-};
-#endif
-
 template <typename Res>
 void test_construct()
 {
