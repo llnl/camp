@@ -136,8 +136,11 @@ template <typename Res>
 void test_get_resource(Res res)
 {
   camp::ResourceAllocator<int, Res> alloc1{res};
+  const camp::ResourceAllocator<int, Res> const_alloc1{res};
 
   ASSERT_EQ(alloc1.get_resource(), res);
+  ASSERT_EQ(const_alloc1.get_resource(), res);
+  ASSERT_EQ(alloc1.get_resource(), const_alloc1.get_resource());
 }
 
 TEST(CampResourceAllocator, GetResource)
