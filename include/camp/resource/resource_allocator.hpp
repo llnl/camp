@@ -27,14 +27,9 @@ struct ResourceAllocator
   {
     using value_type = T;
 
-    allocator()
-        : allocator(Resource::get_default(),
-                    camp::resources::MemoryAccess::Pinned)
-    {}
-
-    allocator(Resource res,
+    allocator(Resource res = Resource {},
               camp::resources::MemoryAccess mem_type =
-                  camp::resources::MemoryAccess::Pinned)
+                  camp::resources::MemoryAccess::Device)
         : m_res {res},
           m_mem_type {mem_type}
     {}
@@ -47,7 +42,7 @@ struct ResourceAllocator
 
     template<typename U>
     allocator(allocator<U> const& other) noexcept
-        : m_res(other.get_resource()),
+        : m_res {other.get_resource()},
           m_mem_type {other.get_mem_access()}
     {}
 
