@@ -20,7 +20,6 @@
 #include <tuple>
 #include <type_traits>
 
-#include "camp/array.hpp"
 #include "camp/concepts.hpp"
 #include "camp/map.hpp"
 
