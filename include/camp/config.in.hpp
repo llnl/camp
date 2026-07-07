@@ -38,7 +38,7 @@
 #define CAMP_DLL_EXPORT
 #endif
 
-#ifdef CAMP_USE_PLATFORM_DEFAULT_STREAM
+#if defined(CAMP_USE_PLATFORM_DEFAULT_STREAM)
 #error "Manually defining CAMP_USE_PLATFORM_DEFAULT_STREAM is not allowed because of the potential for ODR violations. CAMP supports a CMake configuration option that should be used instead."
 #endif
 
