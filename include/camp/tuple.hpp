@@ -774,7 +774,7 @@ struct tuple_size<camp::tuple<T...>> {
 
 template <size_t i, typename... T>
 struct tuple_element<i, camp::tuple<T...>> {
-  using type = ::camp::tuple_element_t<i, camp::tuple<T...>>;
+  using type = camp::at_v<typename camp::tuple<T...>::TList, i>;
 };
 
 /// This allows structured bindings to be used with camp::tagged_tuple
@@ -789,8 +789,7 @@ struct tuple_size<camp::tagged_tuple<TagList, Elements...>> {
 
 template <size_t i, typename TagList, typename... Elements>
 struct tuple_element<i, camp::tagged_tuple<TagList, Elements...>> {
-  using type =
-      ::camp::tuple_element_t<i, camp::tagged_tuple<TagList, Elements...>>;
+  using type = camp::at_v<typename camp::tagged_tuple<TagList, Elements...>::TList, i>;
 };
 }  // namespace std
 
