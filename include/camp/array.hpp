@@ -31,7 +31,6 @@
 
 namespace camp
 {
-
 ///
 /// Provides a portable std::array-like class.
 ///
