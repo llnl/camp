@@ -17,8 +17,8 @@
  */
 
 #include <sstream>
-#include <tuple>
 #include <type_traits>
+#include <utility>
 
 #include "camp/concepts.hpp"
 #include "camp/map.hpp"

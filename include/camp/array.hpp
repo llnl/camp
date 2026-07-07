@@ -22,8 +22,8 @@
 
 #include <cstddef>
 #include <stdexcept>
-#include <tuple>
 #include <type_traits>
+#include <utility>
 
 #include "camp/defines.hpp"
 #include "camp/helpers.hpp"
