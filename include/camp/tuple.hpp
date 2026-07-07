@@ -17,6 +17,7 @@
  */
 
 #include <sstream>
+#include <tuple>
 #include <type_traits>
 
 #include "camp/array.hpp"
@@ -36,40 +37,18 @@ template <template <typename... Ts> class Tup>
 using is_tuple = typename std::is_base_of<tuple<>, Tup<>>::type;
 
 template <typename Tuple>
-struct tuple_size;
+using tuple_size = std::tuple_size<Tuple>;
 
-template <camp::idx_t i, typename T>
-struct tuple_element {
-  using type = camp::at_v<typename T::TList, i>;
-};
+template <camp::idx_t i, typename Tuple>
+using tuple_element = std::tuple_element<i, Tuple>;
 
-template <camp::idx_t i, typename T>
-using tuple_element_t = typename tuple_element<i, T>::type;
+template <camp::idx_t i, typename Tuple>
+using tuple_element_t = typename tuple_element<i, Tuple>::type;
 
 template <typename T, typename Tuple>
 using tuple_ebt_t =
     typename tuple_element<camp::at_key<typename Tuple::TMap, T>::value,
                            Tuple>::type;
-
-template <typename... Args>
-struct tuple_size<tuple<Args...>> : ::camp::num<sizeof...(Args)> {
-};
-
-template <typename L, typename... Args>
-struct tuple_size<tagged_tuple<L, Args...>> : ::camp::num<sizeof...(Args)> {
-};
-
-template <typename T>
-struct tuple_size<const T> : num<tuple_size<T>::value> {
-};
-
-template <typename T>
-struct tuple_size<volatile T> : num<tuple_size<T>::value> {
-};
-
-template <typename T>
-struct tuple_size<const volatile T> : num<tuple_size<T>::value> {
-};
 
 namespace internal
 {

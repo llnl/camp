@@ -22,6 +22,7 @@
 
 #include <cstddef>
 #include <stdexcept>
+#include <tuple>
 #include <type_traits>
 
 #include "camp/defines.hpp"
@@ -30,8 +31,6 @@
 
 namespace camp
 {
-template <typename Tuple>
-struct tuple_size;
 
 ///
 /// Provides a portable std::array-like class.
@@ -286,10 +285,6 @@ CAMP_HOST_DEVICE constexpr void swap(array<T, N>& a, array<T, N>& b) noexcept(
 {
   a.swap(b);
 }
-
-template <typename T, size_t N>
-struct tuple_size<array<T, N>> : ::camp::num<N> {
-};
 
 namespace detail
 {
