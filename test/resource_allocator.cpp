@@ -402,7 +402,7 @@ void test_vector()
 
   camp::ResourceAllocator<int, Res> alloc1{Res(), MemoryAccess::Pinned};
 
-  std::vector vec1(num, alloc1);
+  std::vector<int, camp::ResourceAllocator<int, Res>> vec1(num, alloc1);
   std::iota(vec1.begin(), vec1.end(), num);
   check_vec(vec1);
 
@@ -422,7 +422,7 @@ void test_vector()
   // Generic resource
   camp::ResourceAllocator<int, Resource> alloc2{Res(), MemoryAccess::Pinned};
 
-  std::vector vec4(num, alloc2);
+  std::vector<int, camp::ResourceAllocator<int, Resource>> vec4(num, alloc2);
   std::iota(vec4.begin(), vec4.end(), num);
   check_vec(vec4);
 
