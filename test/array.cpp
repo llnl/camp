@@ -8,6 +8,7 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 #include "camp/array.hpp"
+#include "camp/tuple.hpp"
 
 #include "Test.hpp"
 #include "gtest/gtest.h"
@@ -363,6 +364,20 @@ CAMP_TEST_BEGIN(array, tuple_element)
 CAMP_TEST_END(array, tuple_element)
 
 #if defined(__cplusplus) && __cplusplus >= 201703L
+
+CAMP_TEST_BEGIN(array, apply)
+{
+  camp::array<int, 2> a{-1, 1};
+  int a0 = 0;
+  int a1 = 0;
+  camp::apply([&](int i0, int i1){
+    a0 = i0;
+    a1 = i1;
+  }, a);
+
+  return a0 == -1 && a1 == 1 && a[0] == -1 && a[1] == 1;
+}
+CAMP_TEST_END(array, apply)
 
 CAMP_TEST_BEGIN(array, structured_binding)
 {

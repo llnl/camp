@@ -18,6 +18,7 @@
 
 #include <sstream>
 #include <type_traits>
+#include <utility>
 
 #include "camp/concepts.hpp"
 #include "camp/map.hpp"
@@ -35,40 +36,18 @@ template <template <typename... Ts> class Tup>
 using is_tuple = typename std::is_base_of<tuple<>, Tup<>>::type;
 
 template <typename Tuple>
-struct tuple_size;
+using tuple_size = std::tuple_size<Tuple>;
 
-template <camp::idx_t i, typename T>
-struct tuple_element {
-  using type = camp::at_v<typename T::TList, i>;
-};
+template <camp::idx_t i, typename Tuple>
+using tuple_element = std::tuple_element<i, Tuple>;
 
-template <camp::idx_t i, typename T>
-using tuple_element_t = typename tuple_element<i, T>::type;
+template <camp::idx_t i, typename Tuple>
+using tuple_element_t = typename tuple_element<i, Tuple>::type;
 
 template <typename T, typename Tuple>
 using tuple_ebt_t =
     typename tuple_element<camp::at_key<typename Tuple::TMap, T>::value,
                            Tuple>::type;
-
-template <typename... Args>
-struct tuple_size<tuple<Args...>> : ::camp::num<sizeof...(Args)> {
-};
-
-template <typename L, typename... Args>
-struct tuple_size<tagged_tuple<L, Args...>> : ::camp::num<sizeof...(Args)> {
-};
-
-template <typename T>
-struct tuple_size<const T> : num<tuple_size<T>::value> {
-};
-
-template <typename T>
-struct tuple_size<volatile T> : num<tuple_size<T>::value> {
-};
-
-template <typename T>
-struct tuple_size<const volatile T> : num<tuple_size<T>::value> {
-};
 
 namespace internal
 {
@@ -795,7 +774,7 @@ struct tuple_size<camp::tuple<T...>> {
 
 template <size_t i, typename... T>
 struct tuple_element<i, camp::tuple<T...>> {
-  using type = ::camp::tuple_element_t<i, camp::tuple<T...>>;
+  using type = camp::at_v<typename camp::tuple<T...>::TList, i>;
 };
 
 /// This allows structured bindings to be used with camp::tagged_tuple
@@ -810,8 +789,7 @@ struct tuple_size<camp::tagged_tuple<TagList, Elements...>> {
 
 template <size_t i, typename TagList, typename... Elements>
 struct tuple_element<i, camp::tagged_tuple<TagList, Elements...>> {
-  using type =
-      ::camp::tuple_element_t<i, camp::tagged_tuple<TagList, Elements...>>;
+  using type = camp::at_v<typename camp::tagged_tuple<TagList, Elements...>::TList, i>;
 };
 }  // namespace std
 

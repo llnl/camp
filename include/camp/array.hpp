@@ -23,6 +23,7 @@
 #include <cstddef>
 #include <stdexcept>
 #include <type_traits>
+#include <utility>
 
 #include "camp/defines.hpp"
 #include "camp/helpers.hpp"
