@@ -7,6 +7,9 @@
 // SPDX-License-Identifier: (BSD-3-Clause)
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+#ifndef CAMP_CONFIG_HPP
+#define CAMP_CONFIG_HPP
+
 // Define CAMP_CONFIG_OVERRIDE to change this on a per-file basis
 #if !defined(CAMP_CONFIG_OVERRIDE)
 #cmakedefine CAMP_ENABLE_OPENMP
@@ -33,4 +36,12 @@
 #endif
 #else
 #define CAMP_DLL_EXPORT
+#endif
+
+#if defined(CAMP_USE_PLATFORM_DEFAULT_STREAM)
+#error "Manually defining CAMP_USE_PLATFORM_DEFAULT_STREAM is not allowed because of the potential for ODR violations. CAMP supports a CMake configuration option that should be used instead."
+#endif
+
+#cmakedefine01 CAMP_USE_PLATFORM_DEFAULT_STREAM
+
 #endif

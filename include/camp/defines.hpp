@@ -161,13 +161,6 @@ namespace camp
 #define CAMP_HAS_IS_TRIVIALLY_COPY_CONSTRUCTIBLE 1
 #endif
 
-// distinguish between the use of 'THE' default stream of a platform
-// or 'A' general platform stream created by camp Resource
-#ifndef CAMP_USE_PLATFORM_DEFAULT_STREAM
-#define CAMP_USE_PLATFORM_DEFAULT_STREAM 0
-#endif
-
-
 // Types
 using idx_t = std::ptrdiff_t;
 using nullptr_t = decltype(nullptr);
