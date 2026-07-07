@@ -272,14 +272,24 @@ void test_compare()
   ASSERT_NE(alloc1, alloc2);
   ASSERT_NE(alloc1, alloc3);
 
+  ASSERT_EQ(alloc2, alloc2);
+  ASSERT_NE(alloc2, alloc3);
+
+  ASSERT_EQ(alloc3, alloc3);
+
   // Generic resource
-  camp::ResourceAllocator<int, Resrouce> alloc4{Res(), MemoryAccess::Pinned};
+  camp::ResourceAllocator<int, Resource> alloc4{Res(), MemoryAccess::Pinned};
   camp::ResourceAllocator<int, Resource> alloc5{Res(), MemoryAccess::Device};
   camp::ResourceAllocator<int, Resource> alloc6{Res(), MemoryAccess::Managed};
 
   ASSERT_EQ(alloc4, alloc4);
   ASSERT_NE(alloc4, alloc5);
   ASSERT_NE(alloc4, alloc6);
+
+  ASSERT_EQ(alloc5, alloc5);
+  ASSERT_NE(alloc5, alloc6);
+
+  ASSERT_EQ(alloc6, alloc6);
 }
 
 //
@@ -346,16 +356,16 @@ void test_allocate()
   // Specific resource
   camp::ResourceAllocator<int, Res> alloc1{Res()};
 
-  int* ptr = alloc1.allocate(num);
-  EXPECT_TRUE(ptr != nullptr);
-  alloc1.deallocate(ptr, num);
+  int* ptr1 = alloc1.allocate(num);
+  EXPECT_TRUE(ptr1 != nullptr);
+  alloc1.deallocate(ptr1, num);
 
   // Generic resource
   camp::ResourceAllocator<int, Resource> alloc2{Res()};
 
-  int* ptr = alloc2.allocate(num);
-  EXPECT_TRUE(ptr != nullptr);
-  alloc2.deallocate(ptr, num);
+  int* ptr2 = alloc2.allocate(num);
+  EXPECT_TRUE(ptr2 != nullptr);
+  alloc2.deallocate(ptr2, num);
 }
 
 //
@@ -388,11 +398,11 @@ void test_vector()
     for (std::size_t i = 0; i < vec.size(); ++i) {
       EXPECT_TRUE(vec[i] == static_cast<int>(i));
     }
-  });
+  };
 
-  camp::ResourceAllocator<int, Res> alloc{Res(), MemoryAccess::Pinned};
+  camp::ResourceAllocator<int, Res> alloc1{Res(), MemoryAccess::Pinned};
 
-  std::vector vec1(num, alloc);
+  std::vector vec1(num, alloc1);
   std::iota(vec1.begin(), vec1.end(), num);
   check_vec(vec1);
 
@@ -410,9 +420,9 @@ void test_vector()
   check_vec(vec2);
 
   // Generic resource
-  camp::ResourceAllocator<int, Resource> alloc{Res(), MemoryAccess::Pinned};
+  camp::ResourceAllocator<int, Resource> alloc2{Res(), MemoryAccess::Pinned};
 
-  std::vector vec4(num, alloc);
+  std::vector vec4(num, alloc2);
   std::iota(vec4.begin(), vec4.end(), num);
   check_vec(vec4);
 
