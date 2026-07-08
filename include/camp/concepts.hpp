@@ -256,7 +256,7 @@ namespace concepts
         {arg - increment} -> std::same_as<T>;
         // random access index operator
         arg[increment];
-  };
+    };
 
   template <typename T>
   concept HasBeginEnd = std::ranges::range<T>;
