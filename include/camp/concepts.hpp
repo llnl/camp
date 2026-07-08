@@ -312,6 +312,7 @@ namespace type_traits
   template <class T>
   struct is_iterator : std::bool_constant<camp::concepts::Iterator<T>> {
   };
+
   /// Convenience variable template for `is_iterator<T>::value`.
   template <class T>
   inline constexpr bool is_iterator_v = is_iterator<T>::value;
@@ -321,6 +322,7 @@ namespace type_traits
   struct is_forward_iterator
       : std::bool_constant<camp::concepts::ForwardIterator<T>> {
   };
+
   /// Convenience variable template for `is_forward_iterator<T>::value`.
   template <class T>
   inline constexpr bool is_forward_iterator_v = is_forward_iterator<T>::value;
@@ -330,6 +332,7 @@ namespace type_traits
   struct is_bidirectional_iterator
       : std::bool_constant<camp::concepts::BidirectionalIterator<T>> {
   };
+
   /// Convenience variable template for `is_bidirectional_iterator<T>::value`.
   template <class T>
   inline constexpr bool is_bidirectional_iterator_v =
@@ -340,6 +343,7 @@ namespace type_traits
   struct is_random_access_iterator
       : std::bool_constant<camp::concepts::RandomAccessIterator<T>> {
   };
+
   /// Convenience variable template for `is_random_access_iterator<T>::value`.
   template <class T>
   inline constexpr bool is_random_access_iterator_v =
@@ -349,6 +353,7 @@ namespace type_traits
   template <class T>
   struct is_range : std::bool_constant<camp::concepts::Range<T>> {
   };
+
   /// Convenience variable template for `is_range<T>::value`.
   template <class T>
   inline constexpr bool is_range_v = is_range<T>::value;
@@ -358,6 +363,7 @@ namespace type_traits
   struct is_forward_range
       : std::bool_constant<camp::concepts::ForwardRange<T>> {
   };
+
   /// Convenience variable template for `is_forward_range<T>::value`.
   template <class T>
   inline constexpr bool is_forward_range_v = is_forward_range<T>::value;
@@ -367,6 +373,7 @@ namespace type_traits
   struct is_bidirectional_range
       : std::bool_constant<camp::concepts::BidirectionalRange<T>> {
   };
+
   /// Convenience variable template for `is_bidirectional_range<T>::value`.
   template <class T>
   inline constexpr bool is_bidirectional_range_v =
@@ -377,6 +384,7 @@ namespace type_traits
   struct is_random_access_range
       : std::bool_constant<camp::concepts::RandomAccessRange<T>> {
   };
+
   /// Convenience variable template for `is_random_access_range<T>::value`.
   template <class T>
   inline constexpr bool is_random_access_range_v =
@@ -386,6 +394,7 @@ namespace type_traits
   template <class T>
   struct is_comparable : std::bool_constant<camp::concepts::Comparable<T>> {
   };
+
   /// Convenience variable template for `is_comparable<T>::value`.
   template <class T>
   inline constexpr bool is_comparable_v = is_comparable<T>::value;
@@ -394,6 +403,7 @@ namespace type_traits
   template <class T>
   struct is_arithmetic : std::bool_constant<camp::concepts::Arithmetic<T>> {
   };
+
   /// Convenience variable template for `is_arithmetic<T>::value`.
   template <class T>
   inline constexpr bool is_arithmetic_v = is_arithmetic<T>::value;
@@ -403,6 +413,7 @@ namespace type_traits
   struct is_floating_point
       : std::bool_constant<camp::concepts::FloatingPoint<T>> {
   };
+
   /// Convenience variable template for `is_floating_point<T>::value`.
   template <class T>
   inline constexpr bool is_floating_point_v = is_floating_point<T>::value;
@@ -411,6 +422,7 @@ namespace type_traits
   template <class T>
   struct is_integral : std::bool_constant<camp::concepts::Integral<T>> {
   };
+
   /// Convenience variable template for `is_integral<T>::value`.
   template <class T>
   inline constexpr bool is_integral_v = is_integral<T>::value;
@@ -419,6 +431,7 @@ namespace type_traits
   template <class T>
   struct is_signed : std::bool_constant<camp::concepts::Signed<T>> {
   };
+
   /// Convenience variable template for `is_signed<T>::value`.
   template <class T>
   inline constexpr bool is_signed_v = is_signed<T>::value;
@@ -427,6 +440,7 @@ namespace type_traits
   template <class T>
   struct is_unsigned : std::bool_constant<camp::concepts::Unsigned<T>> {
   };
+
   /// Convenience variable template for `is_unsigned<T>::value`.
   template <class T>
   inline constexpr bool is_unsigned_v = is_unsigned<T>::value;
@@ -436,6 +450,7 @@ namespace type_traits
   struct is_comparable_to
       : std::bool_constant<camp::concepts::ComparableTo<T, U>> {
   };
+
   /// Convenience variable template for `is_comparable_to<T, U>::value`.
   template <class T, class U>
   inline constexpr bool is_comparable_to_v = is_comparable_to<T, U>::value;
