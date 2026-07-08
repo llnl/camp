@@ -24,7 +24,6 @@
 
 // last to ensure we don't hide breakage in the others
 #include "camp/resource/platform.hpp"
-#include "camp/resource/resource_allocator.hpp"
 
 namespace camp
 {
@@ -423,5 +422,7 @@ struct hash<camp::resources::Resource> {
 #if defined(CAMP_HAVE_OMP_OFFLOAD)
 #include "camp/resource/omp_target.hpp"
 #endif
+
+#include "camp/resource/resource_allocator.hpp"
 
 #endif /* __CAMP_RESOURCE_HPP */
