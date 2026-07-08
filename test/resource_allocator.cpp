@@ -218,13 +218,16 @@ void test_get_mem_access()
   camp::ResourceAllocator<int, Res> alloc2{Res(), MemoryAccess::Device};
   camp::ResourceAllocator<int, Res> alloc3{Res(), MemoryAccess::Managed};
 
+  ASSERT_EQ(alloc1.get_mem_access(), MemoryAccess::Pinned);
   ASSERT_EQ(alloc1.get_mem_access(), alloc1.get_mem_access());
   ASSERT_NE(alloc1.get_mem_access(), alloc2.get_mem_access());
   ASSERT_NE(alloc1.get_mem_access(), alloc3.get_mem_access());
 
+  ASSERT_EQ(alloc2.get_mem_access(), MemoryAccess::Device);
   ASSERT_EQ(alloc2.get_mem_access(), alloc2.get_mem_access());
   ASSERT_NE(alloc2.get_mem_access(), alloc3.get_mem_access());
 
+  ASSERT_EQ(alloc3.get_mem_access(), MemoryAccess::Managed);
   ASSERT_EQ(alloc3.get_mem_access(), alloc3.get_mem_access());
 
   // Generic resource
@@ -232,13 +235,16 @@ void test_get_mem_access()
   camp::ResourceAllocator<int, Resource> alloc5{Res(), MemoryAccess::Device};
   camp::ResourceAllocator<int, Resource> alloc6{Res(), MemoryAccess::Managed};
 
+  ASSERT_EQ(alloc4.get_mem_access(), MemoryAccess::Pinned);
   ASSERT_EQ(alloc4.get_mem_access(), alloc4.get_mem_access());
   ASSERT_NE(alloc4.get_mem_access(), alloc5.get_mem_access());
   ASSERT_NE(alloc4.get_mem_access(), alloc6.get_mem_access());
 
+  ASSERT_EQ(alloc5.get_mem_access(), MemoryAccess::Device);
   ASSERT_EQ(alloc5.get_mem_access(), alloc5.get_mem_access());
   ASSERT_NE(alloc5.get_mem_access(), alloc6.get_mem_access());
 
+  ASSERT_EQ(alloc6.get_mem_access(), MemoryAccess::Managed);
   ASSERT_EQ(alloc6.get_mem_access(), alloc6.get_mem_access());
 }
 
