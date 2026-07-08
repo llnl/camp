@@ -8,9 +8,9 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 #include "camp/array.hpp"
-#include "camp/tuple.hpp"
 
 #include "Test.hpp"
+#include "camp/tuple.hpp"
 #include "gtest/gtest.h"
 
 CAMP_TEST_BEGIN(array, initialize)
@@ -370,10 +370,12 @@ CAMP_TEST_BEGIN(array, apply)
   camp::array<int, 2> a{-1, 1};
   int a0 = 0;
   int a1 = 0;
-  camp::apply([&](int i0, int i1){
-    a0 = i0;
-    a1 = i1;
-  }, a);
+  camp::apply(
+      [&](int i0, int i1) {
+        a0 = i0;
+        a1 = i1;
+      },
+      a);
 
   return a0 == -1 && a1 == 1 && a[0] == -1 && a[1] == 1;
 }

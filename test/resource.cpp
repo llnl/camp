@@ -20,6 +20,7 @@ using namespace camp::resources;
 // compatible but different resource for conversion test
 struct Host2 : Host {
 };
+
 struct HostEvent2 : HostEvent {
 };
 #ifdef CAMP_HAVE_CUDA
@@ -46,15 +47,18 @@ namespace resources
   template <>
   struct is_concrete_resource_impl<Host2> : std::true_type {
   };
+
   template <>
   struct is_concrete_event_impl<HostEvent2> : std::true_type {
   };
 }  // namespace resources
 }  // namespace camp
 
-struct NotAResource { };
+struct NotAResource {
+};
 
-struct NotAnEvent { };
+struct NotAnEvent {
+};
 
 template <typename Res>
 void test_construct()
@@ -394,23 +398,23 @@ TEST(CampEvent, MoveAssignment)
 
 TEST(CampPlatform, ResourceFromPlatform)
 {
-  ASSERT_TRUE((std::is_same_v<resource_from_platform<Platform::host>::type,
-                              Host>));
+  ASSERT_TRUE(
+      (std::is_same_v<resource_from_platform<Platform::host>::type, Host>));
 #ifdef CAMP_HAVE_CUDA
-  ASSERT_TRUE((std::is_same_v<resource_from_platform<Platform::cuda>::type,
-                              Cuda>));
+  ASSERT_TRUE(
+      (std::is_same_v<resource_from_platform<Platform::cuda>::type, Cuda>));
 #endif
 #ifdef CAMP_HAVE_HIP
-  ASSERT_TRUE((std::is_same_v<resource_from_platform<Platform::hip>::type,
-                              Hip>));
+  ASSERT_TRUE(
+      (std::is_same_v<resource_from_platform<Platform::hip>::type, Hip>));
 #endif
 #ifdef CAMP_HAVE_OMP_OFFLOAD
-  ASSERT_TRUE(
-      (std::is_same_v<resource_from_platform<Platform::omp_target>::type, Omp>));
+  ASSERT_TRUE((
+      std::is_same_v<resource_from_platform<Platform::omp_target>::type, Omp>));
 #endif
 #ifdef CAMP_HAVE_SYCL
-  ASSERT_TRUE((std::is_same_v<resource_from_platform<Platform::sycl>::type,
-                              Sycl>));
+  ASSERT_TRUE(
+      (std::is_same_v<resource_from_platform<Platform::sycl>::type, Sycl>));
 #endif
 }
 
@@ -704,7 +708,8 @@ TEST(CampResource, UnorderedMapKey)
 
 struct ref_hash {
   template <typename T>
-  std::size_t operator()(std::reference_wrapper<T> const& ref) const {
+  std::size_t operator()(std::reference_wrapper<T> const& ref) const
+  {
     return std::hash<T>()(ref.get());
   }
 };
@@ -712,7 +717,8 @@ struct ref_hash {
 struct ref_equal {
   template <typename T>
   bool operator()(std::reference_wrapper<T> const& lhs,
-                  std::reference_wrapper<T> const& rhs) const {
+                  std::reference_wrapper<T> const& rhs) const
+  {
     return lhs.get() == rhs.get();
   }
 };
@@ -731,7 +737,8 @@ void test_map_key(Event& he)
   erased_event_ref d1(d1_);
   erased_event_ref d2(d2_);
   std::unordered_map<erased_event_ref, size_t, ref_hash, ref_equal> map;
-  std::unordered_multimap<erased_event_ref, size_t, ref_hash, ref_equal> multimap;
+  std::unordered_multimap<erased_event_ref, size_t, ref_hash, ref_equal>
+      multimap;
 
   // Typed
   typed_event e1_ = Res().get_event();
@@ -739,7 +746,8 @@ void test_map_key(Event& he)
   typed_event_ref e1(e1_);
   typed_event_ref e2(e2_);
   std::unordered_map<typed_event_ref, size_t, ref_hash, ref_equal> rmap;
-  std::unordered_multimap<typed_event_ref, size_t, ref_hash, ref_equal> rmultimap;
+  std::unordered_multimap<typed_event_ref, size_t, ref_hash, ref_equal>
+      rmultimap;
 
   // Generic
   map.emplace(he, 10);
@@ -974,7 +982,6 @@ TEST(CampResource, GetDefault)
 #endif
 }
 
-
 template <typename Res>
 void test_id_compare(Event& he)
 {
@@ -1164,8 +1171,8 @@ template <typename Res>
 void test_get()
 {
   const Resource dev_res{Res()};
-  static_assert(std::is_same_v<decltype(dev_res.template get<Res>()),
-                               const Res&>);
+  static_assert(
+      std::is_same_v<decltype(dev_res.template get<Res>()), const Res&>);
   const auto& erased_res = dev_res.get<Res>();
   Res pure_res;
   ASSERT_EQ(typeid(erased_res), typeid(pure_res));
@@ -1320,9 +1327,8 @@ void test_get_const_typed_event(EventArgs&&... eventArgs)
   static_assert(
       std::is_same_v<decltype(erased_event.template try_get<ResEvent>()),
                      const ResEvent*>);
-  static_assert(
-      std::is_same_v<decltype(erased_event.template get<ResEvent>()),
-                     const ResEvent&>);
+  static_assert(std::is_same_v<decltype(erased_event.template get<ResEvent>()),
+                               const ResEvent&>);
 
   const ResEvent* typed_event_ptr = erased_event.template try_get<ResEvent>();
   ASSERT_NE(typed_event_ptr, nullptr);
@@ -1531,8 +1537,10 @@ void test_event_check()
   const auto typed_event = r.get_event();
   const Event event = r.get_event_erased();
   // checking in a loop should always eventually return true
-  while (!typed_event.check()) {}
-  while (!event.check()) {}
+  while (!typed_event.check()) {
+  }
+  while (!event.check()) {
+  }
 }
 
 //
@@ -1562,6 +1570,7 @@ void test_concrete_resource_trait()
   ASSERT_TRUE(is_concrete_resource<const Res&>::value);
   ASSERT_TRUE(is_concrete_resource<Res&&>::value);
 }
+
 //
 TEST(CampResource, ConcreteResourceTypeTrait)
 {
@@ -1605,6 +1614,7 @@ void test_concrete_event_trait()
   ASSERT_TRUE(is_concrete_event<const Evt&>::value);
   ASSERT_TRUE(is_concrete_event<Evt&&>::value);
 }
+
 //
 TEST(CampEvent, ConcreteEventTypeTrait)
 {
@@ -1714,10 +1724,7 @@ void test_inferred_deallocate(MemoryAccess access)
   r.deallocate(ptr);
 }
 
-TEST(CampResource, MemoryHost)
-{
-  test_memory_ops<Host>(MemoryAccess::Device);
-}
+TEST(CampResource, MemoryHost) { test_memory_ops<Host>(MemoryAccess::Device); }
 
 #ifdef CAMP_HAVE_CUDA
 TEST(CampResource, MemoryCuda)
@@ -1748,10 +1755,7 @@ TEST(CampResource, MemoryHip)
 #endif
 
 #ifdef CAMP_HAVE_OMP_OFFLOAD
-TEST(CampResource, MemoryOmp)
-{
-  test_memory_ops<Omp>(MemoryAccess::Device);
-}
+TEST(CampResource, MemoryOmp) { test_memory_ops<Omp>(MemoryAccess::Device); }
 #endif
 
 #ifdef CAMP_HAVE_SYCL
