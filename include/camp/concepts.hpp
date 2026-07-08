@@ -70,29 +70,6 @@ namespace concepts
 }  // end namespace concepts
 }  // end namespace camp
 
-#define DefineConceptRequires(CONCEPT_NAME, expr) \
-  template <typename T>                           \
-  concept CONCEPT_NAME = requires(T arg) { expr };
-
-#define DefineConceptFromSTL(CONCEPT_NAME, stl_concept) \
-  template <typename T>                                 \
-  concept CONCEPT_NAME = stl_concept;
-
-#define DefineConceptBinaryAnd(CONCEPT_NAME, expr1, expr2) \
-  template <typename T>                                    \
-  concept CONCEPT_NAME = expr1 && expr2;
-
-#define DefineConceptVar(CONCEPT_NAME, ...) \
-  template <typename T>                     \
-  concept CONCEPT_NAME = EXPAND_AND(__VA_ARGS__);
-
-#define DefineTypeTraitFromConcept(TTName, ConceptName) \
-  template <class T>                                    \
-  struct TTName : std::bool_constant<ConceptName<T>> {  \
-  };                                                    \
-  template <class T>                                    \
-  inline constexpr bool TTName##_v = TTName<T>::value;
-
 namespace camp
 {
 namespace concepts
@@ -191,12 +168,33 @@ namespace concepts
 
   // clang-format off
 
-  DefineConceptFromSTL(Swappable, std::swappable<T>)
-  DefineConceptRequires(LessThanComparable, {arg < arg} -> std::convertible_to<bool>; )
-  DefineConceptRequires(GreaterThanComparable, {arg > arg} -> std::convertible_to<bool>; )
-  DefineConceptRequires(LessEqualComparable,  {arg <= arg} -> std::convertible_to<bool>; )
-  DefineConceptRequires(GreaterEqualComparable,  {arg >= arg} -> std::convertible_to<bool>; )
-  DefineConceptRequires(EqualityComparable,  {arg == arg} -> std::convertible_to<bool>; )
+  template <typename T>
+  concept Swappable = std::swappable<T>;
+
+  template <typename T>
+  concept LessThanComparable = requires(T arg) {
+    { arg < arg } -> std::convertible_to<bool>;
+  };
+
+  template <typename T>
+  concept GreaterThanComparable = requires(T arg) {
+    { arg > arg } -> std::convertible_to<bool>;
+  };
+
+  template <typename T>
+  concept LessEqualComparable = requires(T arg) {
+    { arg <= arg } -> std::convertible_to<bool>;
+  };
+
+  template <typename T>
+  concept GreaterEqualComparable = requires(T arg) {
+    { arg >= arg } -> std::convertible_to<bool>;
+  };
+
+  template <typename T>
+  concept EqualityComparable = requires(T arg) {
+    { arg == arg } -> std::convertible_to<bool>;
+  };
 
   template <typename T, typename U>
   concept ComparableTo = requires(T lhs, U rhs) {
@@ -217,30 +215,44 @@ namespace concepts
   template <typename T>
   concept Comparable = ComparableTo<T, T>;
 
-  DefineConceptFromSTL(FloatingPoint, std::floating_point<T>)
-  DefineConceptFromSTL(Integral, std::integral<T>)
-  DefineConceptFromSTL(Arithmetic, std::is_arithmetic_v<T>)
-  DefineConceptFromSTL(Signed, std::signed_integral<T>)
-  DefineConceptFromSTL(Unsigned, std::unsigned_integral<T>)
+  template <typename T>
+  concept FloatingPoint = std::floating_point<T>;
+
+  template <typename T>
+  concept Integral = std::integral<T>;
+
+  template <typename T>
+  concept Arithmetic = std::is_arithmetic_v<T>;
+
+  template <typename T>
+  concept Signed = std::signed_integral<T>;
+
+  template <typename T>
+  concept Unsigned = std::unsigned_integral<T>;
 
   // Note: std::weakly_incrementable is the closest C++ concept to Iterator, but differs
   // in two important ways.  (1) std::weakly_incrementable requires and iterator be
   // post-incrementable (arg_ref++) (2) std::weakly_incrementable does not requires
   // not Integral
-  DefineConceptBinaryAnd(Iterator, !Integral<T>, requires(T arg, T& arg_ref) {
+  template <typename T>
+  concept Iterator = !Integral<T> && requires(T arg, T& arg_ref) {
     *arg;
     { ++arg_ref } -> std::same_as<T&>;
-  })
-  DefineConceptBinaryAnd(ForwardIterator, Iterator<T>, requires(T& arg) {
+  };
+
+  template <typename T>
+  concept ForwardIterator = Iterator<T> && requires(T& arg) {
     arg++;
     *arg++;
-  })
+  };
 
-  DefineConceptBinaryAnd(BidirectionalIterator, ForwardIterator<T>, requires(T& arg) {
+  template <typename T>
+  concept BidirectionalIterator =
+      ForwardIterator<T> && requires(T& arg) {
     { --arg } -> std::same_as<T&>;
     { arg-- } -> std::convertible_to<T const &>;
     *arg--;
-  })
+  };
 
   template<typename T>
   concept RandomAccessIterator =
@@ -261,13 +273,19 @@ namespace concepts
   template <typename T>
   concept HasBeginEnd = std::ranges::range<T>;
 
-  DefineConceptBinaryAnd(Range,  HasBeginEnd<T>, Iterator<iterator_from<T>>)
-  DefineConceptBinaryAnd(ForwardRange,  HasBeginEnd<T>,
-    ForwardIterator<iterator_from<T>>)
-  DefineConceptBinaryAnd(BidirectionalRange,  HasBeginEnd<T>,
-    BidirectionalIterator<iterator_from<T>>)
-  DefineConceptBinaryAnd(RandomAccessRange, HasBeginEnd<T>,
-    RandomAccessIterator<iterator_from<T>>)
+  template <typename T>
+  concept Range = HasBeginEnd<T> && Iterator<iterator_from<T>>;
+
+  template <typename T>
+  concept ForwardRange = HasBeginEnd<T> && ForwardIterator<iterator_from<T>>;
+
+  template <typename T>
+  concept BidirectionalRange =
+      HasBeginEnd<T> && BidirectionalIterator<iterator_from<T>>;
+
+  template <typename T>
+  concept RandomAccessRange =
+      HasBeginEnd<T> && RandomAccessIterator<iterator_from<T>>;
 
   // clang-format on
 
@@ -275,28 +293,100 @@ namespace concepts
 
 namespace type_traits
 {
-  DefineTypeTraitFromConcept(is_iterator, camp::concepts::Iterator);
-  DefineTypeTraitFromConcept(is_forward_iterator,
-                             camp::concepts::ForwardIterator);
-  DefineTypeTraitFromConcept(is_bidirectional_iterator,
-                             camp::concepts::BidirectionalIterator);
-  DefineTypeTraitFromConcept(is_random_access_iterator,
-                             camp::concepts::RandomAccessIterator);
+  template <class T>
+  struct is_iterator : std::bool_constant<camp::concepts::Iterator<T>> {
+  };
+  template <class T>
+  inline constexpr bool is_iterator_v = is_iterator<T>::value;
 
-  DefineTypeTraitFromConcept(is_range, camp::concepts::Range);
-  DefineTypeTraitFromConcept(is_forward_range, camp::concepts::ForwardRange);
-  DefineTypeTraitFromConcept(is_bidirectional_range,
-                             camp::concepts::BidirectionalRange);
-  DefineTypeTraitFromConcept(is_random_access_range,
-                             camp::concepts::RandomAccessRange);
+  template <class T>
+  struct is_forward_iterator
+      : std::bool_constant<camp::concepts::ForwardIterator<T>> {
+  };
+  template <class T>
+  inline constexpr bool is_forward_iterator_v = is_forward_iterator<T>::value;
 
-  DefineTypeTraitFromConcept(is_comparable, camp::concepts::Comparable);
+  template <class T>
+  struct is_bidirectional_iterator
+      : std::bool_constant<camp::concepts::BidirectionalIterator<T>> {
+  };
+  template <class T>
+  inline constexpr bool is_bidirectional_iterator_v =
+      is_bidirectional_iterator<T>::value;
 
-  DefineTypeTraitFromConcept(is_arithmetic, camp::concepts::Arithmetic);
-  DefineTypeTraitFromConcept(is_floating_point, camp::concepts::FloatingPoint);
-  DefineTypeTraitFromConcept(is_integral, camp::concepts::Integral);
-  DefineTypeTraitFromConcept(is_signed, camp::concepts::Signed);
-  DefineTypeTraitFromConcept(is_unsigned, camp::concepts::Unsigned);
+  template <class T>
+  struct is_random_access_iterator
+      : std::bool_constant<camp::concepts::RandomAccessIterator<T>> {
+  };
+  template <class T>
+  inline constexpr bool is_random_access_iterator_v =
+      is_random_access_iterator<T>::value;
+
+  template <class T>
+  struct is_range : std::bool_constant<camp::concepts::Range<T>> {
+  };
+  template <class T>
+  inline constexpr bool is_range_v = is_range<T>::value;
+
+  template <class T>
+  struct is_forward_range
+      : std::bool_constant<camp::concepts::ForwardRange<T>> {
+  };
+  template <class T>
+  inline constexpr bool is_forward_range_v = is_forward_range<T>::value;
+
+  template <class T>
+  struct is_bidirectional_range
+      : std::bool_constant<camp::concepts::BidirectionalRange<T>> {
+  };
+  template <class T>
+  inline constexpr bool is_bidirectional_range_v =
+      is_bidirectional_range<T>::value;
+
+  template <class T>
+  struct is_random_access_range
+      : std::bool_constant<camp::concepts::RandomAccessRange<T>> {
+  };
+  template <class T>
+  inline constexpr bool is_random_access_range_v =
+      is_random_access_range<T>::value;
+
+  template <class T>
+  struct is_comparable : std::bool_constant<camp::concepts::Comparable<T>> {
+  };
+  template <class T>
+  inline constexpr bool is_comparable_v = is_comparable<T>::value;
+
+  template <class T>
+  struct is_arithmetic : std::bool_constant<camp::concepts::Arithmetic<T>> {
+  };
+  template <class T>
+  inline constexpr bool is_arithmetic_v = is_arithmetic<T>::value;
+
+  template <class T>
+  struct is_floating_point
+      : std::bool_constant<camp::concepts::FloatingPoint<T>> {
+  };
+  template <class T>
+  inline constexpr bool is_floating_point_v = is_floating_point<T>::value;
+
+  template <class T>
+  struct is_integral : std::bool_constant<camp::concepts::Integral<T>> {
+  };
+  template <class T>
+  inline constexpr bool is_integral_v = is_integral<T>::value;
+
+  template <class T>
+  struct is_signed : std::bool_constant<camp::concepts::Signed<T>> {
+  };
+  template <class T>
+  inline constexpr bool is_signed_v = is_signed<T>::value;
+
+  template <class T>
+  struct is_unsigned : std::bool_constant<camp::concepts::Unsigned<T>> {
+  };
+  template <class T>
+  inline constexpr bool is_unsigned_v = is_unsigned<T>::value;
 
   template <class T, class U>
   struct is_comparable_to
