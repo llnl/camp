@@ -19,10 +19,12 @@
 #include "camp/config.hpp"
 #include "camp/defines.hpp"
 #include "camp/helpers.hpp"
+
 #include "camp/resource/event.hpp"
 
 // last to ensure we don't hide breakage in the others
 #include "camp/resource/platform.hpp"
+#include "camp/resource/resource_allocator.hpp"
 
 namespace camp
 {
@@ -48,7 +50,7 @@ namespace resources
       }
 
       template <typename T>
-      T *try_get()
+      T* try_get()
       {
         if (!m_value) {
           return nullptr;
@@ -61,7 +63,7 @@ namespace resources
       }
 
       template <typename T>
-      T const *try_get() const
+      T const* try_get() const
       {
         if (!m_value) {
           return nullptr;
@@ -74,9 +76,9 @@ namespace resources
       }
 
       template <typename T>
-      T &get() &
+      T& get() &
       {
-        T *result = try_get<T>();
+        T* result = try_get<T>();
         if (result == nullptr) {
           ::camp::throw_re("Incompatible Resource type get cast.");
         }
@@ -84,9 +86,9 @@ namespace resources
       }
 
       template <typename T>
-      T const &get() const &
+      T const& get() const&
       {
-        T const *result = try_get<T>();
+        T const* result = try_get<T>();
         if (result == nullptr) {
           ::camp::throw_re("Incompatible Resource type get cast.");
         }
@@ -96,7 +98,7 @@ namespace resources
       template <typename T>
       T get() &&
       {
-        T *result = try_get<T>();
+        T* result = try_get<T>();
         if (result == nullptr) {
           ::camp::throw_re("Incompatible Resource type get cast.");
         }
@@ -180,10 +182,10 @@ namespace resources
         return m_value->get_event_erased();
       }
 
-      void wait_for(Event const &e)
+      void wait_for(Event const& e)
       {
         if (!m_value) {
-          e.wait();
+            e.wait();
           return;
         }
         m_value->wait_for(e);
@@ -211,7 +213,8 @@ namespace resources
         if (!lhs.m_value && !rhs.m_value) {
           return true;
         }
-        if ((!lhs.m_value && rhs.m_value) || (lhs.m_value && !rhs.m_value)) {
+        if ((!lhs.m_value && rhs.m_value) ||
+            (lhs.m_value && !rhs.m_value)) {
           return false;
         }
         if (lhs.get_platform() == rhs.get_platform()) {
@@ -220,7 +223,7 @@ namespace resources
         return false;
       }
 
-      template <camp::concepts::ConcreteResource Res>
+      template < camp::concepts::ConcreteResource Res >
       friend inline bool operator==(Resource const &lhs, Res const &rhs)
       {
         if (!lhs.m_value) {
@@ -269,7 +272,7 @@ namespace resources
 
         virtual Event get_event() = 0;
         virtual Event get_event_erased() = 0;
-        virtual void wait_for(Event const &e) = 0;
+        virtual void wait_for(Event const& e) = 0;
         virtual void wait() = 0;
       };
 
@@ -326,13 +329,13 @@ namespace resources
           return m_modelVal.get_event_erased();
         }
 
-        void wait_for(Event const &e) override { m_modelVal.wait_for(e); }
+        void wait_for(Event const& e) override { m_modelVal.wait_for(e); }
 
         void wait() override { m_modelVal.wait(); }
 
-        const T *get() const { return &m_modelVal; }
+        const T* get() const { return &m_modelVal; }
 
-        T *get() { return &m_modelVal; }
+        T* get() { return &m_modelVal; }
 
       private:
         T m_modelVal;
@@ -342,7 +345,8 @@ namespace resources
     };
 
     template <typename Res>
-    struct EventProxy : ::camp::resources::detail::EventProxyBase {
+    struct EventProxy : ::camp::resources::detail::EventProxyBase
+    {
       using native_event = typename Res::event_type;
 
       EventProxy(EventProxy &&) = default;
@@ -353,24 +357,27 @@ namespace resources
       EventProxy(Res r) : resource_{move(r)} {}
 
       native_event get()
-        requires(!std::same_as<native_event, Event>)
+      requires (!std::same_as<native_event, Event>)
       {
         return resource_.get_event();
       }
 
       Event get()
-        requires(std::same_as<native_event, Event>)
+      requires (std::same_as<native_event, Event>)
       {
         return resource_.get_event_erased();
       }
 
       operator native_event()
-        requires(!std::same_as<native_event, Event>)
+      requires (!std::same_as<native_event, Event>)
       {
         return resource_.get_event();
       }
 
-      operator Event() { return resource_.get_event_erased(); }
+      operator Event()
+      {
+        return resource_.get_event_erased();
+      }
 
       Res resource_;
     };
@@ -416,7 +423,5 @@ struct hash<camp::resources::Resource> {
 #if defined(CAMP_HAVE_OMP_OFFLOAD)
 #include "camp/resource/omp_target.hpp"
 #endif
-
-#include "camp/resource/resource_allocator.hpp"
 
 #endif /* __CAMP_RESOURCE_HPP */
