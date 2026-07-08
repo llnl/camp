@@ -7,12 +7,11 @@
 // SPDX-License-Identifier: (BSD-3-Clause)
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-#include "camp/resource.hpp"
-
 #include <numeric>
 #include <vector>
 
 #include "camp/camp.hpp"
+#include "camp/resource.hpp"
 #include "gtest/gtest.h"
 
 using namespace camp::resources;
@@ -293,7 +292,7 @@ void test_compare()
 }
 
 //
-TEST(CampResourceAllocator, Compare) 
+TEST(CampResourceAllocator, Compare)
 {
   test_compare<Host>();
 #ifdef CAMP_HAVE_CUDA
@@ -328,6 +327,13 @@ void test_rebind()
   ASSERT_EQ(alloc3, alloc4);
   ASSERT_EQ(alloc3.get_resource(), alloc4.get_resource());
   ASSERT_EQ(alloc3.get_mem_access(), alloc4.get_mem_access());
+
+  camp::ResourceAllocator<int, Resource> alloc5{alloc1};
+  camp::ResourceAllocator<double, Resource> alloc6{alloc2};
+
+  ASSERT_EQ(alloc5, alloc6);
+  ASSERT_EQ(alloc5.get_resource(), alloc6.get_resource());
+  ASSERT_EQ(alloc5.get_mem_access(), alloc6.get_mem_access());
 }
 
 //
@@ -414,7 +420,7 @@ void test_vector()
   // Move ctor
   auto vec3 = std::move(vec2);
   check_vec(vec3);
-  
+
   // Move assignment
   vec2 = std::move(vec3);
   check_vec(vec2);
@@ -434,7 +440,7 @@ void test_vector()
   // Move ctor
   auto vec6 = std::move(vec5);
   check_vec(vec6);
-  
+
   // Move assignment
   vec5 = std::move(vec6);
   check_vec(vec5);
