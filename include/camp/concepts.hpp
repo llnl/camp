@@ -166,8 +166,6 @@ namespace concepts
   struct requires_ : detail::detected<Op, detail::TL<Args...>> {
   };
 
-  // clang-format off
-
   template <typename T>
   concept Swappable = std::swappable<T>;
 
@@ -230,45 +228,43 @@ namespace concepts
   template <typename T>
   concept Unsigned = std::unsigned_integral<T>;
 
-  // Note: std::weakly_incrementable is the closest C++ concept to Iterator, but differs
-  // in two important ways.  (1) std::weakly_incrementable requires and iterator be
-  // post-incrementable (arg_ref++) (2) std::weakly_incrementable does not requires
-  // not Integral
+  // Note: std::weakly_incrementable is the closest C++ concept to Iterator, but
+  // differs in two important ways.  (1) std::weakly_incrementable requires and
+  // iterator be post-incrementable (arg_ref++) (2) std::weakly_incrementable
+  // does not requires not Integral
   template <typename T>
-  concept Iterator = !Integral<T> && requires(T arg, T& arg_ref) {
+  concept Iterator = !Integral<T> && requires(T arg, T &arg_ref) {
     *arg;
-    { ++arg_ref } -> std::same_as<T&>;
+    { ++arg_ref } -> std::same_as<T &>;
   };
 
   template <typename T>
-  concept ForwardIterator = Iterator<T> && requires(T& arg) {
+  concept ForwardIterator = Iterator<T> && requires(T &arg) {
     arg++;
     *arg++;
   };
 
   template <typename T>
-  concept BidirectionalIterator =
-      ForwardIterator<T> && requires(T& arg) {
-    { --arg } -> std::same_as<T&>;
+  concept BidirectionalIterator = ForwardIterator<T> && requires(T &arg) {
+    { --arg } -> std::same_as<T &>;
     { arg-- } -> std::convertible_to<T const &>;
     *arg--;
   };
 
-  template<typename T>
+  template <typename T>
   concept RandomAccessIterator =
-    BidirectionalIterator<T> &&
-    Comparable<T> &&
-    requires(T arg, T& arg_ref, diff_from<T> increment) {
-        // Reference increment requirements
-        {arg_ref += increment} -> std::same_as<T&>;
-        {arg_ref -= increment} ->std::same_as<T&>;
-        // Value increment requirements
-        {arg + increment} -> std::same_as<T>;
-        {increment + arg} -> std::same_as<T>;
-        {arg - increment} -> std::same_as<T>;
-        // random access index operator
-        arg[increment];
-    };
+      BidirectionalIterator<T> && Comparable<T>
+      && requires(T arg, T &arg_ref, diff_from<T> increment) {
+           // Reference increment requirements
+           { arg_ref += increment } -> std::same_as<T &>;
+           { arg_ref -= increment } -> std::same_as<T &>;
+           // Value increment requirements
+           { arg + increment } -> std::same_as<T>;
+           { increment + arg } -> std::same_as<T>;
+           { arg - increment } -> std::same_as<T>;
+           // random access index operator
+           arg[increment];
+         };
 
   template <typename T>
   concept HasBeginEnd = std::ranges::range<T>;
@@ -286,8 +282,6 @@ namespace concepts
   template <typename T>
   concept RandomAccessRange =
       HasBeginEnd<T> && RandomAccessIterator<iterator_from<T>>;
-
-  // clang-format on
 
 }  // end namespace concepts
 
