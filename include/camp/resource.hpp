@@ -45,7 +45,7 @@ namespace resources
       template <camp::concepts::ConcreteResource T>
       Resource(T &&value)
       {
-        m_value.reset(new ContextModel<type::ref::rem<T>>(forward<T>(value)));
+        m_value.reset(new ContextModel<camp::decay<T>>(forward<T>(value)));
       }
 
       template <typename T>
@@ -422,5 +422,7 @@ struct hash<camp::resources::Resource> {
 #if defined(CAMP_HAVE_OMP_OFFLOAD)
 #include "camp/resource/omp_target.hpp"
 #endif
+
+#include "camp/resource/resource_allocator.hpp"
 
 #endif /* __CAMP_RESOURCE_HPP */

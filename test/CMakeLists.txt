@@ -60,6 +60,7 @@ endfunction()
 camp_add_test(array GTEST)
 camp_add_test(errors GTEST)
 camp_add_test(resource GTEST OFFLOAD)
+camp_add_test(resource_allocator GTEST OFFLOAD)
 camp_add_test(tuple GTEST)
 
 camp_add_test(accumulate)
