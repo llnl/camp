@@ -20,9 +20,9 @@
 #cmakedefine CAMP_WIN_STATIC_BUILD
 #endif
 
-#define CAMP_VERSION_MAJOR @camp_VERSION_MAJOR @
-#define CAMP_VERSION_MINOR @camp_VERSION_MINOR @
-#define CAMP_VERSION_PATCH @camp_VERSION_PATCH @
+#define CAMP_VERSION_MAJOR @camp_VERSION_MAJOR@
+#define CAMP_VERSION_MINOR @camp_VERSION_MINOR@
+#define CAMP_VERSION_PATCH @camp_VERSION_PATCH@
 
 #define CAMP_VERSION                                           \
   (CAMP_VERSION_MAJOR * 1000000) + (CAMP_VERSION_MINOR * 1000) \
