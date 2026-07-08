@@ -27,6 +27,7 @@ For more information about specific Camp features, visit the pages below.
   :maxdepth: 3
 
   feature/array
+  feature/concepts
   feature/list
   feature/resource
   feature/number
