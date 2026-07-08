@@ -67,7 +67,8 @@ namespace resources
        *
        * \return True (Host is always synchronous so host events are trivial)
        */
-      friend inline bool operator==(HostEvent const& lhs, HostEvent const& rhs) = default;
+      friend inline bool operator==(HostEvent const& lhs,
+                                    HostEvent const& rhs) = default;
 
       size_t get_hash() const
       {
@@ -98,10 +99,7 @@ namespace resources
 
       void wait() {}
 
-      void wait_for(HostEvent const& e)
-      {
-        e.wait();
-      }
+      void wait_for(HostEvent const& e) { e.wait(); }
 
       void wait_for(Event const& e)
       {
@@ -114,36 +112,37 @@ namespace resources
 
       // Memory
       template <typename T>
-      T *allocate(size_t n, MemoryAccess = MemoryAccess::Device)
+      T* allocate(size_t n, MemoryAccess = MemoryAccess::Device)
       {
-        return (T *)std::malloc(sizeof(T) * n);
+        return (T*)std::malloc(sizeof(T) * n);
       }
 
-      void *calloc(size_t size, MemoryAccess = MemoryAccess::Device)
+      void* calloc(size_t size, MemoryAccess = MemoryAccess::Device)
       {
-        void *p = allocate<char>(size);
+        void* p = allocate<char>(size);
         this->memset(p, 0, size);
         return p;
       }
 
-      void deallocate(void *p, MemoryAccess = MemoryAccess::Device)
+      void deallocate(void* p, MemoryAccess = MemoryAccess::Device)
       {
         std::free(p);
       }
 
-      void memcpy(void *dst, const void *src, size_t size)
+      void memcpy(void* dst, const void* src, size_t size)
       {
         std::memcpy(dst, src, size);
       }
 
-      void memset(void *p, int val, size_t size) { std::memset(p, val, size); }
+      void memset(void* p, int val, size_t size) { std::memset(p, val, size); }
 
       /*
        * \brief Compares two (Host) resources to see if they are equal
        *
        * \return Always return true since Host resources are always the same
        */
-      friend inline bool operator==(Host const& CAMP_UNUSED_ARG(lhs), Host const& CAMP_UNUSED_ARG(rhs))
+      friend inline bool operator==(Host const& CAMP_UNUSED_ARG(lhs),
+                                    Host const& CAMP_UNUSED_ARG(rhs))
       {
         return true;
       }
@@ -173,7 +172,7 @@ namespace std
  */
 template <>
 struct hash<camp::resources::HostEvent> {
-  std::size_t operator()(const camp::resources::HostEvent &e) const
+  std::size_t operator()(const camp::resources::HostEvent& e) const
   {
     return e.get_hash();
   }
@@ -190,7 +189,7 @@ struct hash<camp::resources::HostEvent> {
  */
 template <>
 struct hash<camp::resources::Host> {
-  std::size_t operator()(const camp::resources::Host &h) const
+  std::size_t operator()(const camp::resources::Host& h) const
   {
     return h.get_hash();
   }

@@ -14,8 +14,8 @@
 
 #ifdef CAMP_ENABLE_SYCL
 
-#include <cstddef>
 #include <array>
+#include <cstddef>
 #include <map>
 #include <mutex>
 #include <sycl/sycl.hpp>
@@ -49,9 +49,7 @@ namespace resources
     class SyclEvent
     {
     public:
-      explicit SyclEvent(sycl::event e)
-        : m_event(std::move(e))
-      {}
+      explicit SyclEvent(sycl::event e) : m_event(std::move(e)) {}
 
       // TODO: see what overhead an empty submit has
       explicit SyclEvent(sycl::queue& qu)
@@ -77,10 +75,10 @@ namespace resources
       bool check() const
       {
         return m_event.get_info<sycl::info::event::command_execution_status>()
-            == sycl::info::event_command_status::complete;
+               == sycl::info::event_command_status::complete;
       }
 
-      void wait() const { m_event.wait(); } // sycl::event::wait is non-const
+      void wait() const { m_event.wait(); }  // sycl::event::wait is non-const
 
       sycl::event& getSyclEvent_t() { return m_event; }
 
@@ -92,7 +90,8 @@ namespace resources
        *
        * \return True if both refer to equivalent sycl events, false otherwise.
        */
-      friend inline bool operator==(SyclEvent const& lhs, SyclEvent const& rhs) = default;
+      friend inline bool operator==(SyclEvent const& lhs,
+                                    SyclEvent const& rhs) = default;
 
       size_t get_hash() const
       {
@@ -102,7 +101,7 @@ namespace resources
       }
 
     private:
-      mutable sycl::event m_event; // mutable as use non-const member function
+      mutable sycl::event m_event;  // mutable as use non-const member function
     };
 
     class Sycl
@@ -321,9 +320,8 @@ namespace resources
 
       void wait_for(SyclEvent const& e)
       {
-        qu.submit([&](::sycl::handler& h) {
-          h.depends_on(e.getSyclEvent_t());
-        });
+        qu.submit(
+            [&](::sycl::handler& h) { h.depends_on(e.getSyclEvent_t()); });
       }
 
       void wait_for(Event const& e)

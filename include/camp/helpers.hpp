@@ -290,9 +290,8 @@ namespace experimental
   }
 
 
-
 #ifdef CAMP_ENABLE_CUDA
-  
+
 #if CUDART_VERSION >= 13000
   // Specialization of camp I/O for CUDA 13 cudaMemLocation.
   //
@@ -306,23 +305,23 @@ namespace experimental
   {
     switch (t) {
       case cudaMemLocationTypeInvalid:
-	return "cudaMemLocationTypeInvalid";
+        return "cudaMemLocationTypeInvalid";
       case cudaMemLocationTypeDevice:
-	return "cudaMemLocationTypeDevice";
+        return "cudaMemLocationTypeDevice";
       case cudaMemLocationTypeHost:
-	return "cudaMemLocationTypeHost";
+        return "cudaMemLocationTypeHost";
       case cudaMemLocationTypeHostNuma:
-	return "cudaMemLocationTypeHostNuma";
+        return "cudaMemLocationTypeHostNuma";
       default:
-	return "Unknown";
+        return "Unknown";
     }
   }
 
   //! Print helper for cudaMemLocation
   inline std::ostream& print_cudaMemLocation(std::ostream& os,
-					     const cudaMemLocation& loc)
+                                             const cudaMemLocation& loc)
   {
-    os << "{" <<  to_string(loc.type) << ", " << loc.id << "}";
+    os << "{" << to_string(loc.type) << ", " << loc.id << "}";
     return os;
   }
 
@@ -337,7 +336,8 @@ namespace experimental
   struct StreamInsertHelper<cudaMemLocation&> {
     const cudaMemLocation& m_val;
 
-    std::ostream& operator()(std::ostream& str) const {
+    std::ostream& operator()(std::ostream& str) const
+    {
       return print_cudaMemLocation(str, m_val);
     }
   };
@@ -353,11 +353,12 @@ namespace experimental
   struct StreamInsertHelper<const cudaMemLocation&> {
     const cudaMemLocation& m_val;
 
-    std::ostream& operator()(std::ostream& str) const {
+    std::ostream& operator()(std::ostream& str) const
+    {
       return print_cudaMemLocation(str, m_val);
     }
   };
-#endif // CUDART_VERSION >= 13000
+#endif  // CUDART_VERSION >= 13000
 
   //! Get the argument names for the given cuda API function name.
   //

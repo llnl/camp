@@ -20,9 +20,9 @@
 #cmakedefine CAMP_WIN_STATIC_BUILD
 #endif
 
-#define CAMP_VERSION_MAJOR @camp_VERSION_MAJOR@
-#define CAMP_VERSION_MINOR @camp_VERSION_MINOR@
-#define CAMP_VERSION_PATCH @camp_VERSION_PATCH@
+#define CAMP_VERSION_MAJOR @camp_VERSION_MAJOR @
+#define CAMP_VERSION_MINOR @camp_VERSION_MINOR @
+#define CAMP_VERSION_PATCH @camp_VERSION_PATCH @
 
 #define CAMP_VERSION                                           \
   (CAMP_VERSION_MAJOR * 1000000) + (CAMP_VERSION_MINOR * 1000) \
@@ -39,7 +39,8 @@
 #endif
 
 #if defined(CAMP_USE_PLATFORM_DEFAULT_STREAM)
-#error "Manually defining CAMP_USE_PLATFORM_DEFAULT_STREAM is not allowed because of the potential for ODR violations. CAMP supports a CMake configuration option that should be used instead."
+#error \
+    "Manually defining CAMP_USE_PLATFORM_DEFAULT_STREAM is not allowed because of the potential for ODR violations. CAMP supports a CMake configuration option that should be used instead."
 #endif
 
 #cmakedefine01 CAMP_USE_PLATFORM_DEFAULT_STREAM

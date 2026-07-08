@@ -16,8 +16,8 @@
 
 #include <hip/hip_runtime.h>
 
-#include <cstddef>
 #include <array>
+#include <cstddef>
 #include <mutex>
 #include <utility>
 
@@ -81,11 +81,11 @@ namespace resources
       HipEvent(HipEvent const&) = delete;
 
       HipEvent(HipEvent&& rhs) noexcept
-        : m_event(std::exchange(rhs.m_event, nullptr))
-      {}
+          : m_event(std::exchange(rhs.m_event, nullptr))
+      {
+      }
 
       HipEvent& operator=(HipEvent const&) = delete;
-
 
       HipEvent& operator=(HipEvent&& rhs) noexcept
       {
@@ -94,10 +94,7 @@ namespace resources
         return *this;
       }
 
-      ~HipEvent()
-      {
-        finalize(m_event);
-      }
+      ~HipEvent() { finalize(m_event); }
 
       Platform get_platform() const { return Platform::hip; }
 
@@ -120,7 +117,8 @@ namespace resources
        *
        * \return True if both refer to the same hip event, false otherwise.
        */
-      friend inline bool operator==(HipEvent const& lhs, HipEvent const& rhs) = default;
+      friend inline bool operator==(HipEvent const& lhs,
+                                    HipEvent const& rhs) = default;
 
       size_t get_hash() const
       {
@@ -160,7 +158,7 @@ namespace resources
         static constexpr int num_streams = 16;
         static std::array<hipStream_t, num_streams> s_streams = [] {
           std::array<hipStream_t, num_streams> streams;
-          for (auto &s : streams) {
+          for (auto& s : streams) {
             CAMP_HIP_API_INVOKE_AND_CHECK(hipStreamCreate, &s);
           }
           return streams;
@@ -181,7 +179,7 @@ namespace resources
       // Private from-stream constructor
       Hip(hipStream_t s, int dev = 0) : stream(s), device(dev) {}
 
-      MemoryAccess get_access_type(void *p)
+      MemoryAccess get_access_type(void* p)
       {
         hipPointerAttribute_t a;
         hipError_t status = hipPointerGetAttributes(&a, p);
@@ -276,28 +274,28 @@ namespace resources
 
       // Memory
       template <typename T>
-      T *allocate(size_t size, MemoryAccess ma = MemoryAccess::Device)
+      T* allocate(size_t size, MemoryAccess ma = MemoryAccess::Device)
       {
-        T *ret = nullptr;
+        T* ret = nullptr;
         if (size > 0) {
           auto d{device_guard(device)};
           switch (ma) {
             case MemoryAccess::Unknown:
             case MemoryAccess::Device:
               CAMP_HIP_API_INVOKE_AND_CHECK(hipMalloc,
-                                            (void **)&ret,
+                                            (void**)&ret,
                                             sizeof(T) * size);
               break;
             case MemoryAccess::Pinned:
               // TODO: do a test here for whether managed is *actually* shared
               // so we can use the better performing memory
               CAMP_HIP_API_INVOKE_AND_CHECK(hipHostMalloc,
-                                            (void **)&ret,
+                                            (void**)&ret,
                                             sizeof(T) * size);
               break;
             case MemoryAccess::Managed:
               CAMP_HIP_API_INVOKE_AND_CHECK(hipMallocManaged,
-                                            (void **)&ret,
+                                            (void**)&ret,
                                             sizeof(T) * size);
               break;
           }
@@ -305,14 +303,14 @@ namespace resources
         return ret;
       }
 
-      void *calloc(size_t size, MemoryAccess ma)
+      void* calloc(size_t size, MemoryAccess ma)
       {
-        void *p = allocate<char>(size, ma);
+        void* p = allocate<char>(size, ma);
         this->memset(p, 0, size);
         return p;
       }
 
-      void deallocate(void *p, MemoryAccess ma = MemoryAccess::Unknown)
+      void deallocate(void* p, MemoryAccess ma = MemoryAccess::Unknown)
       {
         auto d{device_guard(device)};
         if (ma == MemoryAccess::Unknown) {
@@ -336,7 +334,7 @@ namespace resources
         }
       }
 
-      void memcpy(void *dst, const void *src, size_t size)
+      void memcpy(void* dst, const void* src, size_t size)
       {
         if (size > 0) {
           auto d{device_guard(device)};
@@ -345,7 +343,7 @@ namespace resources
         }
       }
 
-      void memset(void *p, int val, size_t size)
+      void memset(void* p, int val, size_t size)
       {
         if (size > 0) {
           auto d{device_guard(device)};
@@ -367,7 +365,7 @@ namespace resources
       size_t get_hash() const
       {
         const size_t hip_type = size_t(get_platform()) << 32;
-        size_t stream_hash = std::hash<void *>{}(static_cast<void *>(stream));
+        size_t stream_hash = std::hash<void*>{}(static_cast<void*>(stream));
         return hip_type | (stream_hash & 0xFFFFFFFF);
       }
 
@@ -395,7 +393,7 @@ namespace std
  */
 template <>
 struct hash<camp::resources::HipEvent> {
-  std::size_t operator()(const camp::resources::HipEvent &e) const
+  std::size_t operator()(const camp::resources::HipEvent& e) const
   {
     return e.get_hash();
   }
@@ -412,7 +410,7 @@ struct hash<camp::resources::HipEvent> {
  */
 template <>
 struct hash<camp::resources::Hip> {
-  std::size_t operator()(const camp::resources::Hip &h) const
+  std::size_t operator()(const camp::resources::Hip& h) const
   {
     return h.get_hash();
   }

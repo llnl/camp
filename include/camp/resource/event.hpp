@@ -37,15 +37,16 @@ namespace resources
     {
     public:
       Event() = default;
-      Event(Event const &e) = default;
-      Event(Event &&e) = default;
-      Event &operator=(Event const &e) = default;
-      Event &operator=(Event &&e) = default;
+      Event(Event const& e) = default;
+      Event(Event&& e) = default;
+      Event& operator=(Event const& e) = default;
+      Event& operator=(Event&& e) = default;
 
       template <camp::concepts::ConcreteEvent T>
-      Event(T &&value)
+      Event(T&& value)
       {
-        m_value.reset(new EventModel<type::ref::rem<T>>(std::forward<T>(value)));
+        m_value.reset(
+            new EventModel<type::ref::rem<T>>(std::forward<T>(value)));
       }
 
       template <typename T>
@@ -54,7 +55,7 @@ namespace resources
         if (!m_value) {
           return nullptr;
         }
-        auto result = dynamic_cast<EventModel<T> *>(m_value.get());
+        auto result = dynamic_cast<EventModel<T>*>(m_value.get());
         if (!result) {
           return nullptr;
         }
@@ -67,7 +68,7 @@ namespace resources
         if (!m_value) {
           return nullptr;
         }
-        auto result = dynamic_cast<EventModel<T> *>(m_value.get());
+        auto result = dynamic_cast<EventModel<T>*>(m_value.get());
         if (!result) {
           return nullptr;
         }
@@ -111,7 +112,12 @@ namespace resources
 
       bool check() const { return m_value ? m_value->check() : true; }
 
-      void wait() const { if (m_value) { m_value->wait(); } }
+      void wait() const
+      {
+        if (m_value) {
+          m_value->wait();
+        }
+      }
 
       explicit operator bool() const { return static_cast<bool>(m_value); }
 
@@ -123,13 +129,12 @@ namespace resources
        * \return True if they have the same platform and equivalent underlying
        *         typed events, false otherwise.
        */
-      friend inline bool operator==(Event const &lhs, Event const &rhs)
+      friend inline bool operator==(Event const& lhs, Event const& rhs)
       {
         if (!lhs.m_value && !rhs.m_value) {
           return true;
         }
-        if ((!lhs.m_value && rhs.m_value) ||
-            (lhs.m_value && !rhs.m_value)) {
+        if ((!lhs.m_value && rhs.m_value) || (lhs.m_value && !rhs.m_value)) {
           return false;
         }
         if (lhs.get_platform() == rhs.get_platform()) {
@@ -138,8 +143,8 @@ namespace resources
         return false;
       }
 
-      template < camp::concepts::ConcreteEvent Evt >
-      friend inline bool operator==(Event const &lhs, Evt const &rhs)
+      template <camp::concepts::ConcreteEvent Evt>
+      friend inline bool operator==(Event const& lhs, Evt const& rhs)
       {
         if (!lhs.m_value) {
           return false;
@@ -173,7 +178,7 @@ namespace resources
 
         virtual Platform get_platform() const = 0;
 
-        virtual bool compare(Event const &e) const = 0;
+        virtual bool compare(Event const& e) const = 0;
         virtual size_t get_hash() const = 0;
 
         virtual bool check() const = 0;
@@ -184,31 +189,23 @@ namespace resources
       class EventModel final : public EventInterface
       {
       public:
-        explicit EventModel(T modelVal)
-          : m_modelVal(std::move(modelVal))
-        {}
+        explicit EventModel(T modelVal) : m_modelVal(std::move(modelVal)) {}
 
         Platform get_platform() const override
         {
           return m_modelVal.get_platform();
         }
 
-        bool compare(Event const &e) const override
+        bool compare(Event const& e) const override
         {
           return m_modelVal == e.get<T>();
         }
 
         size_t get_hash() const override { return m_modelVal.get_hash(); }
 
-        bool check() const override
-        {
-          return m_modelVal.check();
-        }
+        bool check() const override { return m_modelVal.check(); }
 
-        void wait() const override
-        {
-          m_modelVal.wait();
-        }
+        void wait() const override { m_modelVal.wait(); }
 
         T const* get() const { return &m_modelVal; }
 
@@ -239,7 +236,7 @@ namespace std
  */
 template <>
 struct hash<camp::resources::Event> {
-  std::size_t operator()(const camp::resources::Event &e) const
+  std::size_t operator()(const camp::resources::Event& e) const
   {
     return e.get_hash();
   }
