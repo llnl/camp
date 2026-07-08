@@ -15,15 +15,15 @@
 namespace camp
 {
 
-void throw_re(const char *s) { throw std::runtime_error(s); }
+void throw_re(const char* s) { throw std::runtime_error(s); }
 
-void throw_re(std::string const &s) { throw std::runtime_error(s); }
+void throw_re(std::string const& s) { throw std::runtime_error(s); }
 
 #ifdef CAMP_ENABLE_CUDA
 
 cudaError_t cudaAssert(cudaError_t code,
-                       const char *call,
-                       const char *file,
+                       const char* call,
+                       const char* file,
                        int line)
 {
   if (code != cudaSuccess && code != cudaErrorNotReady) {
@@ -46,8 +46,8 @@ cudaError_t cudaAssert(cudaError_t code,
 #ifdef CAMP_ENABLE_HIP
 
 hipError_t hipAssert(hipError_t code,
-                     const char *call,
-                     const char *file,
+                     const char* call,
+                     const char* file,
                      int line)
 {
   if (code != hipSuccess && code != hipErrorNotReady) {

@@ -10,9 +10,9 @@
 #ifndef CAMP_CONCEPTS_HPP
 #define CAMP_CONCEPTS_HPP
 
+#include <concepts>
 #include <iterator>
 #include <type_traits>
-#include <concepts>
 
 #include "camp/helpers.hpp"
 #include "camp/list.hpp"
@@ -71,25 +71,26 @@ namespace concepts
 }  // end namespace camp
 
 #define DefineConceptRequires(CONCEPT_NAME, expr) \
-template<typename T> \
-concept CONCEPT_NAME = requires(T arg) { expr };
+  template <typename T>                           \
+  concept CONCEPT_NAME = requires(T arg) { expr };
 
 #define DefineConceptFromSTL(CONCEPT_NAME, stl_concept) \
-template<typename T> \
-concept CONCEPT_NAME = stl_concept;
+  template <typename T>                                 \
+  concept CONCEPT_NAME = stl_concept;
 
 #define DefineConceptBinaryAnd(CONCEPT_NAME, expr1, expr2) \
-template<typename T> \
-concept CONCEPT_NAME = expr1 && expr2;
+  template <typename T>                                    \
+  concept CONCEPT_NAME = expr1 && expr2;
 
 #define DefineConceptVar(CONCEPT_NAME, ...) \
-template<typename T> \
-concept CONCEPT_NAME = EXPAND_AND(__VA_ARGS__);
+  template <typename T>                     \
+  concept CONCEPT_NAME = EXPAND_AND(__VA_ARGS__);
 
-#define DefineTypeTraitFromConcept(TTName, ConceptName)             \
-  template<class T>                                                 \
-  struct TTName : std::bool_constant<ConceptName<T>> {};            \
-  template<class T>                                                 \
+#define DefineTypeTraitFromConcept(TTName, ConceptName) \
+  template <class T>                                    \
+  struct TTName : std::bool_constant<ConceptName<T>> {  \
+  };                                                    \
+  template <class T>                                    \
   inline constexpr bool TTName##_v = TTName<T>::value;
 
 namespace camp
@@ -188,6 +189,8 @@ namespace concepts
   struct requires_ : detail::detected<Op, detail::TL<Args...>> {
   };
 
+  // clang-format off
+
   DefineConceptFromSTL(Swappable, std::swappable<T>)
   DefineConceptRequires(LessThanComparable, {arg < arg} -> std::convertible_to<bool>; )
   DefineConceptRequires(GreaterThanComparable, {arg > arg} -> std::convertible_to<bool>; )
@@ -196,19 +199,19 @@ namespace concepts
   DefineConceptRequires(EqualityComparable,  {arg == arg} -> std::convertible_to<bool>; )
 
   template <typename T, typename U>
-  concept ComparableTo = requires (T lhs, U rhs) {
-        {lhs < rhs} -> std::convertible_to<bool>;
-        {rhs < lhs} -> std::convertible_to<bool>;
-        {lhs <= rhs} -> std::convertible_to<bool>;
-        {rhs <= lhs} -> std::convertible_to<bool>;
-        {lhs > rhs} -> std::convertible_to<bool>;
-        {rhs > lhs} -> std::convertible_to<bool>;
-        {lhs >= rhs} -> std::convertible_to<bool>;
-        {rhs >= lhs} -> std::convertible_to<bool>;
-        {lhs == rhs} -> std::convertible_to<bool>;
-        {rhs == lhs} -> std::convertible_to<bool>;
-        {lhs != rhs} -> std::convertible_to<bool>;
-        {rhs != lhs} -> std::convertible_to<bool>;
+  concept ComparableTo = requires(T lhs, U rhs) {
+    { lhs < rhs } -> std::convertible_to<bool>;
+    { rhs < lhs } -> std::convertible_to<bool>;
+    { lhs <= rhs } -> std::convertible_to<bool>;
+    { rhs <= lhs } -> std::convertible_to<bool>;
+    { lhs > rhs } -> std::convertible_to<bool>;
+    { rhs > lhs } -> std::convertible_to<bool>;
+    { lhs >= rhs } -> std::convertible_to<bool>;
+    { rhs >= lhs } -> std::convertible_to<bool>;
+    { lhs == rhs } -> std::convertible_to<bool>;
+    { rhs == lhs } -> std::convertible_to<bool>;
+    { lhs != rhs } -> std::convertible_to<bool>;
+    { rhs != lhs } -> std::convertible_to<bool>;
   };
 
   template <typename T>
@@ -266,6 +269,8 @@ namespace concepts
   DefineConceptBinaryAnd(RandomAccessRange, HasBeginEnd<T>,
     RandomAccessIterator<iterator_from<T>>)
 
+  // clang-format on
+
 }  // end namespace concepts
 
 namespace type_traits
@@ -293,9 +298,11 @@ namespace type_traits
   DefineTypeTraitFromConcept(is_signed, camp::concepts::Signed);
   DefineTypeTraitFromConcept(is_unsigned, camp::concepts::Unsigned);
 
-  template<class T, class U>
-  struct is_comparable_to : std::bool_constant<camp::concepts::ComparableTo<T, U>> {};
-  template<class T, class U>
+  template <class T, class U>
+  struct is_comparable_to
+      : std::bool_constant<camp::concepts::ComparableTo<T, U>> {
+  };
+  template <class T, class U>
   inline constexpr bool is_comparable_to_v = is_comparable_to<T, U>::value;
 
   template <typename T>
@@ -374,7 +381,6 @@ namespace resources
     template <typename T>
     inline constexpr bool is_concrete_event_v = is_concrete_event<T>::value;
 
-
     template <typename T>
     struct is_concrete_resource_impl : std::false_type {
     };
@@ -385,7 +391,8 @@ namespace resources
     };
 
     template <typename T>
-    inline constexpr bool is_concrete_resource_v = is_concrete_resource<T>::value;
+    inline constexpr bool is_concrete_resource_v =
+        is_concrete_resource<T>::value;
 
   }  // namespace v1
 }  // namespace resources
@@ -393,10 +400,10 @@ namespace resources
 namespace concepts
 {
 
-  template < typename T >
+  template <typename T>
   concept ConcreteEvent = ::camp::resources::is_concrete_event_v<T>;
 
-  template < typename T >
+  template <typename T>
   concept ConcreteResource = ::camp::resources::is_concrete_resource_v<T>;
 
 }  // namespace concepts

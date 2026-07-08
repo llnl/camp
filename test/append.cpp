@@ -14,8 +14,10 @@ using namespace camp;
 using list1 = list<float, double, double>;
 using list2 = list<int, int, char>;
 
-CAMP_CHECK_TSAME((append<list1, list2>), (list<float, double, double, list<int, int, char>>));
-CAMP_CHECK_TSAME((append<list2, list1>), (list<int, int, char, list<float, double, double>>));
+CAMP_CHECK_TSAME((append<list1, list2>),
+                 (list<float, double, double, list<int, int, char>>));
+CAMP_CHECK_TSAME((append<list2, list1>),
+                 (list<int, int, char, list<float, double, double>>));
 
 CAMP_CHECK_TSAME((append<list<int>, int>), (list<int, int>));
 CAMP_CHECK_TSAME((append<list1, int>), (list<float, double, double, int>));

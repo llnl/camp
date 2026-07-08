@@ -19,7 +19,6 @@
 #include "camp/config.hpp"
 #include "camp/defines.hpp"
 #include "camp/helpers.hpp"
-
 #include "camp/resource/event.hpp"
 
 // last to ensure we don't hide breakage in the others
@@ -37,13 +36,13 @@ namespace resources
       using event_type = Event;
 
       Resource() = default;
-      Resource(Resource &&) = default;
-      Resource(Resource const &) = default;
-      Resource &operator=(Resource &&) = default;
-      Resource &operator=(Resource const &) = default;
+      Resource(Resource&&) = default;
+      Resource(Resource const&) = default;
+      Resource& operator=(Resource&&) = default;
+      Resource& operator=(Resource const&) = default;
 
       template <camp::concepts::ConcreteResource T>
-      Resource(T &&value)
+      Resource(T&& value)
       {
         m_value.reset(new ContextModel<camp::decay<T>>(forward<T>(value)));
       }
@@ -54,7 +53,7 @@ namespace resources
         if (!m_value) {
           return nullptr;
         }
-        auto result = dynamic_cast<ContextModel<T> *>(m_value.get());
+        auto result = dynamic_cast<ContextModel<T>*>(m_value.get());
         if (!result) {
           return nullptr;
         }
@@ -67,7 +66,7 @@ namespace resources
         if (!m_value) {
           return nullptr;
         }
-        auto result = dynamic_cast<ContextModel<T> *>(m_value.get());
+        auto result = dynamic_cast<ContextModel<T>*>(m_value.get());
         if (!result) {
           return nullptr;
         }
@@ -110,7 +109,7 @@ namespace resources
       }
 
       template <typename T>
-      T *allocate(size_t size, MemoryAccess ma = MemoryAccess::Device)
+      T* allocate(size_t size, MemoryAccess ma = MemoryAccess::Device)
       {
         if (size == 0) {
           return nullptr;
@@ -118,10 +117,10 @@ namespace resources
         if (!m_value) {
           ::camp::throw_re("Empty Resource type allocate call.");
         }
-        return (T *)m_value->allocate(size * sizeof(T), ma);
+        return (T*)m_value->allocate(size * sizeof(T), ma);
       }
 
-      void *calloc(size_t size, MemoryAccess ma = MemoryAccess::Device)
+      void* calloc(size_t size, MemoryAccess ma = MemoryAccess::Device)
       {
         if (size == 0) {
           return nullptr;
@@ -132,7 +131,7 @@ namespace resources
         return m_value->calloc(size, ma);
       }
 
-      void deallocate(void *p, MemoryAccess ma = MemoryAccess::Device)
+      void deallocate(void* p, MemoryAccess ma = MemoryAccess::Device)
       {
         if (p == nullptr) {
           return;
@@ -143,7 +142,7 @@ namespace resources
         m_value->deallocate(p, ma);
       }
 
-      void memcpy(void *dst, const void *src, size_t size)
+      void memcpy(void* dst, const void* src, size_t size)
       {
         if (size == 0) {
           return;
@@ -154,7 +153,7 @@ namespace resources
         m_value->memcpy(dst, src, size);
       }
 
-      void memset(void *p, int val, size_t size)
+      void memset(void* p, int val, size_t size)
       {
         if (size == 0) {
           return;
@@ -184,7 +183,7 @@ namespace resources
       void wait_for(Event const& e)
       {
         if (!m_value) {
-            e.wait();
+          e.wait();
           return;
         }
         m_value->wait_for(e);
@@ -207,13 +206,12 @@ namespace resources
        * \return True if they have the same platform and stream/queue, false
        * otherwise.
        */
-      friend inline bool operator==(Resource const &lhs, Resource const &rhs)
+      friend inline bool operator==(Resource const& lhs, Resource const& rhs)
       {
         if (!lhs.m_value && !rhs.m_value) {
           return true;
         }
-        if ((!lhs.m_value && rhs.m_value) ||
-            (lhs.m_value && !rhs.m_value)) {
+        if ((!lhs.m_value && rhs.m_value) || (lhs.m_value && !rhs.m_value)) {
           return false;
         }
         if (lhs.get_platform() == rhs.get_platform()) {
@@ -222,8 +220,8 @@ namespace resources
         return false;
       }
 
-      template < camp::concepts::ConcreteResource Res >
-      friend inline bool operator==(Resource const &lhs, Res const &rhs)
+      template <camp::concepts::ConcreteResource Res>
+      friend inline bool operator==(Resource const& lhs, Res const& rhs)
       {
         if (!lhs.m_value) {
           return false;
@@ -257,17 +255,17 @@ namespace resources
 
         virtual Platform get_platform() const = 0;
 
-        virtual bool compare(Resource const &r) const = 0;
+        virtual bool compare(Resource const& r) const = 0;
         virtual size_t get_hash() const = 0;
 
-        virtual void *allocate(size_t size,
+        virtual void* allocate(size_t size,
                                MemoryAccess ma = MemoryAccess::Device) = 0;
-        virtual void *calloc(size_t size,
+        virtual void* calloc(size_t size,
                              MemoryAccess ma = MemoryAccess::Device) = 0;
-        virtual void deallocate(void *p,
+        virtual void deallocate(void* p,
                                 MemoryAccess ma = MemoryAccess::Device) = 0;
-        virtual void memcpy(void *dst, const void *src, size_t size) = 0;
-        virtual void memset(void *p, int val, size_t size) = 0;
+        virtual void memcpy(void* dst, const void* src, size_t size) = 0;
+        virtual void memset(void* p, int val, size_t size) = 0;
 
         virtual Event get_event() = 0;
         virtual Event get_event_erased() = 0;
@@ -279,44 +277,44 @@ namespace resources
       class ContextModel final : public ContextInterface
       {
       public:
-        explicit ContextModel(T const &modelVal) : m_modelVal(modelVal) {}
+        explicit ContextModel(T const& modelVal) : m_modelVal(modelVal) {}
 
         Platform get_platform() const override
         {
           return m_modelVal.get_platform();
         }
 
-        bool compare(Resource const &r) const override
+        bool compare(Resource const& r) const override
         {
           return m_modelVal == r.get<T>();
         }
 
         size_t get_hash() const override { return m_modelVal.get_hash(); }
 
-        void *allocate(size_t size,
+        void* allocate(size_t size,
                        MemoryAccess ma = MemoryAccess::Device) override
         {
           return m_modelVal.template allocate<char>(size, ma);
         }
 
-        void *calloc(size_t size,
+        void* calloc(size_t size,
                      MemoryAccess ma = MemoryAccess::Device) override
         {
           return m_modelVal.calloc(size, ma);
         }
 
-        void deallocate(void *p,
+        void deallocate(void* p,
                         MemoryAccess ma = MemoryAccess::Device) override
         {
           m_modelVal.deallocate(p, ma);
         }
 
-        void memcpy(void *dst, const void *src, size_t size) override
+        void memcpy(void* dst, const void* src, size_t size) override
         {
           m_modelVal.memcpy(dst, src, size);
         }
 
-        void memset(void *p, int val, size_t size) override
+        void memset(void* p, int val, size_t size) override
         {
           m_modelVal.memset(p, val, size);
         }
@@ -344,39 +342,35 @@ namespace resources
     };
 
     template <typename Res>
-    struct EventProxy : ::camp::resources::detail::EventProxyBase
-    {
+    struct EventProxy : ::camp::resources::detail::EventProxyBase {
       using native_event = typename Res::event_type;
 
-      EventProxy(EventProxy &&) = default;
-      EventProxy(EventProxy const &) = delete;
-      EventProxy &operator=(EventProxy &&) = default;
-      EventProxy &operator=(EventProxy const &) = delete;
+      EventProxy(EventProxy&&) = default;
+      EventProxy(EventProxy const&) = delete;
+      EventProxy& operator=(EventProxy&&) = default;
+      EventProxy& operator=(EventProxy const&) = delete;
 
       EventProxy(Res r) : resource_{move(r)} {}
 
       native_event get()
-      requires (!std::same_as<native_event, Event>)
+        requires(!std::same_as<native_event, Event>)
       {
         return resource_.get_event();
       }
 
       Event get()
-      requires (std::same_as<native_event, Event>)
+        requires(std::same_as<native_event, Event>)
       {
         return resource_.get_event_erased();
       }
 
       operator native_event()
-      requires (!std::same_as<native_event, Event>)
+        requires(!std::same_as<native_event, Event>)
       {
         return resource_.get_event();
       }
 
-      operator Event()
-      {
-        return resource_.get_event_erased();
-      }
+      operator Event() { return resource_.get_event_erased(); }
 
       Res resource_;
     };
@@ -399,7 +393,7 @@ namespace std
  */
 template <>
 struct hash<camp::resources::Resource> {
-  std::size_t operator()(const camp::resources::Resource &r) const
+  std::size_t operator()(const camp::resources::Resource& r) const
   {
     return r.get_hash();
   }

@@ -13,27 +13,26 @@
 #include "gtest/gtest.h"
 
 static_assert(
-    std::is_same<camp::tuple<int &, int const &, int>,
+    std::is_same<camp::tuple<int&, int const&, int>,
                  decltype(camp::tuple_cat_pair(
-                     camp::val<camp::tuple<int &>>(),
-                     camp::val<camp::tuple<int const &, int>>()))>::value,
+                     camp::val<camp::tuple<int&>>(),
+                     camp::val<camp::tuple<int const&, int>>()))>::value,
     "tuple_cat pair nuking refs");
 
 static_assert(
-    std::is_same<camp::tuple<int &&, int const &&, int>,
+    std::is_same<camp::tuple<int&&, int const&&, int>,
                  decltype(camp::tuple_cat_pair(
-                     camp::val<camp::tuple<int &&>>(),
-                     camp::val<camp::tuple<int const &&, int>>()))>::value,
+                     camp::val<camp::tuple<int&&>>(),
+                     camp::val<camp::tuple<int const&&, int>>()))>::value,
     "tuple_cat pair nuking rvalue refs");
 
-static_assert(
-    std::is_same<
-        camp::tuple<int &, int const &, int &&, int const &&>,
-        decltype(camp::forward_as_tuple(camp::val<int &>(),
-                                        camp::val<int const &>(),
-                                        camp::val<int &&>(),
-                                        camp::val<int const &&>()))>::value,
-    "forward_as_tuple nuking refs");
+static_assert(std::is_same<camp::tuple<int&, int const&, int&&, int const&&>,
+                           decltype(camp::forward_as_tuple(
+                               camp::val<int&>(),
+                               camp::val<int const&>(),
+                               camp::val<int&&>(),
+                               camp::val<int const&&>()))>::value,
+              "forward_as_tuple nuking refs");
 
 #define CAMP_TEST_TUPLE_GET_REFS(GET_REF, TYPE_REF, TUPLE_REF)            \
   static_assert(                                                          \
@@ -71,106 +70,106 @@ static_assert(
 
 CAMP_TEST_TUPLE_GET_REFS(&, , &)
 CAMP_TEST_TUPLE_GET_REFS(&&, , &&)
-CAMP_TEST_TUPLE_GET_REFS(const &, , const &)
-CAMP_TEST_TUPLE_GET_REFS(const &&, , const &&)
+CAMP_TEST_TUPLE_GET_REFS(const&, , const&)
+CAMP_TEST_TUPLE_GET_REFS(const&&, , const&&)
 
 CAMP_TEST_TUPLE_GET_REFS(&, &, &)
 CAMP_TEST_TUPLE_GET_REFS(&, &, &&)
-CAMP_TEST_TUPLE_GET_REFS(&, &, const &)
-CAMP_TEST_TUPLE_GET_REFS(&, &, const &&)
+CAMP_TEST_TUPLE_GET_REFS(&, &, const&)
+CAMP_TEST_TUPLE_GET_REFS(&, &, const&&)
 
-CAMP_TEST_TUPLE_GET_REFS(const &, const &, &)
-CAMP_TEST_TUPLE_GET_REFS(const &, const &, &&)
-CAMP_TEST_TUPLE_GET_REFS(const &, const &, const &)
-CAMP_TEST_TUPLE_GET_REFS(const &, const &, const &&)
+CAMP_TEST_TUPLE_GET_REFS(const&, const&, &)
+CAMP_TEST_TUPLE_GET_REFS(const&, const&, &&)
+CAMP_TEST_TUPLE_GET_REFS(const&, const&, const&)
+CAMP_TEST_TUPLE_GET_REFS(const&, const&, const&&)
 
 CAMP_TEST_TUPLE_GET_REFS(&, &&, &)
 CAMP_TEST_TUPLE_GET_REFS(&&, &&, &&)
-CAMP_TEST_TUPLE_GET_REFS(&, &&, const &)
-CAMP_TEST_TUPLE_GET_REFS(&&, &&, const &&)
+CAMP_TEST_TUPLE_GET_REFS(&, &&, const&)
+CAMP_TEST_TUPLE_GET_REFS(&&, &&, const&&)
 
-CAMP_TEST_TUPLE_GET_REFS(const &, const &&, &)
-CAMP_TEST_TUPLE_GET_REFS(const &&, const &&, &&)
-CAMP_TEST_TUPLE_GET_REFS(const &, const &&, const &)
-CAMP_TEST_TUPLE_GET_REFS(const &&, const &&, const &&)
+CAMP_TEST_TUPLE_GET_REFS(const&, const&&, &)
+CAMP_TEST_TUPLE_GET_REFS(const&&, const&&, &&)
+CAMP_TEST_TUPLE_GET_REFS(const&, const&&, const&)
+CAMP_TEST_TUPLE_GET_REFS(const&&, const&&, const&&)
 
 
 CAMP_TEST_TUPLE_GET_T_REFS(&, , &)
 CAMP_TEST_TUPLE_GET_T_REFS(&&, , &&)
-CAMP_TEST_TUPLE_GET_T_REFS(const &, , const &)
-CAMP_TEST_TUPLE_GET_T_REFS(const &&, , const &&)
+CAMP_TEST_TUPLE_GET_T_REFS(const&, , const&)
+CAMP_TEST_TUPLE_GET_T_REFS(const&&, , const&&)
 
 CAMP_TEST_TUPLE_GET_T_REFS(&, &, &)
 CAMP_TEST_TUPLE_GET_T_REFS(&, &, &&)
-CAMP_TEST_TUPLE_GET_T_REFS(&, &, const &)
-CAMP_TEST_TUPLE_GET_T_REFS(&, &, const &&)
+CAMP_TEST_TUPLE_GET_T_REFS(&, &, const&)
+CAMP_TEST_TUPLE_GET_T_REFS(&, &, const&&)
 
-CAMP_TEST_TUPLE_GET_T_REFS(const &, const &, &)
-CAMP_TEST_TUPLE_GET_T_REFS(const &, const &, &&)
-CAMP_TEST_TUPLE_GET_T_REFS(const &, const &, const &)
-CAMP_TEST_TUPLE_GET_T_REFS(const &, const &, const &&)
+CAMP_TEST_TUPLE_GET_T_REFS(const&, const&, &)
+CAMP_TEST_TUPLE_GET_T_REFS(const&, const&, &&)
+CAMP_TEST_TUPLE_GET_T_REFS(const&, const&, const&)
+CAMP_TEST_TUPLE_GET_T_REFS(const&, const&, const&&)
 
 CAMP_TEST_TUPLE_GET_T_REFS(&, &&, &)
 CAMP_TEST_TUPLE_GET_T_REFS(&&, &&, &&)
-CAMP_TEST_TUPLE_GET_T_REFS(&, &&, const &)
-CAMP_TEST_TUPLE_GET_T_REFS(&&, &&, const &&)
+CAMP_TEST_TUPLE_GET_T_REFS(&, &&, const&)
+CAMP_TEST_TUPLE_GET_T_REFS(&&, &&, const&&)
 
-CAMP_TEST_TUPLE_GET_T_REFS(const &, const &&, &)
-CAMP_TEST_TUPLE_GET_T_REFS(const &&, const &&, &&)
-CAMP_TEST_TUPLE_GET_T_REFS(const &, const &&, const &)
-CAMP_TEST_TUPLE_GET_T_REFS(const &&, const &&, const &&)
+CAMP_TEST_TUPLE_GET_T_REFS(const&, const&&, &)
+CAMP_TEST_TUPLE_GET_T_REFS(const&&, const&&, &&)
+CAMP_TEST_TUPLE_GET_T_REFS(const&, const&&, const&)
+CAMP_TEST_TUPLE_GET_T_REFS(const&&, const&&, const&&)
 
 
 CAMP_TEST_TAGGED_TUPLE_GET_REFS(&, , &)
 CAMP_TEST_TAGGED_TUPLE_GET_REFS(&&, , &&)
-CAMP_TEST_TAGGED_TUPLE_GET_REFS(const &, , const &)
-CAMP_TEST_TAGGED_TUPLE_GET_REFS(const &&, , const &&)
+CAMP_TEST_TAGGED_TUPLE_GET_REFS(const&, , const&)
+CAMP_TEST_TAGGED_TUPLE_GET_REFS(const&&, , const&&)
 
 CAMP_TEST_TAGGED_TUPLE_GET_REFS(&, &, &)
 CAMP_TEST_TAGGED_TUPLE_GET_REFS(&, &, &&)
-CAMP_TEST_TAGGED_TUPLE_GET_REFS(&, &, const &)
-CAMP_TEST_TAGGED_TUPLE_GET_REFS(&, &, const &&)
+CAMP_TEST_TAGGED_TUPLE_GET_REFS(&, &, const&)
+CAMP_TEST_TAGGED_TUPLE_GET_REFS(&, &, const&&)
 
-CAMP_TEST_TAGGED_TUPLE_GET_REFS(const &, const &, &)
-CAMP_TEST_TAGGED_TUPLE_GET_REFS(const &, const &, &&)
-CAMP_TEST_TAGGED_TUPLE_GET_REFS(const &, const &, const &)
-CAMP_TEST_TAGGED_TUPLE_GET_REFS(const &, const &, const &&)
+CAMP_TEST_TAGGED_TUPLE_GET_REFS(const&, const&, &)
+CAMP_TEST_TAGGED_TUPLE_GET_REFS(const&, const&, &&)
+CAMP_TEST_TAGGED_TUPLE_GET_REFS(const&, const&, const&)
+CAMP_TEST_TAGGED_TUPLE_GET_REFS(const&, const&, const&&)
 
 CAMP_TEST_TAGGED_TUPLE_GET_REFS(&, &&, &)
 CAMP_TEST_TAGGED_TUPLE_GET_REFS(&&, &&, &&)
-CAMP_TEST_TAGGED_TUPLE_GET_REFS(&, &&, const &)
-CAMP_TEST_TAGGED_TUPLE_GET_REFS(&&, &&, const &&)
+CAMP_TEST_TAGGED_TUPLE_GET_REFS(&, &&, const&)
+CAMP_TEST_TAGGED_TUPLE_GET_REFS(&&, &&, const&&)
 
-CAMP_TEST_TAGGED_TUPLE_GET_REFS(const &, const &&, &)
-CAMP_TEST_TAGGED_TUPLE_GET_REFS(const &&, const &&, &&)
-CAMP_TEST_TAGGED_TUPLE_GET_REFS(const &, const &&, const &)
-CAMP_TEST_TAGGED_TUPLE_GET_REFS(const &&, const &&, const &&)
+CAMP_TEST_TAGGED_TUPLE_GET_REFS(const&, const&&, &)
+CAMP_TEST_TAGGED_TUPLE_GET_REFS(const&&, const&&, &&)
+CAMP_TEST_TAGGED_TUPLE_GET_REFS(const&, const&&, const&)
+CAMP_TEST_TAGGED_TUPLE_GET_REFS(const&&, const&&, const&&)
 
 
 CAMP_TEST_TAGGED_TUPLE_GET_T_REFS(&, , &)
 CAMP_TEST_TAGGED_TUPLE_GET_T_REFS(&&, , &&)
-CAMP_TEST_TAGGED_TUPLE_GET_T_REFS(const &, , const &)
-CAMP_TEST_TAGGED_TUPLE_GET_T_REFS(const &&, , const &&)
+CAMP_TEST_TAGGED_TUPLE_GET_T_REFS(const&, , const&)
+CAMP_TEST_TAGGED_TUPLE_GET_T_REFS(const&&, , const&&)
 
 CAMP_TEST_TAGGED_TUPLE_GET_T_REFS(&, &, &)
 CAMP_TEST_TAGGED_TUPLE_GET_T_REFS(&, &, &&)
-CAMP_TEST_TAGGED_TUPLE_GET_T_REFS(&, &, const &)
-CAMP_TEST_TAGGED_TUPLE_GET_T_REFS(&, &, const &&)
+CAMP_TEST_TAGGED_TUPLE_GET_T_REFS(&, &, const&)
+CAMP_TEST_TAGGED_TUPLE_GET_T_REFS(&, &, const&&)
 
-CAMP_TEST_TAGGED_TUPLE_GET_T_REFS(const &, const &, &)
-CAMP_TEST_TAGGED_TUPLE_GET_T_REFS(const &, const &, &&)
-CAMP_TEST_TAGGED_TUPLE_GET_T_REFS(const &, const &, const &)
-CAMP_TEST_TAGGED_TUPLE_GET_T_REFS(const &, const &, const &&)
+CAMP_TEST_TAGGED_TUPLE_GET_T_REFS(const&, const&, &)
+CAMP_TEST_TAGGED_TUPLE_GET_T_REFS(const&, const&, &&)
+CAMP_TEST_TAGGED_TUPLE_GET_T_REFS(const&, const&, const&)
+CAMP_TEST_TAGGED_TUPLE_GET_T_REFS(const&, const&, const&&)
 
 CAMP_TEST_TAGGED_TUPLE_GET_T_REFS(&, &&, &)
 CAMP_TEST_TAGGED_TUPLE_GET_T_REFS(&&, &&, &&)
-CAMP_TEST_TAGGED_TUPLE_GET_T_REFS(&, &&, const &)
-CAMP_TEST_TAGGED_TUPLE_GET_T_REFS(&&, &&, const &&)
+CAMP_TEST_TAGGED_TUPLE_GET_T_REFS(&, &&, const&)
+CAMP_TEST_TAGGED_TUPLE_GET_T_REFS(&&, &&, const&&)
 
-CAMP_TEST_TAGGED_TUPLE_GET_T_REFS(const &, const &&, &)
-CAMP_TEST_TAGGED_TUPLE_GET_T_REFS(const &&, const &&, &&)
-CAMP_TEST_TAGGED_TUPLE_GET_T_REFS(const &, const &&, const &)
-CAMP_TEST_TAGGED_TUPLE_GET_T_REFS(const &&, const &&, const &&)
+CAMP_TEST_TAGGED_TUPLE_GET_T_REFS(const&, const&&, &)
+CAMP_TEST_TAGGED_TUPLE_GET_T_REFS(const&&, const&&, &&)
+CAMP_TEST_TAGGED_TUPLE_GET_T_REFS(const&, const&&, const&)
+CAMP_TEST_TAGGED_TUPLE_GET_T_REFS(const&&, const&&, const&&)
 
 // Size tests, ensure that EBO is being applied
 struct A {
@@ -242,17 +241,17 @@ TEST(CampTuple, Assign)
 
 struct MoveOnly {
   MoveOnly() = default;
-  MoveOnly(MoveOnly const &) = delete;
-  MoveOnly(MoveOnly &&) = default;
-  MoveOnly &operator=(MoveOnly const &) = delete;
-  MoveOnly &operator=(MoveOnly &&) = default;
+  MoveOnly(MoveOnly const&) = delete;
+  MoveOnly(MoveOnly&&) = default;
+  MoveOnly& operator=(MoveOnly const&) = delete;
+  MoveOnly& operator=(MoveOnly&&) = default;
 };
 
 TEST(CampTuple, ForwardAsTuple)
 {
   int a, b;
   const int d{7};
-  [](camp::tuple<int &, int &, int &&, MoveOnly &&, int const &&> t) {
+  [](camp::tuple<int&, int&, int&&, MoveOnly&&, int const&&> t) {
     MoveOnly c{camp::get<3>(std::move(t))};
     ASSERT_NE(&c, nullptr);
     ASSERT_EQ(camp::get<2>(t), 5);
@@ -324,7 +323,7 @@ struct NoDefCon {
 
   NoDefCon(int i) : num{i} { (void)num; }
 
-  NoDefCon(NoDefCon const &) = default;
+  NoDefCon(NoDefCon const&) = default;
 
 private:
   int num;
@@ -383,7 +382,7 @@ TEST(CampTuple, StructuredBindingsConst)
 TEST(CampTuple, StructuredBindingsRef)
 {
   auto t = camp::make_tuple(3, 9.9);
-  auto &[a, b] = t;
+  auto& [a, b] = t;
   static_assert(std::is_same<decltype(a), int>::value);     // Not an int &
   static_assert(std::is_same<decltype(b), double>::value);  // Not a double &
   ASSERT_EQ(a, 3);
@@ -398,7 +397,7 @@ TEST(CampTuple, StructuredBindingsRef)
 TEST(CampTuple, StructuredBindingsRefConst)
 {
   auto t = camp::make_tuple(3, 9.9);
-  const auto &[a, b] = t;
+  const auto& [a, b] = t;
   static_assert(
       std::is_same<decltype(a), const int>::value);  // Not an const int &
   static_assert(
@@ -454,7 +453,7 @@ TEST(CampFilterByTypeTrait, MakeFilteredTuple)
                                     OtherType<int>,
                                     SearchType<int>,
                                     camp::tuple<double>>;
-  using ExpectedTupleType = camp::tuple<SearchType<int> &, SearchType<int> &>;
+  using ExpectedTupleType = camp::tuple<SearchType<int>&, SearchType<int>&>;
   auto base_tuple = BaseTupleType{};
   auto filtered_tuple =
       camp::get_refs_to_elements_by_type_trait<IsSearchType>(base_tuple);
@@ -469,7 +468,7 @@ TEST(CampFilterByTypeTrait, SearchTypeAtEnd)
                                     OtherType<int>,
                                     camp::tuple<SearchType<int>>,
                                     SearchType<int>>;
-  using ExpectedTupleType = camp::tuple<SearchType<int> &>;
+  using ExpectedTupleType = camp::tuple<SearchType<int>&>;
   auto base_tuple = BaseTupleType{};
   auto filtered_tuple =
       camp::get_refs_to_elements_by_type_trait<IsSearchType>(base_tuple);
@@ -484,7 +483,7 @@ TEST(CampFilterByTypeTrait, SearchTypeAtStart)
                                     OtherType<SearchType<int>>,
                                     OtherType<int>,
                                     camp::tuple<SearchType<int>>>;
-  using ExpectedTupleType = camp::tuple<SearchType<OtherType<double>> &>;
+  using ExpectedTupleType = camp::tuple<SearchType<OtherType<double>>&>;
   auto base_tuple = BaseTupleType{};
   auto filtered_tuple =
       camp::get_refs_to_elements_by_type_trait<IsSearchType>(base_tuple);
@@ -522,7 +521,7 @@ TEST(CampFilterByTypeTrait, SingletonTuple)
 TEST(CampFilterByTypeTrait, SingletonTupleTwo)
 {
   using BaseTupleType = camp::tuple<SearchType<int>>;
-  using ExpectedTupleType = camp::tuple<SearchType<int> &>;
+  using ExpectedTupleType = camp::tuple<SearchType<int>&>;
   auto base_tuple = BaseTupleType{};
   auto filtered_tuple =
       camp::get_refs_to_elements_by_type_trait<IsSearchType>(base_tuple);
@@ -533,10 +532,10 @@ TEST(CampFilterByTypeTrait, SingletonTupleTwo)
 
 TEST(CampFilterByTypeTrait, UndecayedSearchTypes)
 {
-  using BaseTupleType = camp::tuple<SearchType<OtherType<double>> *,
+  using BaseTupleType = camp::tuple<SearchType<OtherType<double>>*,
                                     SearchType<SearchType<double>>,
                                     OtherType<int>>;
-  using ExpectedTupleType = camp::tuple<SearchType<SearchType<double>> &>;
+  using ExpectedTupleType = camp::tuple<SearchType<SearchType<double>>&>;
   auto base_tuple = BaseTupleType{};
   auto filtered_tuple =
       camp::get_refs_to_elements_by_type_trait<IsSearchType>(base_tuple);

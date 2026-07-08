@@ -16,8 +16,8 @@
 
 #include <cuda_runtime.h>
 
-#include <cstddef>
 #include <array>
+#include <cstddef>
 #include <mutex>
 #include <utility>
 
@@ -76,15 +76,14 @@ namespace resources
     class CudaEvent
     {
     public:
-      explicit CudaEvent(cudaStream_t stream)
-        : m_event(init(stream))
-      {}
+      explicit CudaEvent(cudaStream_t stream) : m_event(init(stream)) {}
 
       CudaEvent(CudaEvent const&) = delete;
 
       CudaEvent(CudaEvent&& rhs) noexcept
-        : m_event(std::exchange(rhs.m_event, nullptr))
-      {}
+          : m_event(std::exchange(rhs.m_event, nullptr))
+      {
+      }
 
       CudaEvent& operator=(CudaEvent const&) = delete;
 
@@ -95,10 +94,7 @@ namespace resources
         return *this;
       }
 
-      ~CudaEvent()
-      {
-        finalize(m_event);
-      }
+      ~CudaEvent() { finalize(m_event); }
 
       Platform get_platform() const { return Platform::cuda; }
 
@@ -121,7 +117,8 @@ namespace resources
        *
        * \return True if both refer to the same cuda event, false otherwise.
        */
-      friend inline bool operator==(CudaEvent const& lhs, CudaEvent const& rhs) = default;
+      friend inline bool operator==(CudaEvent const& lhs,
+                                    CudaEvent const& rhs) = default;
 
       size_t get_hash() const
       {
@@ -160,7 +157,7 @@ namespace resources
         static constexpr int num_streams = 16;
         static std::array<cudaStream_t, num_streams> s_streams = [] {
           std::array<cudaStream_t, num_streams> streams;
-          for (auto &s : streams) {
+          for (auto& s : streams) {
             CAMP_CUDA_API_INVOKE_AND_CHECK(cudaStreamCreate, &s);
           }
           return streams;
@@ -181,7 +178,7 @@ namespace resources
       // Private from-stream constructor
       Cuda(cudaStream_t s, int dev = 0) : stream(s), device(dev) {}
 
-      MemoryAccess get_access_type(void *p)
+      MemoryAccess get_access_type(void* p)
       {
         cudaPointerAttributes a;
         cudaError_t status = cudaPointerGetAttributes(&a, p);
@@ -275,28 +272,28 @@ namespace resources
 
       // Memory
       template <typename T>
-      T *allocate(size_t size, MemoryAccess ma = MemoryAccess::Device)
+      T* allocate(size_t size, MemoryAccess ma = MemoryAccess::Device)
       {
-        T *ret = nullptr;
+        T* ret = nullptr;
         if (size > 0) {
           auto d{device_guard(device)};
           switch (ma) {
             case MemoryAccess::Unknown:
             case MemoryAccess::Device:
               CAMP_CUDA_API_INVOKE_AND_CHECK(cudaMalloc,
-                                             (void **)&ret,
+                                             (void**)&ret,
                                              sizeof(T) * size);
               break;
             case MemoryAccess::Pinned:
               // TODO: do a test here for whether managed is *actually* shared
               // so we can use the better performing memory
               CAMP_CUDA_API_INVOKE_AND_CHECK(cudaMallocHost,
-                                             (void **)&ret,
+                                             (void**)&ret,
                                              sizeof(T) * size);
               break;
             case MemoryAccess::Managed:
               CAMP_CUDA_API_INVOKE_AND_CHECK(cudaMallocManaged,
-                                             (void **)&ret,
+                                             (void**)&ret,
                                              sizeof(T) * size);
               break;
           }
@@ -304,14 +301,14 @@ namespace resources
         return ret;
       }
 
-      void *calloc(size_t size, MemoryAccess ma = MemoryAccess::Device)
+      void* calloc(size_t size, MemoryAccess ma = MemoryAccess::Device)
       {
-        void *p = allocate<char>(size, ma);
+        void* p = allocate<char>(size, ma);
         this->memset(p, 0, size);
         return p;
       }
 
-      void deallocate(void *p, MemoryAccess ma = MemoryAccess::Unknown)
+      void deallocate(void* p, MemoryAccess ma = MemoryAccess::Unknown)
       {
         auto d{device_guard(device)};
         if (ma == MemoryAccess::Unknown) {
@@ -335,7 +332,7 @@ namespace resources
         }
       }
 
-      void memcpy(void *dst, const void *src, size_t size)
+      void memcpy(void* dst, const void* src, size_t size)
       {
         if (size > 0) {
           auto d{device_guard(device)};
@@ -344,7 +341,7 @@ namespace resources
         }
       }
 
-      void memset(void *p, int val, size_t size)
+      void memset(void* p, int val, size_t size)
       {
         if (size > 0) {
           auto d{device_guard(device)};
@@ -366,7 +363,7 @@ namespace resources
       size_t get_hash() const
       {
         const size_t cuda_type = size_t(get_platform()) << 32;
-        size_t stream_hash = std::hash<void *>{}(static_cast<void *>(stream));
+        size_t stream_hash = std::hash<void*>{}(static_cast<void*>(stream));
         return cuda_type | (stream_hash & 0xFFFFFFFF);
       }
 
@@ -394,7 +391,7 @@ namespace std
  */
 template <>
 struct hash<camp::resources::CudaEvent> {
-  std::size_t operator()(const camp::resources::CudaEvent &e) const
+  std::size_t operator()(const camp::resources::CudaEvent& e) const
   {
     return e.get_hash();
   }
@@ -411,7 +408,7 @@ struct hash<camp::resources::CudaEvent> {
  */
 template <>
 struct hash<camp::resources::Cuda> {
-  std::size_t operator()(const camp::resources::Cuda &c) const
+  std::size_t operator()(const camp::resources::Cuda& c) const
   {
     return c.get_hash();
   }

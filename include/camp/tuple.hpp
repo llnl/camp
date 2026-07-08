@@ -789,7 +789,8 @@ struct tuple_size<camp::tagged_tuple<TagList, Elements...>> {
 
 template <size_t i, typename TagList, typename... Elements>
 struct tuple_element<i, camp::tagged_tuple<TagList, Elements...>> {
-  using type = camp::at_v<typename camp::tagged_tuple<TagList, Elements...>::TList, i>;
+  using type =
+      camp::at_v<typename camp::tagged_tuple<TagList, Elements...>::TList, i>;
 };
 }  // namespace std
 

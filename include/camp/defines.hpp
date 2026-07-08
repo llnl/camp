@@ -176,10 +176,10 @@ using nullptr_t = decltype(nullptr);
 
 /// Throw a runtime_error, avoid including exception everywhere
 [[noreturn]]
-CAMP_DLL_EXPORT void throw_re(const char *s);
+CAMP_DLL_EXPORT void throw_re(const char* s);
 ///
 [[noreturn]]
-CAMP_DLL_EXPORT void throw_re(std::string const &s);
+CAMP_DLL_EXPORT void throw_re(std::string const& s);
 
 #ifdef CAMP_ENABLE_CUDA
 
@@ -190,7 +190,7 @@ CAMP_DLL_EXPORT void throw_re(std::string const &s);
 
 [[deprecated]]
 CAMP_DLL_EXPORT cudaError_t
-cudaAssert(cudaError_t code, const char *call, const char *file, int line);
+cudaAssert(cudaError_t code, const char* call, const char* file, int line);
 
 /// Invoke the given CUDA API function and report CUDA error codes.
 ///
@@ -237,7 +237,7 @@ cudaAssert(cudaError_t code, const char *call, const char *file, int line);
 
 [[deprecated]]
 CAMP_DLL_EXPORT hipError_t
-hipAssert(hipError_t code, const char *call, const char *file, int line);
+hipAssert(hipError_t code, const char* call, const char* file, int line);
 
 
 /// Invoke the given HIP API function and report HIP error codes.
