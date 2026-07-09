@@ -149,8 +149,7 @@ target_include_directories (camp PUBLIC
   $<INSTALL_INTERFACE:include>
   )
 set_target_properties (camp PROPERTIES
-  INTERFACE_LIB_VERSION ${PROJECT_VERSION}
-  INTERFACE_COMPILE_FEATURES cxx_std_20)
+  INTERFACE_LIB_VERSION ${PROJECT_VERSION})
 
 include(CMakePackageConfigHelpers)
 
