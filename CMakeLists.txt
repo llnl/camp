@@ -112,8 +112,8 @@ if (ENABLE_CUDA)
 endif ()
 
 if (ENABLE_HIP)
-  if("${hip_VERSION}" VERSION_LESS "6.2")
-    message(FATAL_ERROR "Trying to use HIP/ROCm version ${hip_VERSION}. CAMP requires HIP/ROCm version 6.2 or newer. ")
+  if("${hip_VERSION}" VERSION_LESS "6.0")
+    message(FATAL_ERROR "Trying to use HIP/ROCm version ${hip_VERSION}. CAMP requires HIP/ROCm version 6.0 or newer. ")
   endif()
 endif ()
 
