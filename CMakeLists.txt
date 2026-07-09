@@ -11,7 +11,7 @@ cmake_minimum_required (VERSION 3.10)
 
 project (camp
   LANGUAGES CXX C
-  VERSION 2025.12.0)
+  VERSION 2026.07.0)
 
 set(camp_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
 set(camp_VERSION_MINOR ${PROJECT_VERSION_MINOR})
@@ -106,14 +106,14 @@ cmake_dependent_option(CAMP_ENABLE_TARGET_OPENMP "Enable OpenMP offload as
 device runtime" Off "CAMP_ENABLE_OPENMP" Off)
 
 if (ENABLE_CUDA)
-  if("${CUDA_VERSION_STRING}" VERSION_LESS "10.1")
-    message(FATAL_ERROR "Trying to use CUDA version ${CUDA_VERSION_STRING}. CAMP requires CUDA version 10.1 or newer.")
+  if("${CUDA_VERSION_STRING}" VERSION_LESS "12.0")
+    message(FATAL_ERROR "Trying to use CUDA version ${CUDA_VERSION_STRING}. CAMP requires CUDA version 12.0 or newer.")
   endif()
 endif ()
 
 if (ENABLE_HIP)
-  if("${hip_VERSION}" VERSION_LESS "3.5")
-    message(FATAL_ERROR "Trying to use HIP/ROCm version ${hip_VERSION}. CAMP requires HIP/ROCm version 3.5 or newer. ")
+  if("${hip_VERSION}" VERSION_LESS "6.2")
+    message(FATAL_ERROR "Trying to use HIP/ROCm version ${hip_VERSION}. CAMP requires HIP/ROCm version 6.2 or newer. ")
   endif()
 endif ()
 
@@ -150,7 +150,7 @@ target_include_directories (camp PUBLIC
   )
 set_target_properties (camp PROPERTIES
   INTERFACE_LIB_VERSION ${PROJECT_VERSION}
-  INTERFACE_COMPILE_FEATURES cxx_std_14)
+  INTERFACE_COMPILE_FEATURES cxx_std_20)
 
 include(CMakePackageConfigHelpers)
 
