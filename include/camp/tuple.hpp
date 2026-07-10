@@ -701,7 +701,8 @@ CAMP_HOST_DEVICE constexpr auto invoke_with_order(TupleLike&& tup,
                                                   Fn&& f,
                                                   camp::idx_seq<Sequence...>)
 {
-  return f(::camp::get<Sequence>(std::forward<TupleLike>(tup))...);
+  using ::camp::get;
+  return f(get<Sequence>(std::forward<TupleLike>(tup))...);
 }
 
 CAMP_SUPPRESS_HD_WARN
