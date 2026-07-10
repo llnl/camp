@@ -21,6 +21,7 @@
 #include "camp/map.hpp"
 #include "camp/number.hpp"
 #include "camp/size.hpp"
+#include "camp/array.hpp"
 #include "camp/tuple.hpp"
 #include "camp/value.hpp"
 
