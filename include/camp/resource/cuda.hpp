@@ -303,13 +303,19 @@ namespace resources
 
       void* calloc(size_t size, MemoryAccess ma = MemoryAccess::Device)
       {
-        void* p = allocate<char>(size, ma);
-        this->memset(p, 0, size);
-        return p;
+        T* ret = nullptr;
+        if (size > 0) {
+          ret = allocate<char>(size, ma);
+          this->memset(ret, 0, size);
+        }
+        return ret;
       }
 
       void deallocate(void* p, MemoryAccess ma = MemoryAccess::Unknown)
       {
+        if (p == nullptr) {
+          return;
+        }
         auto d{device_guard(device)};
         if (ma == MemoryAccess::Unknown) {
           ma = get_access_type(p);

@@ -219,22 +219,31 @@ namespace resources
       template <typename T>
       T* allocate(size_t size, MemoryAccess ma = MemoryAccess::Device)
       {
-        check_ma(ma);
-        T* ret = static_cast<T*>(omp_target_alloc(sizeof(T) * size, dev));
-        register_ptr_dev(ret, dev);
+        T* ret = nullptr;
+        if (size > 0) {
+          check_ma(ma);
+          ret = static_cast<T*>(omp_target_alloc(sizeof(T) * size, dev));
+          register_ptr_dev(ret, dev);
+        }
         return ret;
       }
 
       void* calloc(size_t size, MemoryAccess ma = MemoryAccess::Device)
       {
-        check_ma(ma);
-        void* p = allocate<char>(size);
-        this->memset(p, 0, size);
-        return p;
+        void* ret = nullptr;
+        if (size > 0) {
+          check_ma(ma);
+          void* ret = allocate<char>(size);
+          this->memset(ret, 0, size);
+        }
+        return ret;
       }
 
       void deallocate(void* p, MemoryAccess ma = MemoryAccess::Device)
       {
+        if (p == nullptr) {
+          return;
+        }
         check_ma(ma);
         deregister_ptr_dev(p);
         omp_target_free(p, dev);
@@ -242,22 +251,26 @@ namespace resources
 
       void memcpy(void* dst, const void* src, size_t size)
       {
-        // this is truly, insanely awful, need to think of something better
-        int dd = get_ptr_dev(dst);
-        int sd = get_ptr_dev(src);
-        // extra cast due to GCC openmp header bug
-        omp_target_memcpy(dst, (void*)src, size, 0, 0, dd, sd);
+        if (size > 0) {
+          // this is truly, insanely awful, need to think of something better
+          int dd = get_ptr_dev(dst);
+          int sd = get_ptr_dev(src);
+          // extra cast due to GCC openmp header bug
+          omp_target_memcpy(dst, (void*)src, size, 0, 0, dd, sd);
+        }
       }
 
       void memset(void* p, int val, size_t size)
       {
-        char* local_addr = addr;
-        CAMP_ALLOW_UNUSED_LOCAL(local_addr);
-        char* pc = (char*)p;
+        if (size > 0) {
+          char* local_addr = addr;
+          CAMP_ALLOW_UNUSED_LOCAL(local_addr);
+          char* pc = (char*)p;
 #pragma omp target teams distribute parallel for device(dev) \
     depend(inout : local_addr[0]) is_device_ptr(pc) nowait
-        for (size_t i = 0; i < size; ++i) {
-          pc[i] = val;
+          for (size_t i = 0; i < size; ++i) {
+            pc[i] = val;
+          }
         }
       }
 

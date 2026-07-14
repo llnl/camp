@@ -358,13 +358,19 @@ namespace resources
 
       void* calloc(size_t size, MemoryAccess ma = MemoryAccess::Device)
       {
-        void* p = allocate<char>(size, ma);
-        this->memset(p, 0, size);
-        return p;
+        T* ret = nullptr;
+        if (size > 0) {
+          ret = allocate<char>(size, ma);
+          this->memset(ret, 0, size);
+        }
+        return ret;
       }
 
       void deallocate(void* p, MemoryAccess ma = MemoryAccess::Device)
       {
+        if (p == nullptr) {
+          return;
+        }
         CAMP_ALLOW_UNUSED_LOCAL(ma);
         sycl::free(p, qu);
       }
