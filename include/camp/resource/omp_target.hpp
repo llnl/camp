@@ -235,7 +235,9 @@ namespace resources
         }
         check_ma(ma);
         void* ret = allocate<char>(size);
-        this->memset(ret, 0, size);
+        if (ret != nullptr) {
+          this->memset(ret, 0, size);
+        }
         return ret;
       }
 

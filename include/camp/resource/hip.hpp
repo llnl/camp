@@ -308,7 +308,9 @@ namespace resources
           return nullptr;
         }
         void* ret = allocate<char>(size, ma);
-        this->memset(ret, 0, size);
+        if (ret != nullptr) {
+          this->memset(ret, 0, size);
+        }
         return ret;
       }
 
