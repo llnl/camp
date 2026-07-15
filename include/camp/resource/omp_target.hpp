@@ -278,6 +278,9 @@ namespace resources
 
       void register_ptr_dev(void* p, int device)
       {
+        if (p == nullptr) {
+          return;
+        }
 #pragma omp critical(camp_register_ptr)
         {
           get_dev_register()[p] = device;
@@ -286,6 +289,9 @@ namespace resources
 
       void deregister_ptr_dev(void const* p)
       {
+        if (p == nullptr) {
+          return;
+        }
 #pragma omp critical(camp_register_ptr)
         {
           get_dev_register().erase(p);
@@ -295,6 +301,9 @@ namespace resources
       int get_ptr_dev(void const* p)
       {
         int ret = omp_get_initial_device();
+        if (p == nullptr) {
+          return ret;
+        }
 #pragma omp critical(camp_register_ptr)
         {
           auto it = get_dev_register().find(p);
