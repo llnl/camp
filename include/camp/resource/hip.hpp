@@ -184,11 +184,7 @@ namespace resources
         hipPointerAttribute_t a;
         hipError_t status = hipPointerGetAttributes(&a, p);
         if (status == hipSuccess) {
-#if (HIP_VERSION_MAJOR >= 6)
           switch (a.type) {
-#else
-          switch (a.memoryType) {
-#endif
             case hipMemoryTypeHost:
               return MemoryAccess::Pinned;
             case hipMemoryTypeDevice:
