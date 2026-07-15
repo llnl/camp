@@ -114,11 +114,17 @@ namespace resources
       template <typename T>
       T* allocate(size_t n, MemoryAccess = MemoryAccess::Device)
       {
+        if (n == 0) {
+          return nullptr;
+        }
         return (T*)std::malloc(sizeof(T) * n);
       }
 
       void* calloc(size_t size, MemoryAccess = MemoryAccess::Device)
       {
+        if (size == 0) {
+          return nullptr;
+        }
         void* p = allocate<char>(size);
         this->memset(p, 0, size);
         return p;
@@ -126,15 +132,27 @@ namespace resources
 
       void deallocate(void* p, MemoryAccess = MemoryAccess::Device)
       {
+        if (p == nullptr) {
+          return;
+        }
         std::free(p);
       }
 
       void memcpy(void* dst, const void* src, size_t size)
       {
+        if (size == 0) {
+          return;
+        }
         std::memcpy(dst, src, size);
       }
 
-      void memset(void* p, int val, size_t size) { std::memset(p, val, size); }
+      void memset(void* p, int val, size_t size)
+      {
+        if (size == 0) {
+          return;
+        }
+        std::memset(p, val, size);
+      }
 
       /*
        * \brief Compares two (Host) resources to see if they are equal

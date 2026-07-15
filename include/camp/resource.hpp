@@ -109,15 +109,15 @@ namespace resources
       }
 
       template <typename T>
-      T* allocate(size_t size, MemoryAccess ma = MemoryAccess::Device)
+      T* allocate(size_t n, MemoryAccess ma = MemoryAccess::Device)
       {
-        if (size == 0) {
+        if (n == 0) {
           return nullptr;
         }
         if (!m_value) {
           ::camp::throw_re("Empty Resource type allocate call.");
         }
-        return (T*)m_value->allocate(size * sizeof(T), ma);
+        return (T*)m_value->allocate(n * sizeof(T), ma);
       }
 
       void* calloc(size_t size, MemoryAccess ma = MemoryAccess::Device)
