@@ -193,7 +193,7 @@ namespace resources
               return MemoryAccess::Pinned;
             case hipMemoryTypeDevice:
               return MemoryAccess::Device;
-            case hipMemoryTypeUnified:
+            case hipMemoryTypeManaged:
               return MemoryAccess::Managed;
             default:
               return MemoryAccess::Unknown;
