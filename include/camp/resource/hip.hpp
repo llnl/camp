@@ -282,7 +282,6 @@ namespace resources
         T* ret = nullptr;
         auto d{device_guard(device)};
         switch (ma) {
-          case MemoryAccess::Unknown:
           case MemoryAccess::Device:
             CAMP_HIP_API_INVOKE_AND_CHECK(hipMalloc,
                                           (void**)&ret,
@@ -299,6 +298,9 @@ namespace resources
             CAMP_HIP_API_INVOKE_AND_CHECK(hipMallocManaged,
                                           (void**)&ret,
                                           sizeof(T) * n);
+            break;
+          case MemoryAccess::Unknown:
+            ::camp::throw_re("Unknown memory access type, cannot allocate");
             break;
         }
         return ret;

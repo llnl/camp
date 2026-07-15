@@ -184,14 +184,14 @@ namespace resources
         cudaError_t status = cudaPointerGetAttributes(&a, p);
         if (status == cudaSuccess) {
           switch (a.type) {
-            case cudaMemoryTypeUnregistered:
-              return MemoryAccess::Unknown;
             case cudaMemoryTypeHost:
               return MemoryAccess::Pinned;
             case cudaMemoryTypeDevice:
               return MemoryAccess::Device;
             case cudaMemoryTypeManaged:
               return MemoryAccess::Managed;
+            default:
+              return MemoryAccess::Unknown;
           }
         }
         ::camp::throw_re("invalid pointer detected");
@@ -280,7 +280,6 @@ namespace resources
         T* ret = nullptr;
         auto d{device_guard(device)};
         switch (ma) {
-          case MemoryAccess::Unknown:
           case MemoryAccess::Device:
             CAMP_CUDA_API_INVOKE_AND_CHECK(cudaMalloc,
                                            (void**)&ret,
@@ -297,6 +296,9 @@ namespace resources
             CAMP_CUDA_API_INVOKE_AND_CHECK(cudaMallocManaged,
                                            (void**)&ret,
                                            sizeof(T) * n);
+            break;
+          case MemoryAccess::Unknown:
+            ::camp::throw_re("Unknown memory access type, cannot allocate");
             break;
         }
         return ret;

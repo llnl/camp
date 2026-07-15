@@ -342,7 +342,6 @@ namespace resources
         }
         T* ret = nullptr;
         switch (ma) {
-          case MemoryAccess::Unknown:
           case MemoryAccess::Device:
             ret = sycl::malloc_device<T>(n, qu);
             break;
@@ -351,6 +350,9 @@ namespace resources
             break;
           case MemoryAccess::Managed:
             ret = sycl::malloc_shared<T>(n, qu);
+            break;
+          case MemoryAccess::Unknown:
+            ::camp::throw_re("Unknown memory access type, cannot allocate");
             break;
         }
         return ret;
