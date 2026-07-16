@@ -34,7 +34,9 @@ FROM nvidia/cuda:${VER}${CUDA_IMG_SUFFIX} AS nvcc
 
 FROM nvcr.io/nvidia/nvhpc:23.3-devel-cuda12.0-ubuntu24.04 AS nvhpc
 
-FROM rocm/dev-ubuntu-24.04:${VER} AS rocm
+## Try radiuss image to see if it uses less memory
+#FROM rocm/dev-ubuntu-24.04:${VER} AS rocm
+FROM ghcr.io/llnl/radiuss:hip-6.4.3-ubuntu-24.04 AS rocm
 
 # The intel-runtime container no longer works, use the fat one
 FROM intel/oneapi:${VER} AS oneapi
