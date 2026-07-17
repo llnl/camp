@@ -68,8 +68,7 @@ RUN /bin/bash -lc '[[ -f ~/setup_env.sh ]] && source ~/setup_env.sh ; \
   fi ; \
   ${PRE_CMD} && cmake ${CMAKE_OPTIONS} -DCMAKE_CXX_COMPILER="${CXX}" ..'
 RUN /bin/bash -c "[[ -f ~/setup_env.sh ]] && source ~/setup_env.sh ; ${PRE_CMD} && cmake ${CMAKE_BUILD_OPTS}"
-RUN /bin/bash -c "[[ -f ~/setup_env.sh ]] && source ~/setup_env.sh ; ${PRE_CMD} && cd build && ctest ${CTEST_OPTIONS}" && \
-make clean
+RUN /bin/bash -c "[[ -f ~/setup_env.sh ]] && source ~/setup_env.sh ; ${PRE_CMD} && cd build && ctest ${CTEST_OPTIONS}"
 
 # this is here to stop azure from downloading oneapi for every test
 FROM alpine AS download_fast
