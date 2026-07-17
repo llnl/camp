@@ -85,8 +85,8 @@ jobs:
         build_type: Debug
       rocm:
         base_img: rocm
-        cmake_extra: -DROCM_PATH=/opt/rocm -DENABLE_HIP=On -DENABLE_OPENMP=Off -DENABLE_CUDA=Off
-        compiler: /opt/rocm/llvm/bin/amdclang++
+        cmake_extra: -DROCM_PATH=/opt/rocm-6.4.3 -DENABLE_HIP=On -DENABLE_OPENMP=Off -DENABLE_CUDA=Off
+        compiler: /opt/rocm-6.4.3/bin/amdclang++
       sycl:
         base_img: oneapi
         cmake_extra: -DENABLE_SYCL=On
