@@ -147,7 +147,7 @@ jobs:
             CMAKE_BUILD_TYPE=Release
             ${{ matrix.shared.args }}
           run-build: true
-          build-args: '--parallel 16'
+          build-args: '--config Release --parallel 16'
 ## ====================================
 ## Print the contents of the test directory in the build space (debugging)
 ##    - run: |
