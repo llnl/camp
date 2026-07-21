@@ -64,7 +64,7 @@ jobs:
 #            parallel: 4
           - name: rocm
             base_img: rocm
-            ver: latest
+            ver: 6.4.3
             compiler: /opt/rocm/llvm/bin/amdclang++
             pre_cmd: "true"
             build_type: RelWithDebInfo
