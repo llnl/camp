@@ -35,6 +35,7 @@ FROM nvidia/cuda:${VER}${CUDA_IMG_SUFFIX} AS nvcc
 FROM nvcr.io/nvidia/nvhpc:23.3-devel-cuda12.0-ubuntu24.04 AS nvhpc
 
 FROM rocm/dev-ubuntu-24.04:${VER} AS rocm
+ENV LD_LIBRARY_PATH=/opt/rocm/lib:${LD_LIBRARY_PATH}
 
 # The intel-runtime container no longer works, use the fat one
 FROM intel/oneapi:${VER} AS oneapi
