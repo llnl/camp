@@ -3,7 +3,6 @@ on:
 name: Build
 jobs:
   build_docker:
-    name: Docker (${{ matrix.name }})
     strategy:
       fail-fast: false
       matrix:
