@@ -125,11 +125,7 @@ namespace resources
         if (size == 0) {
           return nullptr;
         }
-        void* ret = allocate<char>(size);
-        if (ret != nullptr) {
-          this->memset(ret, 0, size);
-        }
-        return ret;
+        return std::calloc(size, 1);
       }
 
       void deallocate(void* p, MemoryAccess = MemoryAccess::Device)
