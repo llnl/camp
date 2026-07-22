@@ -62,9 +62,18 @@ jobs:
             cmake_extra: -DENABLE_CUDA=On -DCMAKE_CUDA_ARCHITECTURES=70
             ctest_extra: "-E '(.*offload|blt.*smoke|cuda_.*|hip_.*|CampEvent|CampResource)'"
             parallel: 4
-          - name: rocm
+          - name: rocm-6.4.3
             base_img: rocm
             ver: 6.4.3
+            compiler: /opt/rocm/llvm/bin/amdclang++
+            pre_cmd: "true"
+            build_type: RelWithDebInfo
+            cmake_extra: -DROCM_PATH=/opt/rocm -DENABLE_HIP=On -DENABLE_OPENMP=Off -DENABLE_CUDA=Off
+            ctest_extra: "-E '(.*offload|blt.*smoke|cuda_.*|hip_.*|CampEvent|CampResource)'"
+            parallel: 4
+          - name: rocm-latest
+            base_img: rocm
+            ver: latest
             compiler: /opt/rocm/llvm/bin/amdclang++
             pre_cmd: "true"
             build_type: RelWithDebInfo
