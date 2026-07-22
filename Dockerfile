@@ -20,7 +20,7 @@ RUN cmake -G Ninja -B build \
       -DENABLE_WARNINGS_AS_ERRORS=On \
       -DENABLE_COVERAGE=On .. && \
     cmake --build build --verbose --parallel 4 && \
-    cd build && ctest ${CTEST_EXTRA} -T test -V
+    cd build && ctest "${CTEST_EXTRA}" -T test -V
 
 FROM ghcr.io/llnl/radiuss:gcc-11-ubuntu-24.04 AS gcc11
 ENV GTEST_COLOR=1
@@ -31,7 +31,7 @@ RUN cmake -G Ninja -B build \
       -DCMAKE_BUILD_TYPE=RelWithDebInfo \
       -DENABLE_WARNINGS=On .. && \
     cmake --build build --verbose --parallel 4 && \
-    cd build && ctest ${CTEST_EXTRA} -T test -V
+    cd build && ctest "${CTEST_EXTRA}" -T test -V
 
 FROM ghcr.io/llnl/radiuss:gcc-14-ubuntu-24.04 AS gcc14
 ENV GTEST_COLOR=1
@@ -42,7 +42,7 @@ RUN cmake -G Ninja -B build \
       -DCMAKE_BUILD_TYPE=RelWithDebInfo \
       -DENABLE_WARNINGS=On .. && \
     cmake --build build --verbose --parallel 4 && \
-    cd build && ctest ${CTEST_EXTRA} -T test -V
+    cd build && ctest "${CTEST_EXTRA}" -T test -V
 
 FROM ghcr.io/llnl/radiuss:clang-19-ubuntu-24.04 AS clang19
 ENV GTEST_COLOR=1
@@ -54,7 +54,7 @@ RUN cmake -G Ninja -B build \
       -DCMAKE_BUILD_TYPE=RelWithDebInfo \
       -DENABLE_WARNINGS=On .. && \
     cmake --build build --verbose --parallel 4 && \
-    cd build && ctest ${CTEST_EXTRA} -T test -V
+    cd build && ctest "${CTEST_EXTRA}" -T test -V
 
 FROM nvidia/cuda:12.0.0-devel-ubuntu22.04 AS nvcc12
 ENV GTEST_COLOR=1
@@ -69,7 +69,7 @@ RUN cmake -G Ninja -B build \
       -DENABLE_CUDA=On \
       -DCMAKE_CUDA_ARCHITECTURES=70 .. && \
     cmake --build build --verbose --parallel 4 && \
-    cd build && ctest ${CTEST_EXTRA} -T test -V
+    cd build && ctest "${CTEST_EXTRA}" -T test -V
 
 FROM nvidia/cuda:12.2.2-devel-ubuntu22.04 AS nvcc12_debug
 ENV GTEST_COLOR=1
@@ -84,7 +84,7 @@ RUN cmake -G Ninja -B build \
       -DENABLE_CUDA=On \
       -DCMAKE_CUDA_ARCHITECTURES=70 .. && \
     cmake --build build --verbose --parallel 4 && \
-    cd build && ctest ${CTEST_EXTRA} -T test -V
+    cd build && ctest "${CTEST_EXTRA}" -T test -V
 
 FROM rocm/dev-ubuntu-24.04:6.4.3 AS rocm6_4_3
 ENV GTEST_COLOR=1
@@ -102,7 +102,7 @@ RUN cmake -G Ninja -B build \
       -DENABLE_OPENMP=Off \
       -DENABLE_CUDA=Off .. && \
     cmake --build build --verbose --parallel 4 && \
-    cd build && ctest ${CTEST_EXTRA} -T test -V
+    cd build && ctest "${CTEST_EXTRA}" -T test -V
 
 FROM rocm/dev-ubuntu-24.04:latest AS rocm_latest
 ENV GTEST_COLOR=1
@@ -120,7 +120,7 @@ RUN cmake -G Ninja -B build \
       -DENABLE_OPENMP=Off \
       -DENABLE_CUDA=Off .. && \
     cmake --build build --verbose --parallel 4 && \
-    cd build && ctest ${CTEST_EXTRA} -T test -V
+    cd build && ctest "${CTEST_EXTRA}" -T test -V
 
 FROM intel/oneapi:latest AS sycl
 ENV GTEST_COLOR=1
@@ -136,7 +136,7 @@ RUN /bin/bash -lc 'source ~/setup_env.sh && \
       -DENABLE_WARNINGS=On \
       -DENABLE_SYCL=On .. && \
     cmake --build build --verbose --parallel 4 && \
-    cd build && ctest ${CTEST_EXTRA} -T test -V'
+    cd build && ctest "${CTEST_EXTRA}" -T test -V'
 
 #ARG BASE_IMG=gcc
 #ARG COMPILER=g++
