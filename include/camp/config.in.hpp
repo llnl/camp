@@ -24,8 +24,11 @@
 #define CAMP_VERSION_MINOR @camp_VERSION_MINOR@
 #define CAMP_VERSION_PATCH @camp_VERSION_PATCH@
 
-#define CAMP_VERSION                                           \
-  (CAMP_VERSION_MAJOR * 1000000) + (CAMP_VERSION_MINOR * 1000) \
+// Since Camp now uses a date based versioning scheme, CAMP_VERSION will be
+// of the format YYYYMMPP, where YYYY is the year, MM is the month, and PP
+// is the patch number (e.g. 20260700).
+#define CAMP_VERSION                                        \
+  (CAMP_VERSION_MAJOR * 10000) + (CAMP_VERSION_MINOR * 100) \
       + (CAMP_VERSION_PATCH)
 
 #if (defined(_WIN32) || defined(_WIN64)) && !defined(CAMP_WIN_STATIC_BUILD)
