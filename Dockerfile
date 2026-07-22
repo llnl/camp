@@ -54,10 +54,8 @@ RUN cmake -G Ninja -B build \
     cmake --build build --verbose --parallel 4 && \
     cd build && ctest -E '(.*offload|blt.*smoke|cuda_.*|hip_.*|CampEvent|CampResource)' -T test -V
 
-FROM nvidia/cuda:12.0.0-devel-ubuntu22.04 AS nvcc12
+FROM ghcr.io/llnl/radiuss:cuda-12-6-ubuntu-24.04 AS nvcc12
 ENV GTEST_COLOR=1
-COPY scripts/get-deps.sh /tmp/get-deps.sh
-RUN bash /tmp/get-deps.sh
 COPY . /home/camp/workspace
 WORKDIR /home/camp/workspace/build
 RUN cmake -G Ninja -B build \
@@ -84,18 +82,17 @@ RUN cmake -G Ninja -B build \
     cmake --build build --verbose --parallel 4 && \
     cd build && ctest -E '(.*offload|blt.*smoke|cuda_.*|hip_.*|CampEvent|CampResource)' -T test -V
 
-FROM rocm/dev-ubuntu-24.04:6.4.3 AS rocm6_4_3
+FROM ghcr.io/llnl/radiuss:hip-6.4.3-ubuntu-24.04 AS rocm6_4_3
 ENV GTEST_COLOR=1
-ENV LD_LIBRARY_PATH=/opt/rocm/lib:${LD_LIBRARY_PATH}
-COPY scripts/get-deps.sh /tmp/get-deps.sh
-RUN bash /tmp/get-deps.sh
+ENV HCC_AMDGPU_TARGET=gfx900
+ENV LD_LIBRARY_PATH=/opt/rocm-6.4.3/lib:${LD_LIBRARY_PATH}
 COPY . /home/camp/workspace
 WORKDIR /home/camp/workspace/build
 RUN cmake -G Ninja -B build \
-      -DCMAKE_CXX_COMPILER=/opt/rocm/llvm/bin/amdclang++ \
+      -DCMAKE_CXX_COMPILER=/opt/rocm-6.4.3/bin/amdclang++ \
       -DCMAKE_BUILD_TYPE=RelWithDebInfo \
       -DENABLE_WARNINGS=On \
-      -DROCM_PATH=/opt/rocm \
+      -DROCM_PATH=/opt/rocm-6.4.3 \
       -DENABLE_HIP=On \
       -DENABLE_OPENMP=Off \
       -DENABLE_CUDA=Off .. && \
