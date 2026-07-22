@@ -120,21 +120,21 @@ RUN cmake -G Ninja -B build \
     cmake --build build --verbose --parallel 4 && \
     cd build && ctest -E '(.*offload|blt.*smoke|cuda_.*|hip_.*|CampEvent|CampResource)' -T test -V
 
-FROM intel/oneapi:latest AS sycl
+FROM ghcr.io/llnl/radiuss:ubuntu-24.04-intel-2024.2 AS sycl
 ENV GTEST_COLOR=1
-RUN bash -c 'echo . /opt/intel/oneapi/setvars.sh >> ~/setup_env.sh'
-COPY scripts/get-deps.sh /tmp/get-deps.sh
-RUN bash /tmp/get-deps.sh
 COPY . /home/camp/workspace
 WORKDIR /home/camp/workspace/build
-RUN /bin/bash -lc 'source ~/setup_env.sh && \
+RUN /bin/bash -lc 'source /opt/intel/oneapi/setvars.sh 2>&1 && \
+    export PATH=/opt/intel/oneapi/compiler/2024.2/bin/:$PATH && \
+    export LD_LIBRARY_PATH=/opt/intel/oneapi/2024.2/lib:$LD_LIBRARY_PATH && \
     cmake -G Ninja -B build \
-      -DCMAKE_CXX_COMPILER=dpcpp \
+      -DCMAKE_CXX_COMPILER=icpx \
+      -DCMAKE_CXX_FLAGS="-fsycl -fsycl-unnamed-lambda" \
       -DCMAKE_BUILD_TYPE=RelWithDebInfo \
       -DENABLE_WARNINGS=On \
       -DENABLE_SYCL=On .. && \
     cmake --build build --verbose --parallel 4 && \
-    cd build && ctest -E '(.*offload|blt.*smoke|cuda_.*|hip_.*|CampEvent|CampResource)' -T test -V'
+    cd build && ctest -E "(.*offload|blt.*smoke|cuda_.*|hip_.*|CampEvent|CampResource)" -T test -V'
 
 #ARG BASE_IMG=gcc
 #ARG COMPILER=g++
