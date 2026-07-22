@@ -6,25 +6,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - name: gcc11-debug
-            target: gcc11_debug
-          - name: gcc11
-            target: gcc11
-          - name: gcc-14
-            target: gcc14
-          - name: clang19
-            target: clang19
-          - name: nvcc12
-            target: nvcc12
-          - name: nvcc12-debug
-            target: nvcc12_debug
-          - name: rocm6_4_3
-            target: rocm6_4_3
-          - name: rocm_latest
-            target: rocm_latest
-          - name: sycl
-            target: sycl
+        target: [gcc11_debug, gcc11, gcc14, clang19, nvcc12, nvcc12_debug, rocm6_4_3, rocm_latest, sycl]
     runs-on: ubuntu-latest
     steps:
     - run: |
