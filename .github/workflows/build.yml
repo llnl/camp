@@ -25,87 +25,6 @@ jobs:
             target: rocm_latest
           - name: sycl
             target: sycl
-#          - name: gcc11-debug
-#            base_img: gcc
-#            ver: 11
-#            compiler: g++
-#            pre_cmd: "true"
-#            build_type: Debug
-#            cmake_extra: -DENABLE_WARNINGS_AS_ERRORS=On -DENABLE_COVERAGE=On
-#            ctest_extra: "-E '(.*offload|blt.*smoke|cuda_.*|hip_.*|CampEvent|CampResource)'"
-#            parallel: 4
-#          - name: gcc11
-#            base_img: gcc
-#            ver: 11
-#            compiler: g++
-#            pre_cmd: "true"
-#            build_type: RelWithDebInfo
-#            cmake_extra: ""
-#            ctest_extra: "-E '(.*offload|blt.*smoke|cuda_.*|hip_.*|CampEvent|CampResource)'"
-#            parallel: 4
-#          - name: gcc-14
-#            base_img: gcc
-#            ver: 14
-#            compiler: g++
-#            pre_cmd: "true"
-#            build_type: RelWithDebInfo
-#            cmake_extra: ""
-#            ctest_extra: "-E '(.*offload|blt.*smoke|cuda_.*|hip_.*|CampEvent|CampResource)'"
-#            parallel: 4
-#          - name: clang19
-#            base_img: clang
-#            ver: 19
-#            compiler: clang++
-#            pre_cmd: "true"
-#            build_type: RelWithDebInfo
-#            cmake_extra: ""
-#            ctest_extra: "-E '(.*offload|blt.*smoke|cuda_.*|hip_.*|CampEvent|CampResource)'"
-#            parallel: 4
-#          - name: nvcc12
-#            base_img: nvcc
-#            ver: 12.0.0
-#            compiler: g++
-#            pre_cmd: "true"
-#            build_type: RelWithDebInfo
-#            cmake_extra: -DENABLE_CUDA=On -DCMAKE_CUDA_ARCHITECTURES=70
-#            ctest_extra: "-E '(.*offload|blt.*smoke|cuda_.*|hip_.*|CampEvent|CampResource)'"
-#            parallel: 4
-#          - name: nvcc12-debug
-#            base_img: nvcc
-#            ver: 12.2.2
-#            compiler: g++
-#            pre_cmd: "true"
-#            build_type: Debug
-#            cmake_extra: -DENABLE_CUDA=On -DCMAKE_CUDA_ARCHITECTURES=70
-#            ctest_extra: "-E '(.*offload|blt.*smoke|cuda_.*|hip_.*|CampEvent|CampResource)'"
-#            parallel: 4
-#          - name: rocm-6.4.3
-#            base_img: rocm
-#            ver: 6.4.3
-#            compiler: /opt/rocm/llvm/bin/amdclang++
-#            pre_cmd: "true"
-#            build_type: RelWithDebInfo
-#            cmake_extra: -DROCM_PATH=/opt/rocm -DENABLE_HIP=On -DENABLE_OPENMP=Off -DENABLE_CUDA=Off
-#            ctest_extra: "-E '(.*offload|blt.*smoke|cuda_.*|hip_.*|CampEvent|CampResource)'"
-#            parallel: 4
-#          - name: rocm-latest
-#            base_img: rocm
-#            ver: latest
-#            compiler: /opt/rocm/llvm/bin/amdclang++
-#            pre_cmd: "true"
-#            build_type: RelWithDebInfo
-#            cmake_extra: -DROCM_PATH=/opt/rocm -DENABLE_HIP=On -DENABLE_OPENMP=Off -DENABLE_CUDA=Off
-#            ctest_extra: "-E '(.*offload|blt.*smoke|cuda_.*|hip_.*|CampEvent|CampResource)'"
-#            parallel: 4
-#          - name: sycl
-#            base_img: oneapi
-#            ver: latest
-#            compiler: dpcpp
-#            pre_cmd: "true"
-#            build_type: RelWithDebInfo
-#            cmake_extra: -DENABLE_SYCL=On
-#            ctest_extra: "-E '(.*offload|blt.*smoke|cuda_.*|hip_.*|CampEvent|CampResource)'"
-#            parallel: 4
     runs-on: ubuntu-latest
     steps:
     - run: |
@@ -121,17 +40,6 @@ jobs:
     - uses: docker/build-push-action@v6
       with:
         target: ${{ matrix.target }}
-        #target: test
-        #build-args: |
-        #  BASE_IMG=${{ matrix.base_img }}
-        #  VER=${{ matrix.ver }}
-        #  COMPILER=${{ matrix.compiler }}
-        #  PRE_CMD=${{ matrix.pre_cmd }}
-        #  BUILD_TYPE=${{ matrix.build_type }}
-        #  CMAKE_EXTRA=${{ matrix.cmake_extra }}
-        #  CTEST_EXTRA=${{ matrix.ctest_extra }}
-        #  PARALLEL=${{ matrix.parallel }}
-        #  CMAKE_BUILD_OPTS=--build build --verbose --parallel ${{ matrix.parallel }}
   build_mac:
     runs-on: macos-latest
     steps:
