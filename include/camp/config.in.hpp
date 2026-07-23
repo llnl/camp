@@ -28,7 +28,7 @@
 // of the format YYYYMMPP, where YYYY is the year, MM is the month, and PP
 // is the patch number (e.g. 20260700).
 #define CAMP_VERSION                                        \
-  (CAMP_VERSION_MAJOR * 10000) + (CAMP_VERSION_MINOR * 100) \
+  (CAMP_VERSION_MAJOR * 10000ULL) + (CAMP_VERSION_MINOR * 100ULL) \
       + (CAMP_VERSION_PATCH)
 
 #if (defined(_WIN32) || defined(_WIN64)) && !defined(CAMP_WIN_STATIC_BUILD)
