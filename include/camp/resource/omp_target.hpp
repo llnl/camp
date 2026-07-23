@@ -217,24 +217,35 @@ namespace resources
 
       // Memory
       template <typename T>
-      T* allocate(size_t size, MemoryAccess ma = MemoryAccess::Device)
+      T* allocate(size_t n, MemoryAccess ma = MemoryAccess::Device)
       {
+        if (n == 0) {
+          return nullptr;
+        }
         check_ma(ma);
-        T* ret = static_cast<T*>(omp_target_alloc(sizeof(T) * size, dev));
+        T* ret = static_cast<T*>(omp_target_alloc(sizeof(T) * n, dev));
         register_ptr_dev(ret, dev);
         return ret;
       }
 
       void* calloc(size_t size, MemoryAccess ma = MemoryAccess::Device)
       {
+        if (size == 0) {
+          return nullptr;
+        }
         check_ma(ma);
-        void* p = allocate<char>(size);
-        this->memset(p, 0, size);
-        return p;
+        void* ret = allocate<char>(size);
+        if (ret != nullptr) {
+          this->memset(ret, 0, size);
+        }
+        return ret;
       }
 
       void deallocate(void* p, MemoryAccess ma = MemoryAccess::Device)
       {
+        if (p == nullptr) {
+          return;
+        }
         check_ma(ma);
         deregister_ptr_dev(p);
         omp_target_free(p, dev);
@@ -242,6 +253,9 @@ namespace resources
 
       void memcpy(void* dst, const void* src, size_t size)
       {
+        if (size == 0) {
+          return;
+        }
         // this is truly, insanely awful, need to think of something better
         int dd = get_ptr_dev(dst);
         int sd = get_ptr_dev(src);
@@ -251,6 +265,9 @@ namespace resources
 
       void memset(void* p, int val, size_t size)
       {
+        if (size == 0) {
+          return;
+        }
         char* local_addr = addr;
         CAMP_ALLOW_UNUSED_LOCAL(local_addr);
         char* pc = (char*)p;
@@ -263,6 +280,9 @@ namespace resources
 
       void register_ptr_dev(void* p, int device)
       {
+        if (p == nullptr) {
+          return;
+        }
 #pragma omp critical(camp_register_ptr)
         {
           get_dev_register()[p] = device;
@@ -271,6 +291,9 @@ namespace resources
 
       void deregister_ptr_dev(void const* p)
       {
+        if (p == nullptr) {
+          return;
+        }
 #pragma omp critical(camp_register_ptr)
         {
           get_dev_register().erase(p);
@@ -280,6 +303,9 @@ namespace resources
       int get_ptr_dev(void const* p)
       {
         int ret = omp_get_initial_device();
+        if (p == nullptr) {
+          return ret;
+        }
 #pragma omp critical(camp_register_ptr)
         {
           auto it = get_dev_register().find(p);

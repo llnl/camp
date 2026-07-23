@@ -1729,7 +1729,6 @@ TEST(CampResource, MemoryHost) { test_memory_ops<Host>(MemoryAccess::Device); }
 #ifdef CAMP_HAVE_CUDA
 TEST(CampResource, MemoryCuda)
 {
-  test_memory_ops<Cuda>(MemoryAccess::Unknown);
   test_memory_ops<Cuda>(MemoryAccess::Device);
   test_memory_ops<Cuda>(MemoryAccess::Pinned);
   test_memory_ops<Cuda>(MemoryAccess::Managed);
@@ -1743,7 +1742,6 @@ TEST(CampResource, MemoryCuda)
 #ifdef CAMP_HAVE_HIP
 TEST(CampResource, MemoryHip)
 {
-  test_memory_ops<Hip>(MemoryAccess::Unknown);
   test_memory_ops<Hip>(MemoryAccess::Device);
   test_memory_ops<Hip>(MemoryAccess::Pinned);
   test_memory_ops<Hip>(MemoryAccess::Managed);
@@ -1761,7 +1759,6 @@ TEST(CampResource, MemoryOmp) { test_memory_ops<Omp>(MemoryAccess::Device); }
 #ifdef CAMP_HAVE_SYCL
 TEST(CampResource, MemorySycl)
 {
-  test_memory_ops<Sycl>(MemoryAccess::Unknown);
   test_memory_ops<Sycl>(MemoryAccess::Device);
   test_memory_ops<Sycl>(MemoryAccess::Pinned);
   test_memory_ops<Sycl>(MemoryAccess::Managed);

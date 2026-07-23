@@ -184,14 +184,14 @@ namespace resources
         cudaError_t status = cudaPointerGetAttributes(&a, p);
         if (status == cudaSuccess) {
           switch (a.type) {
-            case cudaMemoryTypeUnregistered:
-              return MemoryAccess::Unknown;
             case cudaMemoryTypeHost:
               return MemoryAccess::Pinned;
             case cudaMemoryTypeDevice:
               return MemoryAccess::Device;
             case cudaMemoryTypeManaged:
               return MemoryAccess::Managed;
+            default:
+              return MemoryAccess::Unknown;
           }
         }
         ::camp::throw_re("invalid pointer detected");
@@ -272,44 +272,55 @@ namespace resources
 
       // Memory
       template <typename T>
-      T* allocate(size_t size, MemoryAccess ma = MemoryAccess::Device)
+      T* allocate(size_t n, MemoryAccess ma = MemoryAccess::Device)
       {
+        if (n == 0) {
+          return nullptr;
+        }
         T* ret = nullptr;
-        if (size > 0) {
-          auto d{device_guard(device)};
-          switch (ma) {
-            case MemoryAccess::Unknown:
-            case MemoryAccess::Device:
-              CAMP_CUDA_API_INVOKE_AND_CHECK(cudaMalloc,
-                                             (void**)&ret,
-                                             sizeof(T) * size);
-              break;
-            case MemoryAccess::Pinned:
-              // TODO: do a test here for whether managed is *actually* shared
-              // so we can use the better performing memory
-              CAMP_CUDA_API_INVOKE_AND_CHECK(cudaMallocHost,
-                                             (void**)&ret,
-                                             sizeof(T) * size);
-              break;
-            case MemoryAccess::Managed:
-              CAMP_CUDA_API_INVOKE_AND_CHECK(cudaMallocManaged,
-                                             (void**)&ret,
-                                             sizeof(T) * size);
-              break;
-          }
+        auto d{device_guard(device)};
+        switch (ma) {
+          case MemoryAccess::Device:
+            CAMP_CUDA_API_INVOKE_AND_CHECK(cudaMalloc,
+                                           (void**)&ret,
+                                           sizeof(T) * n);
+            break;
+          case MemoryAccess::Pinned:
+            // TODO: do a test here for whether managed is *actually* shared
+            // so we can use the better performing memory
+            CAMP_CUDA_API_INVOKE_AND_CHECK(cudaMallocHost,
+                                           (void**)&ret,
+                                           sizeof(T) * n);
+            break;
+          case MemoryAccess::Managed:
+            CAMP_CUDA_API_INVOKE_AND_CHECK(cudaMallocManaged,
+                                           (void**)&ret,
+                                           sizeof(T) * n);
+            break;
+          case MemoryAccess::Unknown:
+            ::camp::throw_re("Unknown memory access type, cannot allocate");
+            break;
         }
         return ret;
       }
 
       void* calloc(size_t size, MemoryAccess ma = MemoryAccess::Device)
       {
-        void* p = allocate<char>(size, ma);
-        this->memset(p, 0, size);
-        return p;
+        if (size == 0) {
+          return nullptr;
+        }
+        void* ret = allocate<char>(size, ma);
+        if (ret != nullptr) {
+          this->memset(ret, 0, size);
+        }
+        return ret;
       }
 
       void deallocate(void* p, MemoryAccess ma = MemoryAccess::Unknown)
       {
+        if (p == nullptr) {
+          return;
+        }
         auto d{device_guard(device)};
         if (ma == MemoryAccess::Unknown) {
           ma = get_access_type(p);
@@ -334,19 +345,21 @@ namespace resources
 
       void memcpy(void* dst, const void* src, size_t size)
       {
-        if (size > 0) {
-          auto d{device_guard(device)};
-          CAMP_CUDA_API_INVOKE_AND_CHECK(
-              cudaMemcpyAsync, dst, src, size, cudaMemcpyDefault, stream);
+        if (size == 0) {
+          return;
         }
+        auto d{device_guard(device)};
+        CAMP_CUDA_API_INVOKE_AND_CHECK(
+            cudaMemcpyAsync, dst, src, size, cudaMemcpyDefault, stream);
       }
 
       void memset(void* p, int val, size_t size)
       {
-        if (size > 0) {
-          auto d{device_guard(device)};
-          CAMP_CUDA_API_INVOKE_AND_CHECK(cudaMemsetAsync, p, val, size, stream);
+        if (size == 0) {
+          return;
         }
+        auto d{device_guard(device)};
+        CAMP_CUDA_API_INVOKE_AND_CHECK(cudaMemsetAsync, p, val, size, stream);
       }
 
       cudaStream_t get_stream() const { return stream; }
