@@ -335,52 +335,64 @@ namespace resources
 
       // Memory
       template <typename T>
-      T* allocate(size_t size, MemoryAccess ma = MemoryAccess::Device)
+      T* allocate(size_t n, MemoryAccess ma = MemoryAccess::Device)
       {
+        if (n == 0) {
+          return nullptr;
+        }
         T* ret = nullptr;
-        if (size > 0) {
-          ret = sycl::malloc_shared<T>(size, qu);
-          switch (ma) {
-            case MemoryAccess::Unknown:
-            case MemoryAccess::Device:
-              ret = sycl::malloc_device<T>(size, qu);
-              break;
-            case MemoryAccess::Pinned:
-              ret = sycl::malloc_host<T>(size, qu);
-              break;
-            case MemoryAccess::Managed:
-              ret = sycl::malloc_shared<T>(size, qu);
-              break;
-          }
+        switch (ma) {
+          case MemoryAccess::Device:
+            ret = sycl::malloc_device<T>(n, qu);
+            break;
+          case MemoryAccess::Pinned:
+            ret = sycl::malloc_host<T>(n, qu);
+            break;
+          case MemoryAccess::Managed:
+            ret = sycl::malloc_shared<T>(n, qu);
+            break;
+          case MemoryAccess::Unknown:
+            ::camp::throw_re("Unknown memory access type, cannot allocate");
+            break;
         }
         return ret;
       }
 
       void* calloc(size_t size, MemoryAccess ma = MemoryAccess::Device)
       {
-        void* p = allocate<char>(size, ma);
-        this->memset(p, 0, size);
-        return p;
+        if (size == 0) {
+          return nullptr;
+        }
+        void* ret = allocate<char>(size, ma);
+        if (ret != nullptr) {
+          this->memset(ret, 0, size);
+        }
+        return ret;
       }
 
       void deallocate(void* p, MemoryAccess ma = MemoryAccess::Device)
       {
+        if (p == nullptr) {
+          return;
+        }
         CAMP_ALLOW_UNUSED_LOCAL(ma);
         sycl::free(p, qu);
       }
 
       void memcpy(void* dst, const void* src, size_t size)
       {
-        if (size > 0) {
-          qu.memcpy(dst, src, size).wait();
+        if (size == 0) {
+          return;
         }
+        qu.memcpy(dst, src, size).wait();
       }
 
       void memset(void* p, int val, size_t size)
       {
-        if (size > 0) {
-          qu.memset(p, val, size).wait();
+        if (size == 0) {
+          return;
         }
+        qu.memset(p, val, size).wait();
       }
 
       // implementation specific
