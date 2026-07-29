@@ -28,16 +28,22 @@ jobs:
       - uses: actions/checkout@v2
         with:
           submodules: recursive
+
+## Back off to version of cmake not on "bleeding edge"
+      - name: Install CMake 3.29
+        uses: lukka/get-cmake@e6906078ebd1ccb8ce51ab4626ac46a1b5a517e3  # v4.4.0
+        with:
+          cmakeVersion: "~3.29.0"
+
       - uses: threeal/cmake-action@v1.3.0
         with:
-          cmake-version: '3.29.x'  # Back off version of cmake with known issue
           build-dir: build
           options:
             CMAKE_CXX_STANDARD=20
             ENABLE_OPENMP=Off
             CMAKE_BUILD_TYPE=Release
           run-build: true
-          build-args: '--parallel 16'
+          build-args: '--parallel 4'
       - uses: threeal/ctest-action@v1.1.0
   build_windows:
     strategy:
@@ -55,9 +61,15 @@ jobs:
           submodules: recursive
 ## ====================================
 ## Config and build action
+
+## Back off to version of cmake not on "bleeding edge"
+      - name: Install CMake 3.29
+        uses: lukka/get-cmake@e6906078ebd1ccb8ce51ab4626ac46a1b5a517e3  # v4.4.0
+        with:
+          cmakeVersion: "~3.29.0"
+
       - uses: threeal/cmake-action@v1.3.0
         with:
-          cmake-version: '3.29.x'  # Back off version of cmake with known issue
           build-dir: build
           options:
             ENABLE_WARNINGS_AS_ERRORS=Off
@@ -66,11 +78,11 @@ jobs:
             CMAKE_BUILD_TYPE=Release
             ${{ matrix.shared.args }}
           run-build: true
-          build-args: '--config Release --parallel 16'
+          build-args: '--config Release --parallel 4'
 ## ====================================
 ## Print the contents of the test directory in the build space (debugging)
 ##    - run: |
-##        dir -r D:\a\RAJA\RAJA\build\test
+##        dir -r D:\a\camp\camp\build\test
 ## ====================================
 ## Run tests action
       - uses: threeal/ctest-action@v1.1.0
