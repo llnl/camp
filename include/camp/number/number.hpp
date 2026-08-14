@@ -15,15 +15,24 @@
 namespace camp
 {
 
-// TODO: document, consider making use/match std::integral_constant
+//
+
+/**
+ * @brief class that represents a compile time constant value
+ *
+ * TODO: consider making use/match std::integral_constant
+ */
 template <class NumT, NumT v>
-struct integral_constant {
+struct [[deprecated("use constant<val> instead of integral_constant<T, val>")]]
+       integral_constant {
   static constexpr NumT value = v;
   using value_type = NumT;
   using type = integral_constant;
 
+  CAMP_HOST_DEVICE
   constexpr operator value_type() const noexcept { return value; }
 
+  CAMP_HOST_DEVICE
   constexpr value_type operator()() const noexcept { return value; }
 };
 
@@ -275,7 +284,7 @@ constexpr auto operator>=(constant<lhs_value>, constant<rhs_value>)
  * @tparam N The integral value
  */
 template <idx_t N>
-using num = integral_constant<idx_t, N>;
+using num = constant<N>;
 
 using true_type = num<true>;
 using false_type = num<false>;
