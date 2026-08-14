@@ -28,6 +28,248 @@ struct integral_constant {
 };
 
 /**
+ * @brief class that represents a compile time constant value.
+ *
+ * Some arithmetic operators are supported for this class so compile-time
+ * arithmetic may be done transparently. In addition, this class is implicitly
+ * convertible to its value type so it is usable in arithmetic with other types.
+ */
+template < auto t_value >
+struct constant
+{
+  using type = constant;
+  using value_type = decltype(t_value);
+  static constexpr value_type value = t_value;
+
+  CAMP_HOST_DEVICE
+  constexpr operator value_type() const noexcept { return value; }
+
+  CAMP_HOST_DEVICE
+  constexpr value_type operator()() const noexcept { return value; }
+};
+
+/**
+ * @brief constant yielding unary plus for a constant value
+ */
+template < auto value >
+CAMP_HOST_DEVICE
+constexpr auto operator+(constant<value>)
+{
+  return constant<+value>{};
+}
+
+/**
+ * @brief constant yielding unary minus for a constant value
+ */
+template < auto value >
+CAMP_HOST_DEVICE
+constexpr auto operator-(constant<value>)
+{
+  return constant<-value>{};
+}
+
+/**
+ * @brief constant yielding bitwise not for a constant value
+ */
+template < auto value >
+CAMP_HOST_DEVICE
+constexpr auto operator~(constant<value>)
+{
+  return constant<~value>{};
+}
+
+/**
+ * @brief constant yielding logical not for a constant value
+ */
+template < auto value >
+CAMP_HOST_DEVICE
+constexpr auto operator!(constant<value>)
+{
+  return constant<!value>{};
+}
+
+/**
+ * @brief constant yielding plus for constant values
+ */
+template < auto lhs_value, auto rhs_value >
+CAMP_HOST_DEVICE
+constexpr auto operator+(constant<lhs_value>, constant<rhs_value>)
+{
+  return constant<lhs_value+rhs_value>{};
+}
+
+/**
+ * @brief constant yielding minus for constant values
+ */
+template < auto lhs_value, auto rhs_value >
+CAMP_HOST_DEVICE
+constexpr auto operator-(constant<lhs_value>, constant<rhs_value>)
+{
+  return constant<lhs_value-rhs_value>{};
+}
+
+/**
+ * @brief constant yielding times for constant values
+ */
+template < auto lhs_value, auto rhs_value >
+CAMP_HOST_DEVICE
+constexpr auto operator*(constant<lhs_value>, constant<rhs_value>)
+{
+  return constant<lhs_value*rhs_value>{};
+}
+
+/**
+ * @brief constant yielding divide for constant values
+ */
+template < auto lhs_value, auto rhs_value >
+CAMP_HOST_DEVICE
+constexpr auto operator/(constant<lhs_value>, constant<rhs_value>)
+{
+  return constant<lhs_value/rhs_value>{};
+}
+
+/**
+ * @brief constant yielding remainder for constant values
+ */
+template < auto lhs_value, auto rhs_value >
+CAMP_HOST_DEVICE
+constexpr auto operator%(constant<lhs_value>, constant<rhs_value>)
+{
+  return constant<lhs_value%rhs_value>{};
+}
+
+/**
+ * @brief constant yielding bitwise and for constant values
+ */
+template < auto lhs_value, auto rhs_value >
+CAMP_HOST_DEVICE
+constexpr auto operator&(constant<lhs_value>, constant<rhs_value>)
+{
+  return constant<lhs_value&rhs_value>{};
+}
+
+/**
+ * @brief constant yielding bitwise or for constant values
+ */
+template < auto lhs_value, auto rhs_value >
+CAMP_HOST_DEVICE
+constexpr auto operator|(constant<lhs_value>, constant<rhs_value>)
+{
+  return constant<lhs_value|rhs_value>{};
+}
+
+/**
+ * @brief constant yielding bitwise xor for constant values
+ */
+template < auto lhs_value, auto rhs_value >
+CAMP_HOST_DEVICE
+constexpr auto operator^(constant<lhs_value>, constant<rhs_value>)
+{
+  return constant<lhs_value^rhs_value>{};
+}
+
+/**
+ * @brief constant yielding left shift for constant values
+ */
+template < auto lhs_value, auto rhs_value >
+CAMP_HOST_DEVICE
+constexpr auto operator<<(constant<lhs_value>, constant<rhs_value>)
+{
+  return constant<(lhs_value<<rhs_value)>{};
+}
+
+/**
+ * @brief constant yielding right shift for constant values
+ */
+template < auto lhs_value, auto rhs_value >
+CAMP_HOST_DEVICE
+constexpr auto operator>>(constant<lhs_value>, constant<rhs_value>)
+{
+  return constant<(lhs_value>>rhs_value)>{};
+}
+
+/**
+ * @brief constant yielding logical and for constant values
+ */
+template < auto lhs_value, auto rhs_value >
+CAMP_HOST_DEVICE
+constexpr auto operator&&(constant<lhs_value>, constant<rhs_value>)
+{
+  return constant<lhs_value&&rhs_value>{};
+}
+
+/**
+ * @brief constant yielding logical or for constant values
+ */
+template < auto lhs_value, auto rhs_value >
+CAMP_HOST_DEVICE
+constexpr auto operator||(constant<lhs_value>, constant<rhs_value>)
+{
+  return constant<lhs_value||rhs_value>{};
+}
+
+/**
+ * @brief constant yielding equals for constant values
+ */
+template < auto lhs_value, auto rhs_value >
+CAMP_HOST_DEVICE
+constexpr auto operator==(constant<lhs_value>, constant<rhs_value>)
+{
+  return constant<lhs_value==rhs_value>{};
+}
+
+/**
+ * @brief constant yielding not equals for constant values
+ */
+template < auto lhs_value, auto rhs_value >
+CAMP_HOST_DEVICE
+constexpr auto operator!=(constant<lhs_value>, constant<rhs_value>)
+{
+  return constant<lhs_value!=rhs_value>{};
+}
+
+/**
+ * @brief constant yielding less than for constant values
+ */
+template < auto lhs_value, auto rhs_value >
+CAMP_HOST_DEVICE
+constexpr auto operator<(constant<lhs_value>, constant<rhs_value>)
+{
+  return constant<(lhs_value<rhs_value)>{};
+}
+
+/**
+ * @brief constant yielding less than equals for constant values
+ */
+template < auto lhs_value, auto rhs_value >
+CAMP_HOST_DEVICE
+constexpr auto operator<=(constant<lhs_value>, constant<rhs_value>)
+{
+  return constant<(lhs_value<=rhs_value)>{};
+}
+
+/**
+ * @brief constant yielding greater than for constant values
+ */
+template < auto lhs_value, auto rhs_value >
+CAMP_HOST_DEVICE
+constexpr auto operator>(constant<lhs_value>, constant<rhs_value>)
+{
+  return constant<(lhs_value>rhs_value)>{};
+}
+
+/**
+ * @brief constant yielding greater than equals for constant values
+ */
+template < auto lhs_value, auto rhs_value >
+CAMP_HOST_DEVICE
+constexpr auto operator>=(constant<lhs_value>, constant<rhs_value>)
+{
+  return constant<(lhs_value>=rhs_value)>{};
+}
+
+
+/**
  * @brief Short-form for a whole number
  *
  * @tparam N The integral value
