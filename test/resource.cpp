@@ -296,7 +296,7 @@ TEST(CampResource, EmptyBehavior)
   ASSERT_FALSE(empty.try_get<Host>());
   ASSERT_THROW((void)empty.allocate<int>(1), std::runtime_error);
   ASSERT_THROW((void)empty.calloc(1), std::runtime_error);
-  ASSERT_THROW(empty.deallocate(&allocated_value), std::runtime_error);
+  ASSERT_THROW(empty.deallocate(allocated_value), std::runtime_error);
   ASSERT_THROW(empty.memcpy(&value, &value, 1), std::runtime_error);
   ASSERT_THROW(empty.memset(&value, 0, 1), std::runtime_error);
 
