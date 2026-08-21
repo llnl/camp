@@ -153,27 +153,38 @@ namespace resources
 
     class Hip
     {
+      static constexpr int num_streams = 16;
+
+      struct stream_state {
+        std::array<hipStream_t, num_streams> streams{};
+        hipStream_t default_stream = nullptr;
+        int previous = num_streams - 1;
+        std::mutex mutex;
+      };
+
+      static stream_state& get_stream_state()
+      {
+        static stream_state state;
+        return state;
+      }
+
       static hipStream_t get_a_stream(int num)
       {
-        static constexpr int num_streams = 16;
-        static std::array<hipStream_t, num_streams> s_streams = [] {
-          std::array<hipStream_t, num_streams> streams;
-          for (auto& s : streams) {
+        auto& state = get_stream_state();
+        std::lock_guard<std::mutex> lock(state.mutex);
+
+        for (auto& s : state.streams) {
+          if (s == nullptr) {
             CAMP_HIP_API_INVOKE_AND_CHECK(hipStreamCreate, &s);
           }
-          return streams;
-        }();
-
-        static std::mutex s_mtx;
-        static int s_previous = num_streams - 1;
-
-        if (num < 0) {
-          std::lock_guard<std::mutex> lock(s_mtx);
-          s_previous = (s_previous + 1) % num_streams;
-          return s_streams[s_previous];
         }
 
-        return s_streams[num % num_streams];
+        if (num < 0) {
+          state.previous = (state.previous + 1) % num_streams;
+          return state.streams[state.previous];
+        }
+
+        return state.streams[num % num_streams];
       }
 
       // Private from-stream constructor
@@ -224,16 +235,48 @@ namespace resources
 
       static Hip get_default()
       {
-        static Hip h([] {
-          hipStream_t s;
 #if CAMP_USE_PLATFORM_DEFAULT_STREAM
-          s = 0;
+        return Hip(nullptr);
 #else
-          CAMP_HIP_API_INVOKE_AND_CHECK(hipStreamCreate, &s);
+        auto& state = get_stream_state();
+        std::lock_guard<std::mutex> lock(state.mutex);
+        if (state.default_stream == nullptr) {
+          CAMP_HIP_API_INVOKE_AND_CHECK(hipStreamCreate, &state.default_stream);
+        }
+        return Hip(state.default_stream);
 #endif
-          return s;
-        }());
-        return h;
+      }
+
+      /**
+       * \brief Destroy all HIP streams created and managed by CAMP.
+       *
+       * Existing resources that refer to CAMP-managed streams are invalid
+       * after this call. Streams passed to HipFromStream and the HIP platform
+       * default stream are not destroyed. This function may be called
+       * repeatedly, and later resource construction recreates the managed
+       * streams.
+       *
+       * The caller must ensure no other thread is using HIP resources while
+       * cleanup runs.
+       */
+      static void cleanup()
+      {
+        auto& state = get_stream_state();
+
+        for (auto& s : state.streams) {
+          if (s != nullptr) {
+            CAMP_HIP_API_INVOKE_AND_CHECK(hipStreamDestroy, s);
+            s = nullptr;
+          }
+        }
+        state.previous = num_streams - 1;
+
+#if !CAMP_USE_PLATFORM_DEFAULT_STREAM
+        if (state.default_stream != nullptr) {
+          CAMP_HIP_API_INVOKE_AND_CHECK(hipStreamDestroy, state.default_stream);
+          state.default_stream = nullptr;
+        }
+#endif
       }
 
       HipEvent get_event()

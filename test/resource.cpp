@@ -1877,3 +1877,118 @@ TEST(CampResourceSycl, Helpers)
   Sycl::set_thread_default_context(original_thread);
 }
 #endif
+
+TEST(CampResource, Cleanup)
+{
+  Host::cleanup();
+#ifdef CAMP_HAVE_CUDA
+  {
+    Cuda cuda_resource;
+    Cuda cuda_default = Cuda::get_default();
+    cuda_resource.wait();
+    cuda_default.wait();
+  }
+#endif
+#ifdef CAMP_HAVE_HIP
+  {
+    Hip hip_resource;
+    Hip hip_default = Hip::get_default();
+    hip_resource.wait();
+    hip_default.wait();
+  }
+#endif
+#ifdef CAMP_HAVE_SYCL
+  Sycl::cleanup();
+#endif
+#ifdef CAMP_HAVE_OMP_OFFLOAD
+  Omp::cleanup();
+#endif
+
+  camp::resources::cleanup();
+  camp::resources::cleanup();
+
+#ifdef CAMP_HAVE_CUDA
+  {
+    Cuda recreated_cuda_resource;
+    Cuda recreated_cuda_default = Cuda::get_default();
+    recreated_cuda_resource.wait();
+    recreated_cuda_default.wait();
+  }
+  Cuda::cleanup();
+#endif
+#ifdef CAMP_HAVE_HIP
+  {
+    Hip recreated_hip_resource;
+    Hip recreated_hip_default = Hip::get_default();
+    recreated_hip_resource.wait();
+    recreated_hip_default.wait();
+  }
+  Hip::cleanup();
+#endif
+}
+
+#ifdef CAMP_HAVE_CUDA
+TEST(CampResourceCuda, CleanupPreservesCustomStream)
+{
+  int current_device = -1;
+  cudaStream_t stream;
+  CAMP_CUDA_API_INVOKE_AND_CHECK(cudaGetDevice, &current_device);
+  CAMP_CUDA_API_INVOKE_AND_CHECK(cudaStreamCreate, &stream);
+
+  Cuda custom = Cuda::CudaFromStream(stream, current_device);
+  {
+    Cuda managed;
+    Cuda managed_default = Cuda::get_default();
+    managed.wait();
+    managed_default.wait();
+  }
+
+  Cuda::cleanup();
+  Cuda::cleanup();
+  custom.wait();
+
+  {
+    Cuda recreated;
+    Cuda recreated_default = Cuda::get_default();
+    recreated.wait();
+    recreated_default.wait();
+  }
+
+  camp::resources::cleanup();
+  custom.wait();
+  CAMP_CUDA_API_INVOKE_AND_CHECK(cudaStreamDestroy, stream);
+}
+#endif
+
+#ifdef CAMP_HAVE_HIP
+TEST(CampResourceHip, CleanupPreservesCustomStream)
+{
+  int current_device = -1;
+  hipStream_t stream;
+  CAMP_HIP_API_INVOKE_AND_CHECK(hipGetDevice, &current_device);
+  CAMP_HIP_API_INVOKE_AND_CHECK(hipStreamCreate, &stream);
+
+  Hip custom = Hip::HipFromStream(stream, current_device);
+  {
+    Hip managed;
+    Hip managed_default = Hip::get_default();
+    managed.wait();
+    managed_default.wait();
+  }
+
+  Hip::cleanup();
+  Hip::cleanup();
+  custom.wait();
+
+  {
+    Hip recreated;
+    Hip recreated_default = Hip::get_default();
+    recreated.wait();
+    recreated_default.wait();
+  }
+
+  camp::resources::cleanup();
+  custom.wait();
+  CAMP_HIP_API_INVOKE_AND_CHECK(hipStreamDestroy, stream);
+}
+#endif

@@ -152,27 +152,38 @@ namespace resources
 
     class Cuda
     {
+      static constexpr int num_streams = 16;
+
+      struct stream_state {
+        std::array<cudaStream_t, num_streams> streams{};
+        cudaStream_t default_stream = nullptr;
+        int previous = num_streams - 1;
+        std::mutex mutex;
+      };
+
+      static stream_state& get_stream_state()
+      {
+        static stream_state state;
+        return state;
+      }
+
       static cudaStream_t get_a_stream(int num)
       {
-        static constexpr int num_streams = 16;
-        static std::array<cudaStream_t, num_streams> s_streams = [] {
-          std::array<cudaStream_t, num_streams> streams;
-          for (auto& s : streams) {
+        auto& state = get_stream_state();
+        std::lock_guard<std::mutex> lock(state.mutex);
+
+        for (auto& s : state.streams) {
+          if (s == nullptr) {
             CAMP_CUDA_API_INVOKE_AND_CHECK(cudaStreamCreate, &s);
           }
-          return streams;
-        }();
-
-        static std::mutex s_mtx;
-        static int s_previous = num_streams - 1;
-
-        if (num < 0) {
-          std::lock_guard<std::mutex> lock(s_mtx);
-          s_previous = (s_previous + 1) % num_streams;
-          return s_streams[s_previous];
         }
 
-        return s_streams[num % num_streams];
+        if (num < 0) {
+          state.previous = (state.previous + 1) % num_streams;
+          return state.streams[state.previous];
+        }
+
+        return state.streams[num % num_streams];
       }
 
       // Private from-stream constructor
@@ -226,16 +237,50 @@ namespace resources
 
       static Cuda get_default()
       {
-        static Cuda c([] {
-          cudaStream_t s;
 #if CAMP_USE_PLATFORM_DEFAULT_STREAM
-          s = 0;
+        return Cuda(nullptr);
 #else
-          CAMP_CUDA_API_INVOKE_AND_CHECK(cudaStreamCreate, &s);
+        auto& state = get_stream_state();
+        std::lock_guard<std::mutex> lock(state.mutex);
+        if (state.default_stream == nullptr) {
+          CAMP_CUDA_API_INVOKE_AND_CHECK(cudaStreamCreate,
+                                         &state.default_stream);
+        }
+        return Cuda(state.default_stream);
 #endif
-          return s;
-        }());
-        return c;
+      }
+
+      /**
+       * \brief Destroy all CUDA streams created and managed by CAMP.
+       *
+       * Existing resources that refer to CAMP-managed streams are invalid
+       * after this call. Streams passed to CudaFromStream and the CUDA
+       * platform default stream are not destroyed. This function may be
+       * called repeatedly, and later resource construction recreates the
+       * managed streams.
+       *
+       * The caller must ensure no other thread is using CUDA resources while
+       * cleanup runs.
+       */
+      static void cleanup()
+      {
+        auto& state = get_stream_state();
+
+        for (auto& s : state.streams) {
+          if (s != nullptr) {
+            CAMP_CUDA_API_INVOKE_AND_CHECK(cudaStreamDestroy, s);
+            s = nullptr;
+          }
+        }
+        state.previous = num_streams - 1;
+
+#if !CAMP_USE_PLATFORM_DEFAULT_STREAM
+        if (state.default_stream != nullptr) {
+          CAMP_CUDA_API_INVOKE_AND_CHECK(cudaStreamDestroy,
+                                         state.default_stream);
+          state.default_stream = nullptr;
+        }
+#endif
       }
 
       CudaEvent get_event()
