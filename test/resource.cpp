@@ -274,6 +274,8 @@ TEST(CampResource, EmptyBehavior)
   Resource full{Host()};
   Resource sink{std::move(full)};
   int value = 7;
+  Host host;
+  int* allocated_value = host.allocate<int>(1);
 
   CAMP_ALLOW_UNUSED_LOCAL(sink);
 
@@ -294,7 +296,7 @@ TEST(CampResource, EmptyBehavior)
   ASSERT_FALSE(empty.try_get<Host>());
   ASSERT_THROW((void)empty.allocate<int>(1), std::runtime_error);
   ASSERT_THROW((void)empty.calloc(1), std::runtime_error);
-  ASSERT_THROW(empty.deallocate(&value), std::runtime_error);
+  ASSERT_THROW(empty.deallocate(&allocated_value), std::runtime_error);
   ASSERT_THROW(empty.memcpy(&value, &value, 1), std::runtime_error);
   ASSERT_THROW(empty.memset(&value, 0, 1), std::runtime_error);
 
@@ -307,6 +309,8 @@ TEST(CampResource, EmptyBehavior)
   Event host_event = Host().get_event_erased();
   empty.wait_for(empty_event);
   empty.wait_for(host_event);
+
+  host.deallocate(allocated_value);
 }
 
 TEST(CampEvent, EmptyBehavior)
