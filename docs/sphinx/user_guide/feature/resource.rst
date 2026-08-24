@@ -187,10 +187,9 @@ Cleaning Up Managed Streams
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Every concrete resource backend provides a ``cleanup()`` function, and
-``camp::resources::cleanup()`` calls it for every enabled backend. The
-cleanup functions are not thread-safe. Resources that do not currently
-require explicit runtime destruction will have no-ops for their respective
-cleanup functions.
+``camp::resources::cleanup()`` calls it for every enabled backend.
+Resources that do not currently require explicit runtime destruction
+will have no-ops for their respective cleanup functions.
 
 CUDA and HIP resources are non-owning views of streams. Their cleanup
 functions release Camp-created streams. Streams supplied through
@@ -202,3 +201,6 @@ stream. Applications must finish using those resources and ensure that no
 other thread is using them before cleanup. A later resource construction will
 recreate the managed streams, but it does not make an older resource valid
 again.
+
+.. note::
+   The ``cleanup()`` function is not thread-safe.
