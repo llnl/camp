@@ -23,6 +23,7 @@
 
 #include "camp/defines.hpp"
 #include "camp/helpers.hpp"
+#include "camp/init_helpers.hpp"
 #include "camp/resource/event.hpp"
 #include "camp/resource/platform.hpp"
 
@@ -158,7 +159,7 @@ namespace resources
         std::array<cudaStream_t, num_streams> streams{};
         cudaStream_t default_stream = nullptr;
         int previous = num_streams - 1;
-        std::mutex mutex;
+        camp::resettable_once_flag flag;
       };
 
       static stream_state& get_stream_state()
@@ -170,13 +171,14 @@ namespace resources
       static cudaStream_t get_a_stream(int num)
       {
         auto& state = get_stream_state();
-        std::lock_guard<std::mutex> lock(state.mutex);
 
-        for (auto& s : state.streams) {
-          if (s == nullptr) {
-            CAMP_CUDA_API_INVOKE_AND_CHECK(cudaStreamCreate, &s);
+        camp::call_once(state.flag, [&] () {
+          for (auto& s : state.streams) {
+            if (s == nullptr) {
+              CAMP_CUDA_API_INVOKE_AND_CHECK(cudaStreamCreate, &s);
+            }
           }
-        }
+        });
 
         if (num < 0) {
           state.previous = (state.previous + 1) % num_streams;
@@ -241,11 +243,13 @@ namespace resources
         return Cuda(nullptr);
 #else
         auto& state = get_stream_state();
-        std::lock_guard<std::mutex> lock(state.mutex);
-        if (state.default_stream == nullptr) {
-          CAMP_CUDA_API_INVOKE_AND_CHECK(cudaStreamCreate,
-                                         &state.default_stream);
-        }
+
+        camp::call_once(state.flag, [&] () {
+          if (state.default_stream == nullptr) {
+            CAMP_CUDA_API_INVOKE_AND_CHECK(cudaStreamCreate,
+                                           &state.default_stream);
+          }
+        });
         return Cuda(state.default_stream);
 #endif
       }
@@ -281,6 +285,8 @@ namespace resources
           state.default_stream = nullptr;
         }
 #endif
+
+        state.flag.clear();
       }
 
       CudaEvent get_event()

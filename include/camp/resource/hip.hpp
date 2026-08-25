@@ -23,6 +23,7 @@
 
 #include "camp/defines.hpp"
 #include "camp/helpers.hpp"
+#include "camp/init_helpers.hpp"
 #include "camp/resource/event.hpp"
 #include "camp/resource/platform.hpp"
 
@@ -159,7 +160,7 @@ namespace resources
         std::array<hipStream_t, num_streams> streams{};
         hipStream_t default_stream = nullptr;
         int previous = num_streams - 1;
-        std::mutex mutex;
+        camp::resettable_once_flag flag;
       };
 
       static stream_state& get_stream_state()
@@ -171,13 +172,14 @@ namespace resources
       static hipStream_t get_a_stream(int num)
       {
         auto& state = get_stream_state();
-        std::lock_guard<std::mutex> lock(state.mutex);
 
-        for (auto& s : state.streams) {
-          if (s == nullptr) {
-            CAMP_HIP_API_INVOKE_AND_CHECK(hipStreamCreate, &s);
+        camp::call_once(state.flag, [&] () {
+          for (auto& s : state.streams) {
+            if (s == nullptr) {
+              CAMP_HIP_API_INVOKE_AND_CHECK(hipStreamCreate, &s);
+            }
           }
-        }
+        });
 
         if (num < 0) {
           state.previous = (state.previous + 1) % num_streams;
@@ -239,10 +241,13 @@ namespace resources
         return Hip(nullptr);
 #else
         auto& state = get_stream_state();
-        std::lock_guard<std::mutex> lock(state.mutex);
-        if (state.default_stream == nullptr) {
-          CAMP_HIP_API_INVOKE_AND_CHECK(hipStreamCreate, &state.default_stream);
-        }
+
+        camp::call_once(state.flag, [&] () {
+          if (state.default_stream == nullptr) {
+            CAMP_HIP_API_INVOKE_AND_CHECK(hipStreamCreate, &state.default_stream);
+          }
+        });
+
         return Hip(state.default_stream);
 #endif
       }
@@ -277,6 +282,8 @@ namespace resources
           state.default_stream = nullptr;
         }
 #endif
+
+        state.flag.clear();
       }
 
       HipEvent get_event()
