@@ -50,6 +50,23 @@ CAMP_TEST_BEGIN(array, copy_assignment)
 }
 CAMP_TEST_END(array, copy_assignment)
 
+CAMP_TEST_BEGIN(array, zero_sized)
+{
+  camp::array<int, 0> a{};
+  camp::array<int, 0> b = {};
+  const camp::array<int, 0>& c = a;
+
+  a.fill(3);
+  camp::swap(a, b);
+
+  return a.empty() && b.empty() && c.empty() && a.size() == 0
+         && b.max_size() == 0 && a.data() == nullptr && c.data() == nullptr
+         && a.begin() == a.end() && c.begin() == c.end()
+         && a.cbegin() == a.cend() && a == b && !(a != b) && !(a < b) && a <= b
+         && !(a > b) && a >= b;
+}
+CAMP_TEST_END(array, zero_sized)
+
 // Not portable as currently implemented
 TEST(host_array, at)
 {
@@ -75,6 +92,15 @@ TEST(host_array, at)
   EXPECT_EQ(resultAt1, 8);
   EXPECT_EQ(resultAt2, -1);
   EXPECT_TRUE(exception);
+}
+
+TEST(host_array, zero_sized_at)
+{
+  camp::array<int, 0> a{};
+  const camp::array<int, 0>& b = a;
+
+  EXPECT_THROW(a.at(0), std::out_of_range);
+  EXPECT_THROW(b.at(0), std::out_of_range);
 }
 
 CAMP_TEST_BEGIN(array, subscript)
