@@ -308,6 +308,9 @@ namespace resources
       // get default resource
       static Sycl get_default() { return Sycl(0, get_default_context()); }
 
+      /// Clean up resources managed by the SYCL backend.
+      static void cleanup() {}
+
       // Methods
       Platform get_platform() const { return Platform::sycl; }
 

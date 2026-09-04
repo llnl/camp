@@ -183,3 +183,21 @@ a unique device stream or queue will get a hash. However, since all Host resourc
 one `stream of execution` on the Host), users should be cautious when using the Host resource as a key. For example, 
 ``std::unordered_map<Host, Value> map`` would only ever have one entry.
 
+Cleaning Up Resources
+^^^^^^^^^^^^^^^^^^^^^
+
+The ``cleanup`` function will delete/destroy any Camp-managed global state
+that is used by resources. For example, this includes Cuda/Hip streams managed
+by Camp. Every concrete resource backend provides a ``cleanup()`` function,
+and ``camp::resources::cleanup()`` calls ``cleanup()`` for every enabled backend.
+Resources that do not currently require explicit runtime destruction
+will have no-ops for their respective cleanup functions. 
+
+Cleanup invalidates every existing resource that refers to a Camp-managed
+stream. Applications must finish using those resources and ensure that no
+other thread is using them before cleanup. A later resource construction will
+recreate the managed streams, but it does not make an older resource valid
+again.
+
+.. note::
+   All ``cleanup()`` functions are not thread-safe.

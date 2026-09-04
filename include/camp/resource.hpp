@@ -417,6 +417,41 @@ struct hash<camp::resources::Resource> {
 #include "camp/resource/omp_target.hpp"
 #endif
 
+namespace camp
+{
+namespace resources
+{
+  inline namespace v1
+  {
+    /**
+     * \brief Clean up resources managed by all enabled backends.
+     *
+     * Existing resources that refer to backend-managed streams are invalid
+     * after this call. Caller-owned resources are not affected. The caller
+     * must ensure no other thread is using backend resources while cleanup
+     * runs.
+     */
+    inline void cleanup()
+    {
+      Host::cleanup();
+#if defined(CAMP_HAVE_CUDA)
+      Cuda::cleanup();
+#endif
+#if defined(CAMP_HAVE_HIP)
+      Hip::cleanup();
+#endif
+#if defined(CAMP_HAVE_SYCL)
+      Sycl::cleanup();
+#endif
+#if defined(CAMP_HAVE_OMP_OFFLOAD)
+      Omp::cleanup();
+#endif
+    }
+
+  }  // namespace v1
+}  // namespace resources
+}  // namespace camp
+
 #include "camp/resource/resource_allocator.hpp"
 
 #endif /* __CAMP_RESOURCE_HPP */

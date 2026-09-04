@@ -23,6 +23,7 @@
 
 #include "camp/defines.hpp"
 #include "camp/helpers.hpp"
+#include "camp/init_helpers.hpp"
 #include "camp/resource/event.hpp"
 #include "camp/resource/platform.hpp"
 
@@ -153,27 +154,82 @@ namespace resources
 
     class Hip
     {
-      static hipStream_t get_a_stream(int num)
-      {
-        static constexpr int num_streams = 16;
-        static std::array<hipStream_t, num_streams> s_streams = [] {
-          std::array<hipStream_t, num_streams> streams;
-          for (auto& s : streams) {
-            CAMP_HIP_API_INVOKE_AND_CHECK(hipStreamCreate, &s);
-          }
-          return streams;
-        }();
+      static constexpr int num_streams = 16;
 
-        static std::mutex s_mtx;
-        static int s_previous = num_streams - 1;
-
-        if (num < 0) {
-          std::lock_guard<std::mutex> lock(s_mtx);
-          s_previous = (s_previous + 1) % num_streams;
-          return s_streams[s_previous];
+      class stream_state {
+      public:
+        hipStream_t get_default_stream()
+        {
+#if !CAMP_USE_PLATFORM_DEFAULT_STREAM
+          auto& default_stream = m_default_stream;
+          camp::call_once(m_default_flag, [&default_stream] () {
+            if (default_stream == nullptr) {
+              CAMP_HIP_API_INVOKE_AND_CHECK(hipStreamCreate, &default_stream);
+            }
+          });
+#endif
+          return m_default_stream;
         }
 
-        return s_streams[num % num_streams];
+        hipStream_t get_a_stream(int num)
+        {
+          auto& streams = m_streams;
+          camp::call_once(m_flag, [&streams] () {
+            for (auto& s : streams) {
+              if (s == nullptr) {
+                CAMP_HIP_API_INVOKE_AND_CHECK(hipStreamCreate, &s);
+              }
+            }
+          });
+
+          if (num < 0) {
+            std::lock_guard<std::mutex> lock(m_flag.get_mutex());
+            m_previous = (m_previous + 1) % num_streams;
+            return m_streams[m_previous];
+          }
+
+          return m_streams[num % num_streams];
+        }
+
+        void cleanup()
+        {
+          for (auto& s : m_streams) {
+            if (s != nullptr) {
+              CAMP_HIP_API_INVOKE_AND_CHECK(hipStreamDestroy, s);
+              s = nullptr;
+            }
+          }
+          m_previous = num_streams - 1;
+
+#if !CAMP_USE_PLATFORM_DEFAULT_STREAM
+          if (m_default_stream != nullptr) {
+            CAMP_HIP_API_INVOKE_AND_CHECK(hipStreamDestroy, m_default_stream);
+            m_default_stream = nullptr;
+          }
+#endif
+
+          m_flag.clear();
+          m_default_flag.clear();
+        }
+
+      private:
+        std::array<hipStream_t, num_streams> m_streams{};
+        hipStream_t m_default_stream = nullptr;
+        int m_previous = num_streams - 1;
+        camp::resettable_once_flag m_flag;
+        camp::resettable_once_flag m_default_flag;
+      };
+
+      static stream_state& get_stream_state()
+      {
+        static stream_state state;
+        return state;
+      }
+
+      static hipStream_t get_a_stream(int num)
+      {
+        auto& state = get_stream_state();
+        return state.get_a_stream(num);
       }
 
       // Private from-stream constructor
@@ -224,16 +280,26 @@ namespace resources
 
       static Hip get_default()
       {
-        static Hip h([] {
-          hipStream_t s;
-#if CAMP_USE_PLATFORM_DEFAULT_STREAM
-          s = 0;
-#else
-          CAMP_HIP_API_INVOKE_AND_CHECK(hipStreamCreate, &s);
-#endif
-          return s;
-        }());
-        return h;
+        auto& state = get_stream_state();
+        return Hip(state.get_default_stream());
+      }
+
+      /**
+       * \brief Destroy all HIP streams created and managed by CAMP.
+       *
+       * Existing resources that refer to CAMP-managed streams are invalid
+       * after this call. Streams passed to HipFromStream and the HIP platform
+       * default stream are not destroyed. This function may be called
+       * repeatedly, and later resource construction recreates the managed
+       * streams.
+       *
+       * The caller must ensure no other thread is using HIP resources while
+       * cleanup runs.
+       */
+      static void cleanup()
+      {
+        auto& state = get_stream_state();
+        state.cleanup();
       }
 
       HipEvent get_event()
