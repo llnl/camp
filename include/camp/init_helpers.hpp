@@ -54,6 +54,11 @@ public:
     m_flag.store(false, std::memory_order_release);
   }
 
+  std::mutex& get_mutex() noexcept
+  {
+    return m_lock;
+  }
+
   template <typename Callable, typename... Args>
   friend void call_once(camp::resettable_once_flag& flag, Callable&& callable,
       Args&&... args);

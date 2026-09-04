@@ -155,11 +155,68 @@ namespace resources
     {
       static constexpr int num_streams = 16;
 
-      struct stream_state {
-        std::array<cudaStream_t, num_streams> streams{};
-        cudaStream_t default_stream = nullptr;
-        int previous = num_streams - 1;
-        camp::resettable_once_flag flag;
+      class stream_state {
+      public:
+        cudaStream_t get_default_stream()
+        {
+#if !CAMP_USE_PLATFORM_DEFAULT_STREAM
+          auto& default_stream = m_default_stream;
+          camp::call_once(m_default_flag, [&default_stream] () {
+            if (default_stream == nullptr) {
+              CAMP_CUDA_API_INVOKE_AND_CHECK(cudaStreamCreate, &default_stream);
+            }
+          });
+#endif
+          return m_default_stream;
+        }
+
+        cudaStream_t get_a_stream(int num)
+        {
+          auto& streams = m_streams;
+          camp::call_once(m_flag, [&streams] () {
+            for (auto& s : streams) {
+              if (s == nullptr) {
+                CAMP_CUDA_API_INVOKE_AND_CHECK(cudaStreamCreate, &s);
+              }
+            }
+          });
+
+          if (num < 0) {
+            std::lock_guard<std::mutex> lock(m_flag.get_mutex());
+            m_previous = (m_previous + 1) % num_streams;
+            return m_streams[m_previous];
+          }
+
+          return m_streams[num % num_streams];
+        }
+
+        void cleanup()
+        {
+          for (auto& s : m_streams) {
+            if (s != nullptr) {
+              CAMP_CUDA_API_INVOKE_AND_CHECK(cudaStreamDestroy, s);
+              s = nullptr;
+            }
+          }
+          m_previous = num_streams - 1;
+
+#if !CAMP_USE_PLATFORM_DEFAULT_STREAM
+          if (m_default_stream != nullptr) {
+            CAMP_CUDA_API_INVOKE_AND_CHECK(cudaStreamDestroy, m_default_stream);
+            m_default_stream = nullptr;
+          }
+#endif
+
+          m_flag.clear();
+          m_default_flag.clear();
+        }
+
+      private:
+        std::array<cudaStream_t, num_streams> m_streams{};
+        cudaStream_t m_default_stream = nullptr;
+        int m_previous = num_streams - 1;
+        camp::resettable_once_flag m_flag;
+        camp::resettable_once_flag m_default_flag;
       };
 
       static stream_state& get_stream_state()
@@ -171,21 +228,7 @@ namespace resources
       static cudaStream_t get_a_stream(int num)
       {
         auto& state = get_stream_state();
-
-        camp::call_once(state.flag, [&] () {
-          for (auto& s : state.streams) {
-            if (s == nullptr) {
-              CAMP_CUDA_API_INVOKE_AND_CHECK(cudaStreamCreate, &s);
-            }
-          }
-        });
-
-        if (num < 0) {
-          state.previous = (state.previous + 1) % num_streams;
-          return state.streams[state.previous];
-        }
-
-        return state.streams[num % num_streams];
+        return state.get_a_stream(num);
       }
 
       // Private from-stream constructor
@@ -239,19 +282,8 @@ namespace resources
 
       static Cuda get_default()
       {
-#if CAMP_USE_PLATFORM_DEFAULT_STREAM
-        return Cuda(nullptr);
-#else
         auto& state = get_stream_state();
-
-        camp::call_once(state.flag, [&] () {
-          if (state.default_stream == nullptr) {
-            CAMP_CUDA_API_INVOKE_AND_CHECK(cudaStreamCreate,
-                                           &state.default_stream);
-          }
-        });
-        return Cuda(state.default_stream);
-#endif
+        return Cuda(state.get_default_stream());
       }
 
       /**
@@ -269,24 +301,7 @@ namespace resources
       static void cleanup()
       {
         auto& state = get_stream_state();
-
-        for (auto& s : state.streams) {
-          if (s != nullptr) {
-            CAMP_CUDA_API_INVOKE_AND_CHECK(cudaStreamDestroy, s);
-            s = nullptr;
-          }
-        }
-        state.previous = num_streams - 1;
-
-#if !CAMP_USE_PLATFORM_DEFAULT_STREAM
-        if (state.default_stream != nullptr) {
-          CAMP_CUDA_API_INVOKE_AND_CHECK(cudaStreamDestroy,
-                                         state.default_stream);
-          state.default_stream = nullptr;
-        }
-#endif
-
-        state.flag.clear();
+        state.cleanup();
       }
 
       CudaEvent get_event()
