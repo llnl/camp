@@ -17,6 +17,18 @@
 
 namespace camp
 {
+
+/// NVCC doesn't define interference size with device compile
+/// and gets a compiler error. This adds default values to 
+/// avoid this compiler error.
+#ifdef __cpp_lib_hardware_interference_size
+  using std::hardware_constructive_interference_size;
+  using std::hardware_destructive_interference_size;
+#else
+  constexpr std::size_t hardware_constructive_interference_size = 64;
+  constexpr std::size_t hardware_destructive_interference_size = 64;
+#endif
+
 /// Resettable version of std::once_flag
 ///
 /// This is similar to std::once_flag used in std::call_once. However,
@@ -27,7 +39,7 @@ namespace camp
 ///       older versions of GCC. atomic_flag::test is not supported until
 ///       GCC 11. atomic_flag would be preferred as it is guaranteed to
 ///       not use a lock.
-class alignas(std::hardware_constructive_interference_size)
+class alignas(camp::hardware_constructive_interference_size)
 resettable_once_flag
 {
 public:

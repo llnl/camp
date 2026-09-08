@@ -213,8 +213,8 @@ namespace resources
         std::array<cudaStream_t, num_streams> m_streams{nullptr};
         cudaStream_t m_default_stream{nullptr};
         int m_previous{num_streams - 1};
-        camp::resettable_once_flag m_flag;
-        camp::resettable_once_flag m_default_flag;
+        alignas(camp::hardware_destructive_interference_size) camp::resettable_once_flag m_flag;
+        alignas(camp::hardware_destructive_interference_size) camp::resettable_once_flag m_default_flag;
       };
 
       static constinit stream_state streams;
