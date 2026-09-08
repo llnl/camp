@@ -217,15 +217,10 @@ namespace resources
         camp::resettable_once_flag m_default_flag;
       };
 
-      static stream_state& get_stream_state()
-      {
-        static stream_state state;
-        return state;
-      }
+      constinit inline static stream_state state;
 
       static cudaStream_t get_a_stream(int num)
       {
-        auto& state = get_stream_state();
         return state.get_a_stream(num);
       }
 
@@ -280,7 +275,6 @@ namespace resources
 
       static Cuda get_default()
       {
-        auto& state = get_stream_state();
         return Cuda(state.get_default_stream());
       }
 
@@ -298,7 +292,6 @@ namespace resources
        */
       static void cleanup()
       {
-        auto& state = get_stream_state();
         state.cleanup();
       }
 
