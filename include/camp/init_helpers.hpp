@@ -21,7 +21,7 @@ namespace camp
 ///
 /// This is similar to std::once_flag used in std::call_once. However,
 /// this version supports resetting flag, so that memory can be cleaned
-/// and re-initialized at a later if needed.
+/// and re-initialized later if needed.
 /// 
 /// @note Currently, this uses atomic<bool> instead of atomic_flag to support
 ///       older versions of GCC. atomic_flag::test is not supported until
