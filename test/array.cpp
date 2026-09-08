@@ -248,20 +248,16 @@ CAMP_TEST_BEGIN(array, cend)
 }
 CAMP_TEST_END(array, cend)
 
-CAMP_TEST_BEGIN(array, empty)
+CAMP_TEST_BEGIN(array, not_empty)
 {
-  // Zero sized arrays are technically not allowed,
-  // and are explicitly disallowed in device code.
   camp::array<double, 1> a{1.0};
 
   return !a.empty();
 }
-CAMP_TEST_END(array, empty)
+CAMP_TEST_END(array, not_empty)
 
 CAMP_TEST_BEGIN(array, size)
 {
-  // Zero sized arrays are technically not allowed,
-  // and are explicitly disallowed in device code.
   camp::array<double, 2> a{1.0, 3.0};
 
   return a.size() == 2;
@@ -270,8 +266,6 @@ CAMP_TEST_END(array, size)
 
 CAMP_TEST_BEGIN(array, max_size)
 {
-  // Zero sized arrays are technically not allowed,
-  // and are explicitly disallowed in device code.
   camp::array<double, 2> a{1.0, 3.0};
 
   return a.size() == 2;
