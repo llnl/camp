@@ -210,18 +210,18 @@ namespace resources
         }
 
       private:
-        std::array<cudaStream_t, num_streams> m_streams{};
-        cudaStream_t m_default_stream = nullptr;
-        int m_previous = num_streams - 1;
+        std::array<cudaStream_t, num_streams> m_streams{nullptr};
+        cudaStream_t m_default_stream{nullptr};
+        int m_previous{num_streams - 1};
         camp::resettable_once_flag m_flag;
         camp::resettable_once_flag m_default_flag;
       };
 
-      constinit inline static stream_state state;
+      static constinit stream_state streams;
 
       static cudaStream_t get_a_stream(int num)
       {
-        return state.get_a_stream(num);
+        return Cuda::streams.get_a_stream(num);
       }
 
       // Private from-stream constructor
@@ -275,7 +275,7 @@ namespace resources
 
       static Cuda get_default()
       {
-        return Cuda(state.get_default_stream());
+        return Cuda(Cuda::streams.get_default_stream());
       }
 
       /**
@@ -292,7 +292,7 @@ namespace resources
        */
       static void cleanup()
       {
-        state.cleanup();
+        Cuda::streams.cleanup();
       }
 
       CudaEvent get_event()
@@ -442,6 +442,7 @@ namespace resources
       int device;
     };
 
+    inline constinit Cuda::stream_state Cuda::streams;
   }  // namespace v1
 
 }  // namespace resources

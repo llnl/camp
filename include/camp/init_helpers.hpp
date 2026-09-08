@@ -12,6 +12,7 @@
 
 #include <atomic>
 #include <mutex>
+#include <new>
 #include <utility>
 
 namespace camp
@@ -26,11 +27,11 @@ namespace camp
 ///       older versions of GCC. atomic_flag::test is not supported until
 ///       GCC 11. atomic_flag would be preferred as it is guaranteed to
 ///       not use a lock.
-class resettable_once_flag
+class alignas(std::hardware_constructive_interference_size)
+resettable_once_flag
 {
 public:
-  resettable_once_flag() : m_lock{}, m_flag{false}
-  {}
+  resettable_once_flag() = default; 
 
   resettable_once_flag(const resettable_once_flag&) = delete;
   resettable_once_flag& operator=(const resettable_once_flag&) = delete;
@@ -59,8 +60,8 @@ public:
   }
 
 private:
-  std::mutex m_lock;
-  std::atomic<bool> m_flag;
+  std::mutex m_lock{};
+  std::atomic<bool> m_flag{false};
 };
 
 /// Resettable version of std::call_once

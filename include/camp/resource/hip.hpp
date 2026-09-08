@@ -211,18 +211,18 @@ namespace resources
         }
 
       private:
-        std::array<hipStream_t, num_streams> m_streams{};
-        hipStream_t m_default_stream = nullptr;
-        int m_previous = num_streams - 1;
+        std::array<hipStream_t, num_streams> m_streams{nullptr};
+        hipStream_t m_default_stream{nullptr};
+        int m_previous{num_streams - 1};
         camp::resettable_once_flag m_flag;
         camp::resettable_once_flag m_default_flag;
       };
 
-      constinit inline static stream_state state;
+      static constinit stream_state streams;
 
       static hipStream_t get_a_stream(int num)
       {
-        return state.get_a_stream(num);
+        return Hip::streams.get_a_stream(num);
       }
 
       // Private from-stream constructor
@@ -273,7 +273,7 @@ namespace resources
 
       static Hip get_default()
       {
-        return Hip(state.get_default_stream());
+        return Hip(Hip::streams.get_default_stream());
       }
 
       /**
@@ -290,7 +290,7 @@ namespace resources
        */
       static void cleanup()
       {
-        state.cleanup();
+        Hip::streams.cleanup();
       }
 
       HipEvent get_event()
@@ -440,6 +440,7 @@ namespace resources
       int device;
     };
 
+    inline constinit Hip::stream_state Hip::streams;
   }  // namespace v1
 
 }  // namespace resources
