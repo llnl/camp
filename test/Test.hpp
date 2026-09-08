@@ -109,22 +109,22 @@
     bool passed = false;                                                  \
     bool* buffer;                                                         \
     auto error = hipHostMalloc((void**)&buffer, sizeof(bool));            \
-                                                                         \
+                                                                          \
     if (error == hipSuccess) {                                            \
       camp::test::CAMP_SUITE_NAME::CAMP_TEST_NAME##_hip_kernel<<<1, 1>>>( \
           buffer);                                                        \
       error = hipDeviceSynchronize();                                     \
-                                                                         \
+                                                                          \
       if (error == hipSuccess) {                                          \
         passed = *buffer;                                                 \
         error = hipHostFree(buffer);                                      \
-                                                                         \
+                                                                          \
         if (error != hipSuccess) {                                        \
           passed = false;                                                 \
         }                                                                 \
       }                                                                   \
     }                                                                     \
-                                                                         \
+                                                                          \
     EXPECT_TRUE(passed);                                                  \
   }
 #else
