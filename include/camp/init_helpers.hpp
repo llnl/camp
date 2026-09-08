@@ -59,9 +59,6 @@ public:
     return m_lock;
   }
 
-  template <typename Callable, typename... Args>
-  friend void call_once(camp::resettable_once_flag& flag, Callable&& callable,
-      Args&&... args);
 private:
   std::mutex m_lock;
   std::atomic<bool> m_flag;
@@ -80,7 +77,7 @@ void call_once(camp::resettable_once_flag& flag, Callable&& callable, Args&&... 
     return;
   }
 
-  std::lock_guard guard(flag.m_lock);
+  std::lock_guard guard(flag.get_mutex());
   if (!flag.test(std::memory_order::relaxed)) {
     callable(std::forward<Args>(args)...);
     flag.set(true, std::memory_order::release);
