@@ -16,10 +16,6 @@
 
 namespace camp
 {
-#if !ATOMIC_BOOL_LOCK_FREE
-#warning "std::atomic<bool> is not lock free. This may impact performance."
-#endif
-
 /// Resettable version of std::once_flag
 ///
 /// This is similar to std::once_flag used in std::call_once. However,
