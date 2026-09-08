@@ -160,10 +160,9 @@ namespace resources
         cudaStream_t get_default_stream()
         {
 #if !CAMP_USE_PLATFORM_DEFAULT_STREAM
-          auto& default_stream = m_default_stream;
-          camp::call_once(m_default_flag, [&default_stream] () {
-            if (default_stream == nullptr) {
-              CAMP_CUDA_API_INVOKE_AND_CHECK(cudaStreamCreate, &default_stream);
+          camp::call_once(m_default_flag, [this] () {
+            if (m_default_stream == nullptr) {
+              CAMP_CUDA_API_INVOKE_AND_CHECK(cudaStreamCreate, &m_default_stream);
             }
           });
 #endif
@@ -172,9 +171,8 @@ namespace resources
 
         cudaStream_t get_a_stream(int num)
         {
-          auto& streams = m_streams;
-          camp::call_once(m_flag, [&streams] () {
-            for (auto& s : streams) {
+          camp::call_once(m_flag, [this] () {
+            for (auto& s : m_streams) {
               if (s == nullptr) {
                 CAMP_CUDA_API_INVOKE_AND_CHECK(cudaStreamCreate, &s);
               }
