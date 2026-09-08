@@ -1921,3 +1921,60 @@ TEST(CampResource, Cleanup)
   test_cleanup<Omp>();
 #endif
 }
+
+template <typename Res>
+void test_cleanup_custom_resource(Res custom)
+{
+  {
+    Res managed;
+    Res managed_default = Res::get_default();
+    managed.wait();
+    managed_default.wait();
+  }
+
+  Res::cleanup();
+  Res::cleanup();
+  custom.wait();
+
+  {
+    Res recreated;
+    Res recreated_default = Res::get_default();
+    recreated.wait();
+    recreated_default.wait();
+  }
+
+  camp::resources::cleanup();
+}
+
+TEST(CampResource, CleanupPreservesCustomStream)
+{
+  test_cleanup_custom_resource<Host>(Host{});
+#ifdef CAMP_HAVE_CUDA
+  int current_device = -1;
+  cudaStream_t stream;
+  CAMP_CUDA_API_INVOKE_AND_CHECK(cudaGetDevice, &current_device);
+  CAMP_CUDA_API_INVOKE_AND_CHECK(cudaStreamCreate, &stream);
+
+  Cuda custom = Cuda::CudaFromStream(stream, current_device);
+  test_cleanup_custom_resource<Cuda>(custom);
+
+  CAMP_CUDA_API_INVOKE_AND_CHECK(cudaStreamDestroy, stream);
+#endif
+#ifdef CAMP_HAVE_HIP
+  int current_device = -1;
+  hipStream_t stream;
+  CAMP_HIP_API_INVOKE_AND_CHECK(hipGetDevice, &current_device);
+  CAMP_HIP_API_INVOKE_AND_CHECK(hipStreamCreate, &stream);
+
+  Hip custom = Hip::HipFromStream(stream, current_device);
+  test_cleanup_custom_resource<Hip>(custom);
+
+  CAMP_HIP_API_INVOKE_AND_CHECK(hipStreamDestroy, stream);
+#endif
+#ifdef CAMP_HAVE_SYCL
+  test_cleanup_custom_resource<Sycl>(Sycl{});
+#endif
+#ifdef CAMP_HAVE_OMP_OFFLOAD
+  test_cleanup_custom_resource<Omp>(Omp{});
+#endif
+}
