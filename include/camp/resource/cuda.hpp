@@ -171,7 +171,7 @@ namespace resources
 
         cudaStream_t get_a_stream(int num)
         {
-          camp::call_once(m_flag, [this] () {
+          camp::call_once(m_extra.flag, [this] () {
             for (auto& s : m_extra.streams) {
               if (s == nullptr) {
                 CAMP_CUDA_API_INVOKE_AND_CHECK(cudaStreamCreate, &s);
