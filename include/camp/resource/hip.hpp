@@ -214,7 +214,7 @@ namespace resources
         struct default_state
         {
           camp::resettable_once_flag flag;
-          hipStream_t stream;
+          hipStream_t stream{nullptr};
         };
 
         struct extra_state

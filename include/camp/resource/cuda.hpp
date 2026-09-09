@@ -213,7 +213,7 @@ namespace resources
         struct default_state
         {
           camp::resettable_once_flag flag;
-          cudaStream_t stream;
+          cudaStream_t stream{nullptr};
         };
 
         struct extra_state
