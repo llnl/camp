@@ -161,19 +161,19 @@ namespace resources
         hipStream_t get_default_stream()
         {
 #if !CAMP_USE_PLATFORM_DEFAULT_STREAM
-          camp::call_once(m_default_flag, [this] () {
-            if (m_default_stream == nullptr) {
-              CAMP_HIP_API_INVOKE_AND_CHECK(hipStreamCreate, &m_default_stream);
+          camp::call_once(m_default.flag, [this] () {
+            if (m_default.stream == nullptr) {
+              CAMP_HIP_API_INVOKE_AND_CHECK(hipStreamCreate, &m_default.stream);
             }
           });
 #endif
-          return m_default_stream;
+          return m_default.stream;
         }
 
         hipStream_t get_a_stream(int num)
         {
-          camp::call_once(m_flag, [this] () {
-            for (auto& s : m_streams) {
+          camp::call_once(m_extra.flag, [this] () {
+            for (auto& s : m_extra.streams) {
               if (s == nullptr) {
                 CAMP_HIP_API_INVOKE_AND_CHECK(hipStreamCreate, &s);
               }
@@ -181,41 +181,51 @@ namespace resources
           });
 
           if (num < 0) {
-            std::lock_guard<std::mutex> lock(m_flag.get_mutex());
-            m_previous = (m_previous + 1) % num_streams;
-            return m_streams[m_previous];
+            std::lock_guard<std::mutex> lock(m_extra.flag.get_mutex());
+            m_extra.previous = (m_extra.previous + 1) % num_streams;
+            return m_extra.streams[m_extra.previous];
           }
 
-          return m_streams[num % num_streams];
+          return m_extra.streams[num % num_streams];
         }
 
         void cleanup()
         {
-          for (auto& s : m_streams) {
+          for (auto& s : m_extra.streams) {
             if (s != nullptr) {
               CAMP_HIP_API_INVOKE_AND_CHECK(hipStreamDestroy, s);
               s = nullptr;
             }
           }
-          m_previous = num_streams - 1;
+          m_extra.previous = num_streams - 1;
 
 #if !CAMP_USE_PLATFORM_DEFAULT_STREAM
-          if (m_default_stream != nullptr) {
-            CAMP_HIP_API_INVOKE_AND_CHECK(hipStreamDestroy, m_default_stream);
-            m_default_stream = nullptr;
+          if (m_default.stream != nullptr) {
+            CAMP_HIP_API_INVOKE_AND_CHECK(hipStreamDestroy, m_default.stream);
+            m_default.stream = nullptr;
           }
 #endif
 
-          m_flag.clear();
-          m_default_flag.clear();
+          m_extra.flag.clear();
+          m_default.flag.clear();
         }
 
       private:
-        std::array<hipStream_t, num_streams> m_streams{nullptr};
-        hipStream_t m_default_stream{nullptr};
-        int m_previous{num_streams - 1};
-        alignas(camp::hardware_destructive_interference_size) camp::resettable_once_flag m_flag;
-        alignas(camp::hardware_destructive_interference_size) camp::resettable_once_flag m_default_flag;
+        struct default_state
+        {
+          camp::resettable_once_flag flag;
+          hipStream_t stream;
+        };
+
+        struct extra_state
+        {
+          camp::resettable_once_flag flag;
+          std::array<hipStream_t, num_streams> streams{nullptr};
+          int previous{num_streams - 1};
+        };
+
+        alignas(camp::hardware_destructive_interference_size) default_state m_default;
+        alignas(camp::hardware_destructive_interference_size) extra_state m_extra;
       };
 
       static constinit stream_state streams;
