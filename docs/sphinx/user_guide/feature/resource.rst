@@ -195,9 +195,9 @@ will have no-ops for their respective cleanup functions.
 
 Cleanup invalidates every existing resource that refers to a Camp-managed
 stream. Applications must finish using those resources and ensure that no
-other thread is using them before cleanup. A later resource construction will
-recreate the managed streams, but it does not make an older resource valid
-again.
+other thread is using them before cleanup. If an application uses creates
+a new resource at a later time, the resource managed streams will be created
+again. However, this does not make an old resource valid.
 
 .. note::
    The ``cleanup()`` functions are not thread-safe.
