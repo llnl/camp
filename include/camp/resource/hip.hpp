@@ -170,23 +170,23 @@ namespace resources
           return m_default.stream;
         }
 
-        hipStream_t get_a_stream(int num)
+        hipStream_t get_a_stream(int index)
         {
           camp::call_once(m_extra.flag, [this] () {
-            for (auto& s : m_extra.streams) {
-              if (s == nullptr) {
-                CAMP_HIP_API_INVOKE_AND_CHECK(hipStreamCreate, &s);
+            for (auto& stream : m_extra.streams) {
+              if (stream == nullptr) {
+                CAMP_HIP_API_INVOKE_AND_CHECK(hipStreamCreate, &stream);
               }
             }
           });
 
-          if (num < 0) {
+          if (index < 0) {
             std::lock_guard<std::mutex> lock(m_extra.flag.get_mutex());
             m_extra.previous = (m_extra.previous + 1) % num_streams;
             return m_extra.streams[m_extra.previous];
           }
 
-          return m_extra.streams[num % num_streams];
+          return m_extra.streams[index % num_streams];
         }
 
         void cleanup()
