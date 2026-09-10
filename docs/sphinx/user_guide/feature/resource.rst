@@ -186,8 +186,8 @@ one `stream of execution` on the Host), users should be cautious when using the 
 Cleaning Up Resources
 ^^^^^^^^^^^^^^^^^^^^^
 
-The ``cleanup`` function will delete/destroy any Camp-managed global state
-that is used by resources. For example, this includes Cuda/Hip streams managed
+The ``cleanup`` function will delete any Camp-managed global state
+that is used by resources. For example, this includes CUDA/HIP streams managed
 by Camp. Every concrete resource backend provides a ``cleanup()`` function,
 and ``camp::resources::cleanup()`` calls ``cleanup()`` for every enabled backend.
 Resources that do not currently require explicit runtime destruction
@@ -200,4 +200,4 @@ recreate the managed streams, but it does not make an older resource valid
 again.
 
 .. note::
-   All ``cleanup()`` functions are not thread-safe.
+   The ``cleanup()`` functions are not thread-safe.
