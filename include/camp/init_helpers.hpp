@@ -39,8 +39,7 @@ namespace camp
 ///       older versions of GCC. atomic_flag::test is not supported until
 ///       GCC 11. atomic_flag would be preferred as it is guaranteed to
 ///       not use a lock.
-class alignas(camp::hardware_constructive_interference_size)
-resettable_once_flag
+class resettable_once_flag
 {
 public:
   resettable_once_flag() = default; 
