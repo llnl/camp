@@ -50,6 +50,48 @@ CAMP_TEST_BEGIN(array, copy_assignment)
 }
 CAMP_TEST_END(array, copy_assignment)
 
+CAMP_TEST_BEGIN(array, zero_sized_capacity)
+{
+  camp::array<int, 0> a{};
+  const camp::array<int, 0>& c = a;
+
+  return a.empty() && c.empty() && a.size() == 0 && c.size() == 0
+         && a.max_size() == 0 && c.max_size() == 0;
+}
+CAMP_TEST_END(array, zero_sized_capacity)
+
+CAMP_TEST_BEGIN(array, zero_sized_data)
+{
+  camp::array<int, 0> a{};
+  const camp::array<int, 0>& c = a;
+
+  return a.data() == nullptr && c.data() == nullptr && a.begin() == a.end()
+         && c.begin() == c.end() && a.cbegin() == a.cend()
+         && c.cbegin() == c.cend();
+}
+CAMP_TEST_END(array, zero_sized_data)
+
+CAMP_TEST_BEGIN(array, zero_sized_modifiers)
+{
+  camp::array<int, 0> a{};
+  camp::array<int, 0> b = {};
+
+  a.fill(3);
+  camp::swap(a, b);
+
+  return a.empty() && b.empty() && a.size() == 0 && b.size() == 0;
+}
+CAMP_TEST_END(array, zero_sized_modifiers)
+
+CAMP_TEST_BEGIN(array, zero_sized_comparisons)
+{
+  camp::array<int, 0> a{};
+  camp::array<int, 0> b = {};
+
+  return a == b && !(a != b) && !(a < b) && a <= b && !(a > b) && a >= b;
+}
+CAMP_TEST_END(array, zero_sized_comparisons)
+
 // Not portable as currently implemented
 TEST(host_array, at)
 {
@@ -75,6 +117,15 @@ TEST(host_array, at)
   EXPECT_EQ(resultAt1, 8);
   EXPECT_EQ(resultAt2, -1);
   EXPECT_TRUE(exception);
+}
+
+TEST(host_array, zero_sized_at)
+{
+  camp::array<int, 0> a{};
+  const camp::array<int, 0>& b = a;
+
+  EXPECT_THROW(a.at(0), std::out_of_range);
+  EXPECT_THROW(b.at(0), std::out_of_range);
 }
 
 CAMP_TEST_BEGIN(array, subscript)
@@ -197,20 +248,16 @@ CAMP_TEST_BEGIN(array, cend)
 }
 CAMP_TEST_END(array, cend)
 
-CAMP_TEST_BEGIN(array, empty)
+CAMP_TEST_BEGIN(array, not_empty)
 {
-  // Zero sized arrays are technically not allowed,
-  // and are explicitly disallowed in device code.
   camp::array<double, 1> a{1.0};
 
   return !a.empty();
 }
-CAMP_TEST_END(array, empty)
+CAMP_TEST_END(array, not_empty)
 
 CAMP_TEST_BEGIN(array, size)
 {
-  // Zero sized arrays are technically not allowed,
-  // and are explicitly disallowed in device code.
   camp::array<double, 2> a{1.0, 3.0};
 
   return a.size() == 2;
@@ -219,8 +266,6 @@ CAMP_TEST_END(array, size)
 
 CAMP_TEST_BEGIN(array, max_size)
 {
-  // Zero sized arrays are technically not allowed,
-  // and are explicitly disallowed in device code.
   camp::array<double, 2> a{1.0, 3.0};
 
   return a.size() == 2;

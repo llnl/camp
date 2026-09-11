@@ -192,6 +192,134 @@ struct array {
   value_type elements[N];
 };
 
+template <class T>
+struct array<T, 0> {
+  using value_type = T;
+  using size_type = std::size_t;
+  using difference_type = std::ptrdiff_t;
+  using reference = value_type&;
+  using const_reference = const value_type&;
+  using pointer = value_type*;
+  using const_pointer = const value_type*;
+  using iterator = pointer;
+  using const_iterator = const_pointer;
+
+  constexpr reference at(size_type)
+  {
+    throw std::out_of_range{"camp::array::at detected out of range access"};
+  }
+
+  constexpr const_reference at(size_type) const
+  {
+    throw std::out_of_range{"camp::array::at detected out of range access"};
+  }
+
+  CAMP_HOST_DEVICE constexpr reference operator[](size_type) noexcept
+  {
+    return *data();
+  }
+
+  CAMP_HOST_DEVICE constexpr const_reference operator[](
+      size_type) const noexcept
+  {
+    return *data();
+  }
+
+  reference front() = delete;
+  const_reference front() const = delete;
+  reference back() = delete;
+  const_reference back() const = delete;
+
+  CAMP_HOST_DEVICE constexpr pointer data() noexcept { return nullptr; }
+
+  CAMP_HOST_DEVICE constexpr const_pointer data() const noexcept
+  {
+    return nullptr;
+  }
+
+  CAMP_HOST_DEVICE constexpr iterator begin() noexcept
+  {
+    return iterator(data());
+  }
+
+  CAMP_HOST_DEVICE constexpr const_iterator begin() const noexcept
+  {
+    return const_iterator(data());
+  }
+
+  CAMP_HOST_DEVICE constexpr const_iterator cbegin() const noexcept
+  {
+    return const_iterator(data());
+  }
+
+  CAMP_HOST_DEVICE constexpr iterator end() noexcept
+  {
+    return iterator(data());
+  }
+
+  CAMP_HOST_DEVICE constexpr const_iterator end() const noexcept
+  {
+    return const_iterator(data());
+  }
+
+  CAMP_HOST_DEVICE constexpr const_iterator cend() const noexcept
+  {
+    return const_iterator(data());
+  }
+
+  CAMP_HOST_DEVICE constexpr bool empty() const noexcept { return true; }
+
+  CAMP_HOST_DEVICE constexpr size_type size() const noexcept { return 0; }
+
+  CAMP_HOST_DEVICE constexpr size_type max_size() const noexcept { return 0; }
+
+  CAMP_HOST_DEVICE constexpr void fill(const T&) {}
+
+  CAMP_HOST_DEVICE constexpr void swap(array&) noexcept {}
+};
+
+template <class T>
+CAMP_HOST_DEVICE inline constexpr bool operator==(const array<T, 0>&,
+                                                  const array<T, 0>&)
+{
+  return true;
+}
+
+template <class T>
+CAMP_HOST_DEVICE inline constexpr bool operator!=(const array<T, 0>&,
+                                                  const array<T, 0>&)
+{
+  return false;
+}
+
+template <class T>
+CAMP_HOST_DEVICE inline constexpr bool operator<(const array<T, 0>&,
+                                                 const array<T, 0>&)
+{
+  return false;
+}
+
+template <class T>
+CAMP_HOST_DEVICE inline constexpr bool operator<=(const array<T, 0>&,
+                                                  const array<T, 0>&)
+{
+  return true;
+}
+
+template <class T>
+CAMP_HOST_DEVICE inline constexpr bool operator>(const array<T, 0>&,
+                                                 const array<T, 0>&)
+{
+  return false;
+}
+
+template <class T>
+CAMP_HOST_DEVICE inline constexpr bool operator>=(const array<T, 0>&,
+                                                  const array<T, 0>&)
+{
+  return true;
+}
+
 template <class T, std::size_t N>
 CAMP_HOST_DEVICE inline constexpr bool operator==(const array<T, N>& lhs,
                                                   const array<T, N>& rhs)
