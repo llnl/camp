@@ -181,6 +181,9 @@ namespace resources
         return o;
       }
 
+      /// Clean up resources managed by the OpenMP target backend.
+      static void cleanup() {}
+
       OmpEvent get_event() { return OmpEvent(addr, dev); }
 
       Event get_event_erased() { return Event{get_event()}; }

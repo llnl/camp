@@ -23,6 +23,7 @@
 
 #include "camp/defines.hpp"
 #include "camp/helpers.hpp"
+#include "camp/init_helpers.hpp"
 #include "camp/resource/event.hpp"
 #include "camp/resource/platform.hpp"
 
@@ -152,27 +153,85 @@ namespace resources
 
     class Cuda
     {
-      static cudaStream_t get_a_stream(int num)
-      {
-        static constexpr int num_streams = 16;
-        static std::array<cudaStream_t, num_streams> s_streams = [] {
-          std::array<cudaStream_t, num_streams> streams;
-          for (auto& s : streams) {
-            CAMP_CUDA_API_INVOKE_AND_CHECK(cudaStreamCreate, &s);
-          }
-          return streams;
-        }();
+      static constexpr int num_streams = 16;
 
-        static std::mutex s_mtx;
-        static int s_previous = num_streams - 1;
-
-        if (num < 0) {
-          std::lock_guard<std::mutex> lock(s_mtx);
-          s_previous = (s_previous + 1) % num_streams;
-          return s_streams[s_previous];
+      class stream_state {
+      public:
+        cudaStream_t get_default_stream()
+        {
+#if !CAMP_USE_PLATFORM_DEFAULT_STREAM
+          camp::call_once(m_default.flag, [this] () {
+            if (m_default.stream == nullptr) {
+              CAMP_CUDA_API_INVOKE_AND_CHECK(cudaStreamCreate, &m_default.stream);
+            }
+          });
+#endif
+          return m_default.stream;
         }
 
-        return s_streams[num % num_streams];
+        cudaStream_t get_a_stream(int index)
+        {
+          camp::call_once(m_extra.flag, [this] () {
+            for (auto& stream : m_extra.streams) {
+              if (stream == nullptr) {
+                CAMP_CUDA_API_INVOKE_AND_CHECK(cudaStreamCreate, &stream);
+              }
+            }
+          });
+
+          if (index < 0) {
+            std::lock_guard<std::mutex> lock(m_extra.flag.get_mutex());
+            m_extra.previous = (m_extra.previous + 1) % num_streams;
+            return m_extra.streams[m_extra.previous];
+          }
+
+          return m_extra.streams[index % num_streams];
+        }
+
+        void cleanup()
+        {
+          for (auto& s : m_extra.streams) {
+            if (s != nullptr) {
+              CAMP_CUDA_API_INVOKE_AND_CHECK(cudaStreamDestroy, s);
+              s = nullptr;
+            }
+          }
+          m_extra.previous = num_streams - 1;
+
+#if !CAMP_USE_PLATFORM_DEFAULT_STREAM
+          if (m_default.stream != nullptr) {
+            CAMP_CUDA_API_INVOKE_AND_CHECK(cudaStreamDestroy, m_default.stream);
+            m_default.stream = nullptr;
+          }
+#endif
+
+          m_extra.flag.clear();
+          m_default.flag.clear();
+        }
+
+      private:
+        struct default_state
+        {
+          camp::resettable_once_flag flag;
+          cudaStream_t stream{nullptr};
+        };
+
+        struct extra_state
+        {
+          camp::resettable_once_flag flag;
+          std::array<cudaStream_t, num_streams> streams{nullptr};
+          int previous{num_streams - 1};
+        };
+
+        default_state m_default;
+        extra_state m_extra;
+      };
+
+      static constinit stream_state streams;
+
+      static cudaStream_t get_a_stream(int num)
+      {
+        return Cuda::streams.get_a_stream(num);
       }
 
       // Private from-stream constructor
@@ -226,16 +285,24 @@ namespace resources
 
       static Cuda get_default()
       {
-        static Cuda c([] {
-          cudaStream_t s;
-#if CAMP_USE_PLATFORM_DEFAULT_STREAM
-          s = 0;
-#else
-          CAMP_CUDA_API_INVOKE_AND_CHECK(cudaStreamCreate, &s);
-#endif
-          return s;
-        }());
-        return c;
+        return Cuda(Cuda::streams.get_default_stream());
+      }
+
+      /**
+       * \brief Destroy all CUDA streams created and managed by CAMP.
+       *
+       * Existing resources that refer to CAMP-managed streams are invalid
+       * after this call. Streams passed to CudaFromStream and the CUDA
+       * platform default stream are not destroyed. This function may be
+       * called repeatedly, and later resource construction recreates the
+       * managed streams.
+       *
+       * The caller must ensure no other thread is using CUDA resources while
+       * cleanup runs.
+       */
+      static void cleanup()
+      {
+        Cuda::streams.cleanup();
       }
 
       CudaEvent get_event()
@@ -385,6 +452,7 @@ namespace resources
       int device;
     };
 
+    inline constinit Cuda::stream_state Cuda::streams;
   }  // namespace v1
 
 }  // namespace resources

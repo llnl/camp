@@ -93,6 +93,9 @@ namespace resources
         return h;
       }
 
+      /// Clean up resources managed by the host backend.
+      static void cleanup() {}
+
       HostEvent get_event() { return HostEvent(); }
 
       Event get_event_erased() { return Event{get_event()}; }
