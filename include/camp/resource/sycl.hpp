@@ -222,7 +222,7 @@ namespace resources
           }
           syclContext = &get_thread_default_context();
 
-          auto cachedContextIter = get_cache_context();
+          auto& cachedContextIter = get_cache_context();
 
           if (syclContext != cachedContextIter->first) {
             cachedContextIter = m_queue_map.end();
