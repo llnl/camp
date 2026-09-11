@@ -34,7 +34,7 @@ namespace detail
 
   template <typename T, T... Args>
   struct _as_list<int_seq<T, Args...>> {
-    using type = list<integral_constant<T, Args>...>;
+    using type = list<constant<Args>...>;
   };
 }  // namespace detail
 
