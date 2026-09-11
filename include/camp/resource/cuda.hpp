@@ -223,8 +223,8 @@ namespace resources
           int previous{num_streams - 1};
         };
 
-        alignas(camp::hardware_destructive_interference_size) default_state m_default;
-        alignas(camp::hardware_destructive_interference_size) extra_state m_extra;
+        default_state m_default;
+        extra_state m_extra;
       };
 
       static constinit stream_state streams;
