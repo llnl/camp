@@ -268,6 +268,8 @@ namespace resources
         void cleanup()
         {
           m_queue_map.clear();
+          auto& cachedContextIter = get_cache_context();
+          cachedContextIter = m_queue_map.end();
         }
 
       private:
