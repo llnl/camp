@@ -11,8 +11,10 @@
 #define CAMP_INIT_HELPERS_HPP
 
 #include <atomic>
+#include <concepts>
 #include <mutex>
 #include <new>
+#include <optional>
 #include <utility>
 
 namespace camp
@@ -82,6 +84,106 @@ void call_once(camp::resettable_once_flag& flag, Callable&& callable, Args&&... 
     flag.set(true, std::memory_order::release);
   }
 }
+
+template <typename T>
+class optional_singleton
+{
+public:
+  // Helpers
+  constexpr T& value() &
+  {
+    return m_data.value();
+  }
+
+  constexpr const T& value() const &
+  {
+    return m_data.value();
+  }
+
+  constexpr T&& value() &&
+  {
+    return m_data.value();
+  }
+
+  constexpr const T&& value() const &&
+  {
+    return m_data.value();
+  }
+
+  constexpr bool has_value() const noexcept
+  {
+    return m_data.has_value();
+  }
+
+  template <typename U = std::remove_cv_t<T>>
+  constexpr T value_or(U&& default_value) const&
+  {
+    return m_data.value_or(std::forward<U>(default_value));
+  }
+
+  template <typename U = std::remove_cv_t<T>>
+  constexpr T value_or(U&& default_value) &&
+  {
+    return m_data.value_or(std::forward<U>(default_value));
+  }
+
+  // Operators
+  constexpr const T* operator->() const noexcept
+  {
+    return (m_data.has_value()) ? &m_data.value() : nullptr;
+  }
+
+  constexpr T* operator->() noexcept
+  {
+    return (m_data.has_value()) ? &m_data.value() : nullptr;
+  }
+
+  constexpr T& operator*() &
+  {
+    return *m_data;
+  }
+
+  constexpr const T& operator*() const &
+  {
+    return *m_data;
+  }
+
+  constexpr T&& operator*() &&
+  {
+    return *m_data;
+  }
+
+  constexpr const T&& operator*() const &&
+  {
+    return *m_data;
+  }
+
+  constexpr explicit operator bool() const noexcept
+  {
+    return static_cast<bool>(m_data);
+  }
+
+  // Modifiers
+  template <typename... Args>
+  requires std::constructible_from<T, Args...>
+  constexpr T& emplace_once(Args&&... args)
+  {
+    camp::call_once(m_flag, [this, ...captured_args = std::forward<Args>(args)] () mutable {
+      m_data.emplace(std::forward<Args>(captured_args)...);
+    });
+    return m_data.value();
+  }
+
+  void reset() noexcept
+  {
+    m_data.reset();
+    m_flag.clear(); 
+  }
+
+private:
+  std::optional<T> m_data;
+  camp::resettable_once_flag m_flag;
+};
 
 }  // namespace camp
 

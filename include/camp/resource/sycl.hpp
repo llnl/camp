@@ -21,6 +21,7 @@
 #include <sycl/sycl.hpp>
 
 #include "camp/defines.hpp"
+#include "camp/init_helpers.hpp"
 #include "camp/resource/event.hpp"
 #include "camp/resource/platform.hpp"
 
@@ -106,6 +107,18 @@ namespace resources
 
     class Sycl
     {
+      static auto& get_ctx_manager()
+      {
+        constinit static camp::optional_singleton<sycl::context> s_context;
+        return s_context;
+      }
+
+      static auto& get_thread_ctx_manager()
+      {
+        constinit thread_local camp::optional_singleton<sycl::context> t_context;
+        return t_context;
+      }
+
       /*
        * \brief Get the camp managed sycl context.
        *
@@ -116,9 +129,10 @@ namespace resources
       static sycl::context& get_private_context(
           const sycl::context* syclContext)
       {
-        static sycl::context s_context(syclContext ? *syclContext
-                                                   : sycl::context());
-        return s_context;
+        auto& s_context = get_ctx_manager();
+        s_context.emplace_once(syclContext ? *syclContext : sycl::context());
+
+        return s_context.value();
       }
 
       /*
@@ -131,8 +145,10 @@ namespace resources
       static sycl::context& get_thread_private_context(
           sycl::context const& syclContext)
       {
-        thread_local sycl::context t_context(syclContext);
-        return t_context;
+        auto& t_context = get_thread_ctx_manager();
+        t_context.emplace_once(syclContext);
+
+        return t_context.value();
       }
 
       /*
@@ -202,11 +218,19 @@ namespace resources
         static constexpr int num_queues    = 16;
         static constexpr auto gpu_selector = sycl::gpu_selector_v;
 
+        auto& get_cached_ctx_manager()
+        {
+          constinit thread_local camp::optional_singleton<queue_map_iter_type> cachedCtxIterManager;
+          return cachedCtxIterManager; 
+        }
+
         auto& get_cache_context()
         {
-          thread_local auto cachedContextIter = m_queue_map.end();
-          return cachedContextIter;
+          auto& cachedContextIter = get_cached_ctx_manager();
+          cachedContextIter.emplace_once(m_queue_map.end());
+          return cachedContextIter.value();
         }
+
         sycl::queue make_queue(const sycl::context& context)
         {
           static const sycl::property_list propList{sycl::property::queue::in_order()};
@@ -224,7 +248,8 @@ namespace resources
 
           auto& cachedContextIter = get_cache_context();
 
-          if (syclContext != cachedContextIter->first) {
+          if (cachedContextIter != m_queue_map.end() && 
+              syclContext != cachedContextIter->first) {
             cachedContextIter = m_queue_map.end();
           }
 
@@ -268,8 +293,15 @@ namespace resources
         void cleanup()
         {
           m_queue_map.clear();
-          auto& cachedContextIter = get_cache_context();
-          cachedContextIter = m_queue_map.end();
+
+          auto& cachedContextIter = get_cached_ctx_manager();
+          cachedContextIter.reset();
+
+          auto& default_ctx = get_ctx_manager();
+          default_ctx.reset();
+
+          auto& default_thread_ctx = get_thread_ctx_manager();
+          default_thread_ctx.reset();
         }
 
       private:
