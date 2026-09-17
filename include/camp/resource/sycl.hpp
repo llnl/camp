@@ -237,15 +237,10 @@ namespace resources
       static sycl::context& get_private_context(
           const sycl::context* syclContext)
       {
-#if 0
         auto& s_context = get_queue_state().get_default_context();
         s_context.emplace_once(syclContext ? *syclContext : sycl::context());
 
         return s_context.value();
-#else
-        static sycl::context s_context = syclContext ? *syclContext : sycl::context();
-        return s_context;
-#endif
       }
 
       /*
@@ -258,15 +253,10 @@ namespace resources
       static sycl::context& get_thread_private_context(
           sycl::context const& syclContext)
       {
-#if 1
         auto& t_context = get_queue_state().get_thread_default_context();
         t_context.emplace_once(syclContext);
 
         return t_context.value();
-#else
-        thread_local sycl::context t_context(syclContext);
-        return t_context;
-#endif
       }
 
       /*
