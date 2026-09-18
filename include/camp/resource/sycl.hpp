@@ -115,9 +115,10 @@ namespace resources
         using queue_map_type      = std::map<const sycl::context*, queue_list>;
         using queue_map_iter_type = queue_map_type::iterator;
 
+        template <typename T>
+        using optional_t = camp::optional_singleton<T, camp::OptionalDtorPolicy::None>;
       public:
-        static constexpr int num_queues    = 16;
-        static constexpr auto gpu_selector = sycl::gpu_selector_v;
+        static constexpr int num_queues = 16;
 
         auto& get_default_context()
         {
@@ -126,22 +127,21 @@ namespace resources
 
         auto& get_thread_default_context()
         {
-          constinit thread_local camp::optional_singleton<sycl::context> t_context;
+          constinit thread_local optional_t<sycl::context> t_context;
           return t_context;
         }
 
         auto& get_cache_context()
         {
-          constinit thread_local camp::optional_singleton<queue_map_iter_type> cachedCtxIterManager;
+          constinit thread_local optional_t<queue_map_iter_type> cachedCtxIterManager;
           cachedCtxIterManager.emplace_once(m_queue_map.end());
           return cachedCtxIterManager; 
         }
 
         sycl::queue make_queue(const sycl::context& context)
         {
-          static const sycl::property_list propList{sycl::property::queue::in_order()};
 
-          return sycl::queue(context, gpu_selector, propList);
+          return sycl::queue(context, sycl::gpu_selector_v, propList);
         }
 
         sycl::queue& get_a_queue(const sycl::context* syclContext, int index)
@@ -216,7 +216,8 @@ namespace resources
           std::array<sycl::queue, num_queues> queues;
         };
 
-        camp::optional_singleton<sycl::context> default_ctx;
+        const sycl::property_list propList{sycl::property::queue::in_order()};
+        optional_t<sycl::context> default_ctx;
         queue_map_type m_queue_map;
         std::mutex m_mutex; 
       };

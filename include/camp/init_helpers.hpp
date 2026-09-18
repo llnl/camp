@@ -13,8 +13,8 @@
 #include <atomic>
 #include <concepts>
 #include <mutex>
+#include <memory>
 #include <new>
-#include <optional>
 #include <utility>
 
 namespace camp
@@ -40,7 +40,7 @@ public:
   resettable_once_flag(resettable_once_flag&&) = delete;
   resettable_once_flag& operator=(resettable_once_flag&&) = delete;
 
-  bool test(std::memory_order order = std::memory_order_seq_cst) noexcept
+  bool test(std::memory_order order = std::memory_order_seq_cst) const noexcept
   {
     return m_flag.load(order);
   }
@@ -85,82 +85,64 @@ void call_once(camp::resettable_once_flag& flag, Callable&& callable, Args&&... 
   }
 }
 
-template <typename T>
+/// Policy to determine default behavior of the optional singleton class.
+/// Some types have non-trivial deconstructors that could be freed
+/// after main if `reset` is not called. If cleanup
+/// order after main is not clear, then it may be preferred to avoid
+/// automatic cleanup, which is the None policy. The default behavior
+/// will call the deconstructor.
+enum class OptionalDtorPolicy
+{
+  Default,
+  None
+};
+
+/// Resettable version of a singleton
+///
+/// This class aims to have clear semnatics around initialization and
+/// destruction of singleton types. Types will not be constructed until
+/// `emplace_once` is called. Additionally, if need be types, can be cleaned up
+/// and re-initialized. If types can't be cleaned up at the end of `main`, then
+/// the `OptionalDtorPolicy::None` can be used. This avoids trying to deconstruct
+/// an object when the singleton goes out of scope.
+///
+/// \note This allows constant initialization (initialization at compiler time)
+/// for all types due the construction of the \tparam{T} happening at a later time.
+/// 
+template <typename T, OptionalDtorPolicy Policy = OptionalDtorPolicy::Default>
 class optional_singleton
 {
 public:
+  optional_singleton() = default;
+
+  ~optional_singleton() requires (Policy == OptionalDtorPolicy::None) = default;
+
+  constexpr ~optional_singleton()
+  requires (Policy == OptionalDtorPolicy::Default)
+  {
+    reset();
+  }
+
   // Helpers
-  constexpr T& value() &
+  constexpr T& value() noexcept
   {
-    return m_data.value();
+    return *std::launder(reinterpret_cast<T*>(m_storage));
   }
 
-  constexpr const T& value() const &
+  constexpr const T& value() const
   {
-    return m_data.value();
-  }
-
-  constexpr T&& value() &&
-  {
-    return m_data.value();
-  }
-
-  constexpr const T&& value() const &&
-  {
-    return m_data.value();
+    return *std::launder(reinterpret_cast<const T*>(m_storage));
   }
 
   constexpr bool has_value() const noexcept
   {
-    return m_data.has_value();
-  }
-
-  template <typename U = std::remove_cv_t<T>>
-  constexpr T value_or(U&& default_value) const&
-  {
-    return m_data.value_or(std::forward<U>(default_value));
-  }
-
-  template <typename U = std::remove_cv_t<T>>
-  constexpr T value_or(U&& default_value) &&
-  {
-    return m_data.value_or(std::forward<U>(default_value));
+    return m_flag.test(std::memory_order_relaxed);
   }
 
   // Operators
-  constexpr const T* operator->() const noexcept
-  {
-    return (m_data.has_value()) ? &m_data.value() : nullptr;
-  }
-
-  constexpr T* operator->() noexcept
-  {
-    return (m_data.has_value()) ? &m_data.value() : nullptr;
-  }
-
-  constexpr T& operator*() &
-  {
-    return *m_data;
-  }
-
-  constexpr const T& operator*() const &
-  {
-    return *m_data;
-  }
-
-  constexpr T&& operator*() &&
-  {
-    return *m_data;
-  }
-
-  constexpr const T&& operator*() const &&
-  {
-    return *m_data;
-  }
-
   constexpr explicit operator bool() const noexcept
   {
-    return static_cast<bool>(m_data);
+    return has_value();
   }
 
   // Modifiers
@@ -169,19 +151,19 @@ public:
   constexpr T& emplace_once(Args&&... args)
   {
     camp::call_once(m_flag, [this, ...captured_args = std::forward<Args>(args)] () mutable {
-      m_data.emplace(std::forward<Args>(captured_args)...);
+      std::construct_at(reinterpret_cast<T*>(m_storage), std::forward<Args>(captured_args)...);
     });
-    return m_data.value();
+    return value();
   }
 
   void reset() noexcept
   {
-    m_data.reset();
+    if (has_value()) { std::destroy_at(reinterpret_cast<T*>(m_storage)); }
     m_flag.clear(); 
   }
 
 private:
-  std::optional<T> m_data;
+  alignas(alignof(T)) unsigned char m_storage[sizeof(T)]{};
   camp::resettable_once_flag m_flag;
 };
 
