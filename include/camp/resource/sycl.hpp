@@ -107,40 +107,44 @@ namespace resources
 
     class Sycl
     {
+      template <typename T>
+      using singleton_t = camp::optional_singleton<T, camp::OptionalDtorPolicy::Default>;
+
+      struct context
+      {
+        inline constinit static singleton_t<sycl::context> default_ctx;
+
+        static auto& get_thread_private_context()
+        {
+          constinit thread_local singleton_t<sycl::context> t_context;
+          return t_context;
+        }
+      };
+
       class queue_state 
       {
-        struct queue_list;
+        static constexpr int num_queues = 16;
+
+        struct queue_list
+        {
+          int previous;
+          std::array<sycl::queue, num_queues> queues;
+        };
 
         // note that this type must not invalidate iterators when modified
         using queue_map_type      = std::map<const sycl::context*, queue_list>;
         using queue_map_iter_type = queue_map_type::iterator;
 
-        template <typename T>
-        using optional_t = camp::optional_singleton<T, camp::OptionalDtorPolicy::None>;
-      public:
-        static constexpr int num_queues = 16;
-
-        auto& get_default_context()
-        {
-          return default_ctx;
-        }
-
-        auto& get_thread_default_context()
-        {
-          constinit thread_local optional_t<sycl::context> t_context;
-          return t_context;
-        }
-
         auto& get_cache_context()
         {
-          constinit thread_local optional_t<queue_map_iter_type> cachedCtxIterManager;
+          constinit thread_local singleton_t<queue_map_iter_type> cachedCtxIterManager;
           cachedCtxIterManager.emplace_once(m_queue_map.end());
           return cachedCtxIterManager; 
         }
 
+      public:
         sycl::queue make_queue(const sycl::context& context)
         {
-
           return sycl::queue(context, sycl::gpu_selector_v, propList);
         }
 
@@ -150,7 +154,7 @@ namespace resources
             // implement sticky contexts
             set_thread_default_context(*syclContext);
           }
-          syclContext = &get_thread_default_context().value();
+          syclContext = &get_thread_default_context();
 
           auto& cachedContextIter = get_cache_context().value();
 
@@ -202,22 +206,10 @@ namespace resources
 
           auto& cachedContextIter = get_cache_context();
           cachedContextIter.reset();
-
-          default_ctx.reset();
-
-          auto& default_thread_ctx = get_thread_default_context();
-          default_thread_ctx.reset();
         }
 
       private:
-        struct queue_list
-        {
-          int previous{num_queues-1};
-          std::array<sycl::queue, num_queues> queues;
-        };
-
         const sycl::property_list propList{sycl::property::queue::in_order()};
-        optional_t<sycl::context> default_ctx;
         queue_map_type m_queue_map;
         std::mutex m_mutex; 
       };
@@ -238,7 +230,7 @@ namespace resources
       static sycl::context& get_private_context(
           const sycl::context* syclContext)
       {
-        auto& s_context = get_queue_state().get_default_context();
+        auto& s_context = Sycl::context::default_ctx;
         s_context.emplace_once(syclContext ? *syclContext : sycl::context());
 
         return s_context.value();
@@ -254,7 +246,7 @@ namespace resources
       static sycl::context& get_thread_private_context(
           sycl::context const& syclContext)
       {
-        auto& t_context = get_queue_state().get_thread_default_context();
+        auto& t_context = Sycl::context::get_thread_private_context();
         t_context.emplace_once(syclContext);
 
         return t_context.value();
@@ -343,6 +335,11 @@ namespace resources
       {
         auto& queues = Sycl::get_queue_state();
         queues.cleanup();
+
+        Sycl::context::default_ctx.reset();
+
+        auto& thread_ctx = Sycl::context::get_thread_private_context();
+        thread_ctx.reset();
       }
 
       // Methods
