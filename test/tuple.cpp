@@ -349,6 +349,14 @@ TEST(CampTuple, Apply)
 
   auto t3 = camp::make_tuple(2, 5.5);
   ASSERT_NEAR(camp::apply(testLambda, t3), 7.5, 1e-15);
+
+  auto returnReference = [](int& value) -> int& { return value; };
+  auto t4 = camp::make_tuple(1);
+  static_assert(
+      std::is_same<decltype(camp::apply(returnReference, t4)), int&>::value,
+      "apply must preserve the callable's reference return type");
+  camp::apply(returnReference, t4) = 2;
+  ASSERT_EQ(camp::get<0>(t4), 2);
 }
 
 #if defined(__cplusplus) && __cplusplus >= 201703L
