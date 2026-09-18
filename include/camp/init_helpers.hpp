@@ -117,7 +117,7 @@ public:
 
   ~optional_singleton() requires (Policy == OptionalDtorPolicy::None) = default;
 
-  constexpr ~optional_singleton()
+  ~optional_singleton()
   requires (Policy == OptionalDtorPolicy::Default)
   {
     reset();
