@@ -115,10 +115,10 @@ class optional_singleton
 public:
   optional_singleton() = default;
 
-  ~optional_singleton() requires (Policy == OptionalDtorPolicy::None) = default;
+  ~optional_singleton() requires (Policy == OptionalDtorPolicy::None || std::is_trivially_destructible_v<T>) = default;
 
   ~optional_singleton()
-  requires (Policy == OptionalDtorPolicy::Default)
+  requires (Policy == OptionalDtorPolicy::Default && !std::is_trivially_destructible_v<T>)
   {
     reset();
   }
@@ -136,7 +136,7 @@ public:
 
   constexpr bool has_value() const noexcept
   {
-    return m_flag.test(std::memory_order_relaxed);
+    return m_flag.test(std::memory_order_acquire);
   }
 
   // Operators
