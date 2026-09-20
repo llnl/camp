@@ -697,9 +697,10 @@ CAMP_HOST_DEVICE constexpr auto get_refs_to_elements_by_type_trait(
 
 CAMP_SUPPRESS_HD_WARN
 template <typename Fn, camp::idx_t... Sequence, typename TupleLike>
-CAMP_HOST_DEVICE constexpr auto invoke_with_order(TupleLike&& tup,
-                                                  Fn&& f,
-                                                  camp::idx_seq<Sequence...>)
+CAMP_HOST_DEVICE constexpr decltype(auto) invoke_with_order(
+    TupleLike&& tup,
+    Fn&& f,
+    camp::idx_seq<Sequence...>)
 {
   using ::camp::get;
   return f(get<Sequence>(std::forward<TupleLike>(tup))...);
@@ -707,7 +708,7 @@ CAMP_HOST_DEVICE constexpr auto invoke_with_order(TupleLike&& tup,
 
 CAMP_SUPPRESS_HD_WARN
 template <typename Fn, typename TupleLike>
-CAMP_HOST_DEVICE constexpr auto invoke(TupleLike&& tup, Fn&& f)
+CAMP_HOST_DEVICE constexpr decltype(auto) invoke(TupleLike&& tup, Fn&& f)
 {
   return invoke_with_order(
       std::forward<TupleLike>(tup),
@@ -736,7 +737,7 @@ constexpr T make_from_tuple(Tuple&& tup)
 
 /// Forward the elements of a tuple to a callable
 template <class Fn, class TupleLike>
-CAMP_HOST_DEVICE constexpr auto apply(Fn&& f, TupleLike&& tup)
+CAMP_HOST_DEVICE constexpr decltype(auto) apply(Fn&& f, TupleLike&& tup)
 {
   return ::camp::invoke(std::forward<TupleLike>(tup), std::forward<Fn>(f));
 }
