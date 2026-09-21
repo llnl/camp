@@ -721,7 +721,8 @@ namespace detail
   template <class T, class Tuple, idx_t... I>
   constexpr T make_from_tuple_impl(Tuple&& tup, idx_seq<I...>)
   {
-    return T(::camp::get<I>(std::forward<Tuple>(tup))...);
+    using ::camp::get;
+    return T(get<I>(std::forward<Tuple>(tup))...);
   }
 }  // namespace detail
 

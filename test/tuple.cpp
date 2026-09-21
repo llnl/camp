@@ -12,6 +12,33 @@
 #include "camp/camp.hpp"
 #include "gtest/gtest.h"
 
+namespace adl_test
+{
+struct Constructed
+{
+  int first;
+  double second;
+};
+
+struct Range
+{};
+
+int* begin(Range&&);
+
+struct MemberRange
+{
+  const int* begin() const;
+};
+}  // namespace adl_test
+
+static_assert(
+    std::is_same<camp::type_traits::IterableValue<adl_test::Range>, int&>::value,
+    "IterableValue must find begin using ADL");
+static_assert(
+    std::is_same<camp::type_traits::IterableValue<adl_test::MemberRange>,
+                 const int&>::value,
+    "IterableValue must fall back to std::begin for member begin");
+
 static_assert(
     std::is_same<camp::tuple<int&, int const&, int>,
                  decltype(camp::tuple_cat_pair(
@@ -357,6 +384,15 @@ TEST(CampTuple, Apply)
       "apply must preserve the callable's reference return type");
   camp::apply(returnReference, t4) = 2;
   ASSERT_EQ(camp::get<0>(t4), 2);
+}
+
+TEST(CampTuple, MakeFromTupleUsesADL)
+{
+  camp::array<double, 2> tuple_like {3.0, 4.5};
+  auto value = camp::make_from_tuple<adl_test::Constructed>(tuple_like);
+
+  ASSERT_EQ(value.first, 3);
+  ASSERT_DOUBLE_EQ(value.second, 4.5);
 }
 
 #if defined(__cplusplus) && __cplusplus >= 201703L
