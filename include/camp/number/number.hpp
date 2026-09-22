@@ -200,22 +200,22 @@ constexpr auto operator>>(constant<lhs_value>, constant<rhs_value>)
 /**
  * @brief constant yielding logical and for constant values
  */
-template < auto lhs_value, auto rhs_value >
-CAMP_HOST_DEVICE
-constexpr auto operator&&(constant<lhs_value>, constant<rhs_value>)
-{
-  return constant<lhs_value&&rhs_value>{};
-}
+// template < auto lhs_value, auto rhs_value >
+// CAMP_HOST_DEVICE
+// constexpr auto operator&&(constant<lhs_value>, constant<rhs_value>)
+// {
+//   return constant<lhs_value&&rhs_value>{};
+// }
 
 /**
  * @brief constant yielding logical or for constant values
  */
-template < auto lhs_value, auto rhs_value >
-CAMP_HOST_DEVICE
-constexpr auto operator||(constant<lhs_value>, constant<rhs_value>)
-{
-  return constant<lhs_value||rhs_value>{};
-}
+// template < auto lhs_value, auto rhs_value >
+// CAMP_HOST_DEVICE
+// constexpr auto operator||(constant<lhs_value>, constant<rhs_value>)
+// {
+//   return constant<lhs_value||rhs_value>{};
+// }
 
 /**
  * @brief constant yielding equals for constant values
