@@ -455,9 +455,9 @@ namespace type_traits
   template <class T, class U>
   inline constexpr bool is_comparable_to_v = is_comparable_to<T, U>::value;
 
-  /// Dereferenced value type from `std::begin(T)`.
+  /// Dereferenced value type from `begin(T)`.
   template <typename T>
-  using IterableValue = decltype(*std::begin(camp::val<T>()));
+  using IterableValue = decltype(*begin(camp::val<T>()));
 
   /// Dereferenced value type from an iterator-like type `T`.
   template <typename T>
