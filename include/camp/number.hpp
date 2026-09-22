@@ -66,11 +66,11 @@ namespace detail
   struct gen_seq<T, 1> : int_seq<T, 0> {
   };
 
-  template <typename T, T N_t>
+  template <typename T, T N>
   struct gen_seq
       : gen_seq_concat<T,
-            typename gen_seq<T, N_t / 2>::type,
-            typename gen_seq<T, N_t - N_t / 2>::type
+            typename gen_seq<T, N/2>::type,
+            typename gen_seq<T, N - N/2>::type
             >::type {
   };
 #endif
