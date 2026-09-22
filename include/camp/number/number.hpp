@@ -23,8 +23,7 @@ namespace camp
  * TODO: consider making use/match std::integral_constant
  */
 template <class NumT, NumT v>
-struct [[deprecated("use constant<val> instead of integral_constant<T, val>")]]
-       integral_constant {
+struct integral_constant {
   static constexpr NumT value = v;
   using value_type = NumT;
   using type = integral_constant;
@@ -284,7 +283,7 @@ constexpr auto operator>=(constant<lhs_value>, constant<rhs_value>)
  * @tparam N The integral value
  */
 template <idx_t N>
-using num = constant<N>;
+using num = integral_constant<idx_t, N>;
 
 using true_type = num<true>;
 using false_type = num<false>;
