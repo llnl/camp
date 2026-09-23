@@ -21,7 +21,6 @@
 #include <sycl/sycl.hpp>
 
 #include "camp/defines.hpp"
-#include "camp/init_helpers.hpp"
 #include "camp/resource/event.hpp"
 #include "camp/resource/platform.hpp"
 
@@ -107,119 +106,6 @@ namespace resources
 
     class Sycl
     {
-      template <typename T>
-      using singleton_t = camp::optional_singleton<T, camp::OptionalDtorPolicy::Default>;
-
-      struct context
-      {
-        inline constinit static singleton_t<sycl::context> default_ctx;
-
-        static auto& get_thread_private_context()
-        {
-          constinit thread_local singleton_t<sycl::context> t_context;
-          return t_context;
-        }
-      };
-
-      class queue_state 
-      {
-        static constexpr int num_queues = 16;
-
-        struct queue_list
-        {
-          int previous;
-          std::array<sycl::queue, num_queues> queues;
-        };
-
-        // note that this type must not invalidate iterators when modified
-        using queue_map_type      = std::map<const sycl::context*, queue_list>;
-        using queue_map_iter_type = queue_map_type::iterator;
-
-        auto& get_cache_context()
-        {
-          constinit thread_local singleton_t<queue_map_iter_type> cachedCtxIterManager;
-          cachedCtxIterManager.emplace_once(m_queue_map.end());
-          return cachedCtxIterManager; 
-        }
-
-      public:
-        sycl::queue make_queue(const sycl::context& context)
-        {
-          return sycl::queue(context, sycl::gpu_selector_v, propList);
-        }
-
-        sycl::queue& get_a_queue(const sycl::context* syclContext, int index)
-        {
-          if (syclContext) {
-            // implement sticky contexts
-            set_thread_default_context(*syclContext);
-          }
-          syclContext = &get_thread_default_context();
-
-          auto& cachedContextIter = get_cache_context().value();
-
-          if (cachedContextIter != m_queue_map.end() && 
-              syclContext != cachedContextIter->first) {
-            cachedContextIter = m_queue_map.end();
-          }
-
-          if (cachedContextIter == m_queue_map.end() || index < 0) {
-            std::lock_guard<std::mutex> lock(m_mutex);
-            cachedContextIter = m_queue_map.find(syclContext);
-
-            if (cachedContextIter == m_queue_map.end()) {
-              cachedContextIter =
-                  m_queue_map
-                      .emplace(syclContext,
-                               queue_list(num_queues - 1,
-                                          {make_queue(*syclContext),
-                                           make_queue(*syclContext),
-                                           make_queue(*syclContext),
-                                           make_queue(*syclContext),
-                                           make_queue(*syclContext),
-                                           make_queue(*syclContext),
-                                           make_queue(*syclContext),
-                                           make_queue(*syclContext),
-                                           make_queue(*syclContext),
-                                           make_queue(*syclContext),
-                                           make_queue(*syclContext),
-                                           make_queue(*syclContext),
-                                           make_queue(*syclContext),
-                                           make_queue(*syclContext),
-                                           make_queue(*syclContext),
-                                           make_queue(*syclContext)})).first;
-            }
-
-            if (index < 0) {
-              int& previous = cachedContextIter->second.previous;
-              previous = (previous + 1) % num_queues;
-              return cachedContextIter->second.queues[previous];
-            }
-          }
-        
-          return cachedContextIter->second.queues[index % num_queues];
-        }
-
-        void cleanup()
-        {
-          m_queue_map.clear();
-
-          auto& cachedContextIter = get_cache_context();
-          cachedContextIter.reset();
-        }
-
-      private:
-        const sycl::property_list propList{sycl::property::queue::in_order()};
-        queue_map_type m_queue_map;
-        std::mutex m_mutex; 
-      };
-
-      static queue_state& get_queue_state()
-      {
-        static queue_state queues;
-        return queues;
-      }
-
       /*
        * \brief Get the camp managed sycl context.
        *
@@ -230,10 +116,9 @@ namespace resources
       static sycl::context& get_private_context(
           const sycl::context* syclContext)
       {
-        auto& s_context = Sycl::context::default_ctx;
-        s_context.emplace_once(syclContext ? *syclContext : sycl::context());
-
-        return s_context.value();
+        static sycl::context s_context(syclContext ? *syclContext
+                                                   : sycl::context());
+        return s_context;
       }
 
       /*
@@ -246,10 +131,8 @@ namespace resources
       static sycl::context& get_thread_private_context(
           sycl::context const& syclContext)
       {
-        auto& t_context = Sycl::context::get_thread_private_context();
-        t_context.emplace_once(syclContext);
-
-        return t_context.value();
+        thread_local sycl::context t_context(syclContext);
+        return t_context;
       }
 
       /*
@@ -307,11 +190,106 @@ namespace resources
       }
 
     private:
-
       static sycl::queue& get_a_queue(const sycl::context* syclContext, int num)
       {
-        auto& queues = Sycl::get_queue_state();
-        return queues.get_a_queue(syclContext, num);
+        static constexpr int num_queues = 16;
+
+        static std::mutex s_mtx;
+
+        // note that this type must not invalidate iterators when modified
+        using value_second_type =
+            std::pair<int, std::array<sycl::queue, num_queues>>;
+        using queueMap_type = std::map<const sycl::context*, value_second_type>;
+        static queueMap_type queueMap;
+        static const typename queueMap_type::iterator queueMap_end =
+            queueMap.end();
+        thread_local typename queueMap_type::iterator cachedContextIter =
+            queueMap_end;
+
+        if (syclContext) {
+          // implement sticky contexts
+          set_thread_default_context(*syclContext);
+        }
+        syclContext = &get_thread_default_context();
+
+        if (syclContext != cachedContextIter->first) {
+          cachedContextIter = queueMap_end;
+        }
+
+        if (cachedContextIter == queueMap_end || num < 0) {
+          std::lock_guard<std::mutex> lock(s_mtx);
+
+          if (cachedContextIter == queueMap_end) {
+            cachedContextIter = queueMap.find(syclContext);
+            if (cachedContextIter == queueMap_end) {
+              static constexpr auto gpuSelector = sycl::gpu_selector_v;
+              static const sycl::property_list propertyList =
+                  sycl::property_list(sycl::property::queue::in_order());
+
+              cachedContextIter =
+                  queueMap
+                      .emplace(syclContext,
+                               value_second_type(num_queues - 1,
+                                                 {sycl::queue(*syclContext,
+                                                              gpuSelector,
+                                                              propertyList),
+                                                  sycl::queue(*syclContext,
+                                                              gpuSelector,
+                                                              propertyList),
+                                                  sycl::queue(*syclContext,
+                                                              gpuSelector,
+                                                              propertyList),
+                                                  sycl::queue(*syclContext,
+                                                              gpuSelector,
+                                                              propertyList),
+                                                  sycl::queue(*syclContext,
+                                                              gpuSelector,
+                                                              propertyList),
+                                                  sycl::queue(*syclContext,
+                                                              gpuSelector,
+                                                              propertyList),
+                                                  sycl::queue(*syclContext,
+                                                              gpuSelector,
+                                                              propertyList),
+                                                  sycl::queue(*syclContext,
+                                                              gpuSelector,
+                                                              propertyList),
+                                                  sycl::queue(*syclContext,
+                                                              gpuSelector,
+                                                              propertyList),
+                                                  sycl::queue(*syclContext,
+                                                              gpuSelector,
+                                                              propertyList),
+                                                  sycl::queue(*syclContext,
+                                                              gpuSelector,
+                                                              propertyList),
+                                                  sycl::queue(*syclContext,
+                                                              gpuSelector,
+                                                              propertyList),
+                                                  sycl::queue(*syclContext,
+                                                              gpuSelector,
+                                                              propertyList),
+                                                  sycl::queue(*syclContext,
+                                                              gpuSelector,
+                                                              propertyList),
+                                                  sycl::queue(*syclContext,
+                                                              gpuSelector,
+                                                              propertyList),
+                                                  sycl::queue(*syclContext,
+                                                              gpuSelector,
+                                                              propertyList)}))
+                      .first;
+            }
+          }
+
+          if (num < 0) {
+            int& previous = cachedContextIter->second.first;
+            previous = (previous + 1) % num_queues;
+            return cachedContextIter->second.second[previous];
+          }
+        }
+
+        return cachedContextIter->second.second[num % num_queues];
       }
 
       // Private from-queue constructor
@@ -331,16 +309,7 @@ namespace resources
       static Sycl get_default() { return Sycl(0, get_default_context()); }
 
       /// Clean up resources managed by the SYCL backend.
-      static void cleanup()
-      {
-        auto& queues = Sycl::get_queue_state();
-        queues.cleanup();
-
-        Sycl::context::default_ctx.reset();
-
-        auto& thread_ctx = Sycl::context::get_thread_private_context();
-        thread_ctx.reset();
-      }
+      static void cleanup() {}
 
       // Methods
       Platform get_platform() const { return Platform::sycl; }
