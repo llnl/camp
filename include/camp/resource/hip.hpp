@@ -152,87 +152,116 @@ namespace resources
       }
     };
 
+    class HipStream
+    {
+    public:
+      using handle_type = hipStream_t;
+
+      explicit HipStream() : m_stream(init()) {}
+
+      HipStream(HipStream const&) = delete;
+
+      HipStream(HipStream&& rhs) noexcept
+          : m_stream(std::exchange(rhs.m_stream, nullptr))
+      {
+      }
+
+      HipStream& operator=(HipStream const&) = delete;
+
+      HipStream& operator=(HipStream&& rhs) noexcept
+      {
+        finalize(m_stream);
+        m_stream = std::exchange(rhs.m_stream, nullptr);
+        return *this;
+      }
+
+      ~HipStream() { finalize(m_stream); }
+
+      Platform get_platform() const { return Platform::hip; }
+
+      void wait() const
+      {
+        CAMP_HIP_API_INVOKE_AND_CHECK(hipStreamSynchronize, m_stream);
+      }
+
+      handle_type get_handle() const { return m_stream; }
+
+      /*
+       * \brief Compares two events to see if they represent the same underlying
+       *        hip stream.
+       *
+       * \return True if both refer to the same hip stream, false otherwise.
+       */
+      friend inline bool operator==(HipStream const& lhs,
+                                    HipStream const& rhs) = default;
+
+      size_t get_hash() const
+      {
+        const size_t platform_type = size_t(get_platform()) << 32;
+        size_t hash = std::hash<hipStream_t>{}(m_stream);
+        return platform_type | (hash & 0xFFFFFFFF);
+      }
+
+
+    private:
+      // note that hipStream_t is an alias for a pointer and is nullable
+      handle_type m_stream;
+
+      static handle_type init()
+      {
+        handle_type stream;
+        CAMP_HIP_API_INVOKE_AND_CHECK(hipStreamCreate, &stream);
+        return stream;
+      }
+
+      static void finalize(handle_type& stream)
+      {
+        if (stream != nullptr) {
+          CAMP_HIP_API_INVOKE_AND_CHECK(hipStreamDestroy, stream);
+          stream = nullptr;
+        }
+      }
+    };
+
     class Hip
     {
       static constexpr int num_streams = 16;
 
-      class stream_state {
-      public:
-        hipStream_t get_default_stream()
-        {
-#if !CAMP_USE_PLATFORM_DEFAULT_STREAM
-          camp::call_once(m_default.flag, [this] () {
-            if (m_default.stream == nullptr) {
-              CAMP_HIP_API_INVOKE_AND_CHECK(hipStreamCreate, &m_default.stream);
-            }
-          });
-#endif
-          return m_default.stream;
-        }
+      template <typename T>
+      using singleton_t = camp::optional_singleton<T, camp::OptionalDtorPolicy::None>;
 
-        hipStream_t get_a_stream(int index)
-        {
-          camp::call_once(m_extra.flag, [this] () {
-            for (auto& stream : m_extra.streams) {
-              if (stream == nullptr) {
-                CAMP_HIP_API_INVOKE_AND_CHECK(hipStreamCreate, &stream);
-              }
-            }
-          });
-
-          if (index < 0) {
-            std::lock_guard<std::mutex> lock(m_extra.flag.get_mutex());
-            m_extra.previous = (m_extra.previous + 1) % num_streams;
-            return m_extra.streams[m_extra.previous];
-          }
-
-          return m_extra.streams[index % num_streams];
-        }
-
-        void cleanup()
-        {
-          for (auto& s : m_extra.streams) {
-            if (s != nullptr) {
-              CAMP_HIP_API_INVOKE_AND_CHECK(hipStreamDestroy, s);
-              s = nullptr;
-            }
-          }
-          m_extra.previous = num_streams - 1;
-
-#if !CAMP_USE_PLATFORM_DEFAULT_STREAM
-          if (m_default.stream != nullptr) {
-            CAMP_HIP_API_INVOKE_AND_CHECK(hipStreamDestroy, m_default.stream);
-            m_default.stream = nullptr;
-          }
-#endif
-
-          m_extra.flag.clear();
-          m_default.flag.clear();
-        }
-
-      private:
-        struct default_state
-        {
-          camp::resettable_once_flag flag;
-          hipStream_t stream{nullptr};
-        };
-
-        struct extra_state
-        {
-          camp::resettable_once_flag flag;
-          std::array<hipStream_t, num_streams> streams{nullptr};
-          int previous{num_streams - 1};
-        };
-
-        default_state m_default;
-        extra_state m_extra;
+      struct ExtraStream
+      {
+        std::array<HipStream, num_streams> streams;
+        std::mutex lock;
+        int previous{num_streams-1};
       };
 
-      static constinit stream_state streams;
+      inline static constinit singleton_t<HipStream> default_stream;
+      inline static constinit singleton_t<ExtraStream> extra_streams;
+
+      static hipStream_t get_default_stream()
+      {
+#if !CAMP_USE_PLATFORM_DEFAULT_STREAM
+        default_stream.emplace_once();
+        return default_stream.value().get_handle();
+#else
+        return nullptr;
+#endif
+      }
 
       static hipStream_t get_a_stream(int num)
       {
-        return Hip::streams.get_a_stream(num);
+        extra_streams.emplace_once();
+        auto& extra_state = extra_streams.value();
+
+        if (num < 0) {
+          std::lock_guard<std::mutex> lock(extra_state.lock);
+          extra_state.previous = (extra_state.previous + 1) % num_streams;
+          return extra_state.streams[extra_state.previous].get_handle();
+        }
+
+        return extra_state.streams[num % num_streams].get_handle();
       }
 
       // Private from-stream constructor
@@ -283,7 +312,7 @@ namespace resources
 
       static Hip get_default()
       {
-        return Hip(Hip::streams.get_default_stream());
+        return Hip(get_default_stream());
       }
 
       /**
@@ -300,7 +329,8 @@ namespace resources
        */
       static void cleanup()
       {
-        Hip::streams.cleanup();
+        extra_streams.reset();
+        default_stream.reset();
       }
 
       HipEvent get_event()
@@ -449,8 +479,6 @@ namespace resources
       hipStream_t stream;
       int device;
     };
-
-    inline constinit Hip::stream_state Hip::streams;
   }  // namespace v1
 
 }  // namespace resources
