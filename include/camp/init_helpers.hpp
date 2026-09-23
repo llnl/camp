@@ -145,6 +145,24 @@ public:
     return has_value();
   }
 
+  constexpr const T* operator->() const noexcept
+  {
+    return std::launder(reinterpret_cast<const T*>(m_storage));
+  }
+  constexpr T* operator->() noexcept
+  {
+    return std::launder(reinterpret_cast<T*>(m_storage));
+  }
+
+  constexpr const T& operator*() const noexcept
+  {
+    return value();
+  }
+  constexpr T& operator*() noexcept
+  {
+    return value();
+  }
+
   // Modifiers
   template <typename... Args>
   requires std::constructible_from<T, Args...>
@@ -154,6 +172,13 @@ public:
       std::construct_at(reinterpret_cast<T*>(m_storage), std::forward<Args>(captured_args)...);
     });
     return value();
+  }
+
+  template <typename... Args>
+  requires std::constructible_from<T, Args...>
+  constexpr T& get_or_emplace(Args&&... args)
+  {
+    return emplace_once(std::forward<Args>(args)...);
   }
 
   void reset() noexcept

@@ -151,9 +151,8 @@ namespace resources
       }
     };
 
-    class CudaStream
+    struct CudaStream
     {
-    public:
       using handle_type = cudaStream_t;
 
       explicit CudaStream() : m_stream(init()) {}
@@ -180,7 +179,7 @@ namespace resources
 
       void wait() const
       {
-        CAMP_HIP_API_INVOKE_AND_CHECK(cudaStreamSynchronize, m_stream);
+        CAMP_CUDA_API_INVOKE_AND_CHECK(cudaStreamSynchronize, m_stream);
       }
 
       handle_type get_handle() const { return m_stream; }
@@ -209,14 +208,14 @@ namespace resources
       static handle_type init()
       {
         handle_type stream;
-        CAMP_HIP_API_INVOKE_AND_CHECK(cudaStreamCreate, &stream);
+        CAMP_CUDA_API_INVOKE_AND_CHECK(cudaStreamCreate, &stream);
         return stream;
       }
 
       static void finalize(handle_type& stream)
       {
         if (stream != nullptr) {
-          CAMP_HIP_API_INVOKE_AND_CHECK(cudaStreamDestroy, stream);
+          CAMP_CUDA_API_INVOKE_AND_CHECK(cudaStreamDestroy, stream);
           stream = nullptr;
         }
       }
@@ -236,14 +235,13 @@ namespace resources
         int previous{num_streams-1};
       };
 
-      inline static constinit singleton_t<HipStream> default_stream;
+      inline static constinit singleton_t<CudaStream> default_stream;
       inline static constinit singleton_t<ExtraStream> extra_streams;
 
       static cudaStream_t get_default_stream()
       {
 #if !CAMP_USE_PLATFORM_DEFAULT_STREAM
-        default_stream.emplace_once();
-        return default_stream.value().get_handle();
+        return default_stream.get_or_emplace().get_handle();
 #else
         return nullptr;
 #endif
@@ -251,8 +249,7 @@ namespace resources
 
       static cudaStream_t get_a_stream(int num)
       {
-        extra_streams.emplace_once();
-        auto& extra_state = extra_streams.value();
+        auto& extra_state = extra_streams.get_or_emplace();
 
         if (num < 0) {
           std::lock_guard<std::mutex> lock(extra_state.lock);

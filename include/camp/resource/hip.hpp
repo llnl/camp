@@ -152,9 +152,8 @@ namespace resources
       }
     };
 
-    class HipStream
+    struct HipStream
     {
-    public:
       using handle_type = hipStream_t;
 
       explicit HipStream() : m_stream(init()) {}
@@ -243,8 +242,7 @@ namespace resources
       static hipStream_t get_default_stream()
       {
 #if !CAMP_USE_PLATFORM_DEFAULT_STREAM
-        default_stream.emplace_once();
-        return default_stream.value().get_handle();
+        return default_stream.get_or_emplace().get_handle();
 #else
         return nullptr;
 #endif
@@ -252,8 +250,7 @@ namespace resources
 
       static hipStream_t get_a_stream(int num)
       {
-        extra_streams.emplace_once();
-        auto& extra_state = extra_streams.value();
+        auto& extra_state = extra_streams.get_or_emplace();
 
         if (num < 0) {
           std::lock_guard<std::mutex> lock(extra_state.lock);
