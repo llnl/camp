@@ -66,3 +66,117 @@ TEST(CampInitHelpers, ThreadedCallOnce)
   t8.join();
   ASSERT_EQ(test, num+1);
 }
+
+TEST(CampOptionalSingleton, Construct)
+{
+  camp::optional_singleton<int> test;
+  CAMP_ALLOW_UNUSED_LOCAL(test);
+}
+
+TEST(CampOptionalSingleton, HasValue)
+{
+  camp::optional_singleton<int> test;
+  ASSERT_EQ(test.has_value(), false);
+}
+
+TEST(CampOptionalSingleton, EmplaceOnce)
+{
+  camp::optional_singleton<int> test;
+  ASSERT_EQ(test.has_value(), false);
+
+  test.emplace_once(5);
+  ASSERT_EQ(test.has_value(), true);
+  ASSERT_EQ(test.value(), 5);
+
+  test.emplace_once(10);
+  ASSERT_EQ(test.has_value(), true);
+  ASSERT_EQ(test.value(), 5);
+}
+
+TEST(CampOptionalSingleton, ThreadedEmplaceOnce)
+{
+  camp::optional_singleton<int> test;
+  ASSERT_EQ(test.has_value(), false);
+
+  auto set_once = [&] (int i) {
+    test.emplace_once(i);
+  };
+
+  const int num = 5;
+  std::thread t1(set_once, num);
+  std::thread t2(set_once, num);
+  std::thread t3(set_once, num);
+  std::thread t4(set_once, num);
+  t1.join();
+  t2.join();
+  t3.join();
+  t4.join();
+  ASSERT_EQ(test.has_value(), true);
+  ASSERT_EQ(test.value(), num);
+
+  const int num2 = 10;
+  std::thread t5(set_once, num2);
+  std::thread t6(set_once, num2);
+  std::thread t7(set_once, num2);
+  std::thread t8(set_once, num2);
+  t5.join();
+  t6.join();
+  t7.join();
+  t8.join();
+  ASSERT_EQ(test.has_value(), true);
+  ASSERT_EQ(test.value(), num); // still should be original number
+}
+
+TEST(CampOptionalSingleton, Reset)
+{
+  camp::optional_singleton<int> test;
+  ASSERT_EQ(test.has_value(), false);
+
+  test.emplace_once(5);
+  ASSERT_EQ(test.has_value(), true);
+  ASSERT_EQ(test.value(), 5);
+
+  test.reset();
+  ASSERT_EQ(test.has_value(), false);
+
+  test.emplace_once(10);
+  ASSERT_EQ(test.has_value(), true);
+  ASSERT_EQ(test.value(), 10);
+}
+
+TEST(CampOptionalSingleton, ThreadedReset)
+{
+  camp::optional_singleton<int> test;
+  ASSERT_EQ(test.has_value(), false);
+
+  auto set_once = [&] (int i) {
+    test.emplace_once(i);
+  };
+
+  const int num = 5;
+  std::thread t1(set_once, num);
+  std::thread t2(set_once, num);
+  std::thread t3(set_once, num);
+  std::thread t4(set_once, num);
+  t1.join();
+  t2.join();
+  t3.join();
+  t4.join();
+  ASSERT_EQ(test.has_value(), true);
+  ASSERT_EQ(test.value(), num);
+
+  test.reset();
+  ASSERT_EQ(test.has_value(), false);
+
+  const int num2 = 10;
+  std::thread t5(set_once, num2);
+  std::thread t6(set_once, num2);
+  std::thread t7(set_once, num2);
+  std::thread t8(set_once, num2);
+  t5.join();
+  t6.join();
+  t7.join();
+  t8.join();
+  ASSERT_EQ(test.has_value(), true);
+  ASSERT_EQ(test.value(), num2);
+}
