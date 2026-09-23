@@ -13,6 +13,14 @@
 #include "camp/init_helpers.hpp"
 #include "gtest/gtest.h"
 
+namespace detail
+{
+  struct MyStruct
+  {
+    int my_int{5};
+  };
+};
+
 TEST(CampInitHelpers, SimpleCallOnce)
 {
   int test = 0;
@@ -87,10 +95,13 @@ TEST(CampOptionalSingleton, EmplaceOnce)
   test.emplace_once(5);
   ASSERT_EQ(test.has_value(), true);
   ASSERT_EQ(test.value(), 5);
+  ASSERT_EQ(*test, 5);
+  ASSERT_EQ(test.get_or_emplace(), 5);
 
   test.emplace_once(10);
   ASSERT_EQ(test.has_value(), true);
   ASSERT_EQ(test.value(), 5);
+  ASSERT_EQ(*test, 5);
 }
 
 TEST(CampOptionalSingleton, ThreadedEmplaceOnce)
@@ -113,6 +124,8 @@ TEST(CampOptionalSingleton, ThreadedEmplaceOnce)
   t4.join();
   ASSERT_EQ(test.has_value(), true);
   ASSERT_EQ(test.value(), num);
+  ASSERT_EQ(*test, num);
+  ASSERT_EQ(test.get_or_emplace(), num);
 
   const int num2 = 10;
   std::thread t5(set_once, num2);
@@ -125,6 +138,86 @@ TEST(CampOptionalSingleton, ThreadedEmplaceOnce)
   t8.join();
   ASSERT_EQ(test.has_value(), true);
   ASSERT_EQ(test.value(), num); // still should be original number
+  ASSERT_EQ(*test, num); // still should be original number
+  ASSERT_EQ(test.get_or_emplace(), num); // still should be original number
+}
+
+TEST(CampOptionalSingleton, GetOrEmplace)
+{
+  camp::optional_singleton<int> test;
+  ASSERT_EQ(test.has_value(), false);
+
+  const int val = test.get_or_emplace(5);
+  ASSERT_EQ(test.has_value(), true);
+  ASSERT_EQ(test.value(), 5);
+  ASSERT_EQ(val, 5);
+  ASSERT_EQ(*test, 5);
+  ASSERT_EQ(test.get_or_emplace(), 5);
+
+  const int val2 = test.get_or_emplace(10);
+  ASSERT_EQ(test.has_value(), true);
+  ASSERT_EQ(test.value(), 5);
+  ASSERT_EQ(val2, 5);
+  ASSERT_EQ(*test, 5);
+  ASSERT_EQ(test.get_or_emplace(), 5);
+}
+
+TEST(CampOptionalSingleton, ThreadedGetOrEmplace)
+{
+  camp::optional_singleton<int> test;
+  ASSERT_EQ(test.has_value(), false);
+
+  auto set_once = [&] (int i) {
+    test.get_or_emplace(i);
+  };
+
+  const int num = 5;
+  std::thread t1(set_once, num);
+  std::thread t2(set_once, num);
+  std::thread t3(set_once, num);
+  std::thread t4(set_once, num);
+  t1.join();
+  t2.join();
+  t3.join();
+  t4.join();
+  ASSERT_EQ(test.has_value(), true);
+  ASSERT_EQ(test.value(), num);
+  ASSERT_EQ(*test, num);
+  ASSERT_EQ(test.get_or_emplace(), num);
+
+  const int num2 = 10;
+  std::thread t5(set_once, num2);
+  std::thread t6(set_once, num2);
+  std::thread t7(set_once, num2);
+  std::thread t8(set_once, num2);
+  t5.join();
+  t6.join();
+  t7.join();
+  t8.join();
+  ASSERT_EQ(test.has_value(), true);
+  ASSERT_EQ(test.value(), num); // still should be original number
+  ASSERT_EQ(*test, num); // still should be original number
+  ASSERT_EQ(test.get_or_emplace(), num); // still should be original number
+}
+
+TEST(CampOptionalSingleton, OperatorMemberAccess)
+{
+  camp::optional_singleton<detail::MyStruct> test;
+  ASSERT_EQ(test.has_value(), false);
+
+  const auto& val = test.get_or_emplace();
+  ASSERT_EQ(test.has_value(), true);
+  ASSERT_EQ(test.value().my_int, 5);
+  ASSERT_EQ(val.my_int, 5);
+  ASSERT_EQ(test.get_or_emplace().my_int, 5);
+  ASSERT_EQ(test->my_int, 5);
+
+  const auto& val2 = test.get_or_emplace();
+  ASSERT_EQ(test.has_value(), true);
+  ASSERT_EQ(test.value().my_int, 5);
+  ASSERT_EQ(val2.my_int, 5);
+  ASSERT_EQ(test.get_or_emplace().my_int, 5);
+  ASSERT_EQ(test->my_int, 5);
 }
 
 TEST(CampOptionalSingleton, Reset)
@@ -135,6 +228,8 @@ TEST(CampOptionalSingleton, Reset)
   test.emplace_once(5);
   ASSERT_EQ(test.has_value(), true);
   ASSERT_EQ(test.value(), 5);
+  ASSERT_EQ(*test, 5);
+  ASSERT_EQ(test.get_or_emplace(), 5);
 
   test.reset();
   ASSERT_EQ(test.has_value(), false);
@@ -142,6 +237,31 @@ TEST(CampOptionalSingleton, Reset)
   test.emplace_once(10);
   ASSERT_EQ(test.has_value(), true);
   ASSERT_EQ(test.value(), 10);
+  ASSERT_EQ(*test, 10);
+  ASSERT_EQ(test.get_or_emplace(), 10);
+}
+
+TEST(CampOptionalSingleton, ResetGetOrEmplace)
+{
+  camp::optional_singleton<int> test;
+  ASSERT_EQ(test.has_value(), false);
+
+  const int val = test.get_or_emplace(5);
+  ASSERT_EQ(test.has_value(), true);
+  ASSERT_EQ(test.value(), 5);
+  ASSERT_EQ(val, 5);
+  ASSERT_EQ(*test, 5);
+  ASSERT_EQ(test.get_or_emplace(), 5);
+
+  test.reset();
+  ASSERT_EQ(test.has_value(), false);
+
+  const int val2 = test.get_or_emplace(10);
+  ASSERT_EQ(test.has_value(), true);
+  ASSERT_EQ(test.value(), 10);
+  ASSERT_EQ(val2, 10);
+  ASSERT_EQ(*test, 10);
+  ASSERT_EQ(test.get_or_emplace(), 10);
 }
 
 TEST(CampOptionalSingleton, ThreadedReset)
@@ -164,6 +284,8 @@ TEST(CampOptionalSingleton, ThreadedReset)
   t4.join();
   ASSERT_EQ(test.has_value(), true);
   ASSERT_EQ(test.value(), num);
+  ASSERT_EQ(*test, num);
+  ASSERT_EQ(test.get_or_emplace(), num);
 
   test.reset();
   ASSERT_EQ(test.has_value(), false);
@@ -179,4 +301,6 @@ TEST(CampOptionalSingleton, ThreadedReset)
   t8.join();
   ASSERT_EQ(test.has_value(), true);
   ASSERT_EQ(test.value(), num2);
+  ASSERT_EQ(*test, num2);
+  ASSERT_EQ(test.get_or_emplace(), num2);
 }
