@@ -176,6 +176,8 @@ namespace resources
 
       ~HipStream() { finalize(m_stream); }
 
+      Platform get_platform() const { return Platform::hip; }
+
       handle_type get_handle() const { return m_stream; }
 
       /*

@@ -175,6 +175,8 @@ namespace resources
 
       ~CudaStream() { finalize(m_stream); }
 
+      Platform get_platform() const { return Platform::cuda; }
+
       handle_type get_handle() const { return m_stream; }
 
       /*
