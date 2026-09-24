@@ -175,13 +175,6 @@ namespace resources
 
       ~CudaStream() { finalize(m_stream); }
 
-      Platform get_platform() const { return Platform::cuda; }
-
-      void wait() const
-      {
-        CAMP_CUDA_API_INVOKE_AND_CHECK(cudaStreamSynchronize, m_stream);
-      }
-
       handle_type get_handle() const { return m_stream; }
 
       /*

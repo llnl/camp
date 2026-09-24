@@ -176,13 +176,6 @@ namespace resources
 
       ~HipStream() { finalize(m_stream); }
 
-      Platform get_platform() const { return Platform::hip; }
-
-      void wait() const
-      {
-        CAMP_HIP_API_INVOKE_AND_CHECK(hipStreamSynchronize, m_stream);
-      }
-
       handle_type get_handle() const { return m_stream; }
 
       /*
