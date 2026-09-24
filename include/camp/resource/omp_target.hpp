@@ -182,6 +182,8 @@ namespace resources
       }
 
       /// Clean up resources managed by the OpenMP target backend.
+      /// \note OpenMP target backend has no global state that
+      /// needs to be cleaned up.
       static void cleanup() {}
 
       OmpEvent get_event() { return OmpEvent(addr, dev); }

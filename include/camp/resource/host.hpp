@@ -94,6 +94,8 @@ namespace resources
       }
 
       /// Clean up resources managed by the host backend.
+      /// \note The host backend has no global state that needs to
+      /// be cleaned up.
       static void cleanup() {}
 
       HostEvent get_event() { return HostEvent(); }

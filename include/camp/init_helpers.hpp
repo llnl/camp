@@ -99,13 +99,15 @@ enum class DestructorPolicy
 
 /// Resettable version of a singleton
 ///
-/// This class aims to have clear semnatics around initialization and
-/// destruction of singleton types. Types will not be constructed until
-/// `emplace_once` is called. Additionally, if need be types, can be 
-/// cleaned up.
-/// and re-initialized. If types can't be cleaned up at the end of `main`, 
-/// then the `DestructorPolicy::None` can be used. This avoids trying to 
-/// deconstruct an object when the singleton goes out of scope.
+/// This class aims to have clear semantics around initialization and
+/// destruction of singleton types. Type \tparam{T} will not be constructed
+/// until `emplace_once` is called. If need be, \tparam{T} can be
+/// destroyed with `reset` and then later re-constructed with
+/// `emplace_once`.
+///
+/// If types can't be cleaned up at the end of `main`, then the
+/// `DestructorPolicy::None` can be used. This avoids deconstructing
+/// an object when the singleton goes out of scope (after the end of main).
 ///
 /// \note This allows constant initialization (initialization at compiler time)
 /// for all types due the construction of the \tparam{T} happening at a later time.

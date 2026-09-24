@@ -186,18 +186,23 @@ one `stream of execution` on the Host), users should be cautious when using the 
 Cleaning Up Resources
 ^^^^^^^^^^^^^^^^^^^^^
 
-The ``cleanup`` function will delete any Camp-managed global state
-that is used by resources. For example, this includes CUDA/HIP streams managed
-by Camp. Every concrete resource backend provides a ``cleanup()`` function,
-and ``camp::resources::cleanup()`` calls ``cleanup()`` for every enabled backend.
-Resources that do not currently require explicit runtime destruction
-will have no-ops for their respective cleanup functions. 
+Some Camp resources can have global states. These are typically used
+for storing streams/queues in the CUDA, HIP and Sycl backends, which are not
+automatically deleted on exit. To delete these global states, there
+is a ``cleanup`` function for each backend. Resources that do not
+store any global state will have no-ops for their respective ``cleanup``
+function. Additionally, there is a ``camp::resources::cleanup()`` that
+will delete the Camp-managed global state for every enabled backend.
 
-Cleanup invalidates every existing resource that refers to a Camp-managed
-stream. Applications must finish using those resources and ensure that no
-other thread is using them before cleanup. If an application uses creates
-a new resource at a later time, the resource managed streams will be created
-again. However, this does not make an old resource valid.
+Calling ``cleanup`` function will invalidate existing resource objects that
+rely on the global states. If a new resource object is created after 
+the ``cleanup`` function is called, then the Camp-managed global state
+is re-initialized. For applications, the recommendation is to call 
+``camp::resources::cleanup()`` before exiting from ``main``.
 
 .. note::
    The ``cleanup()`` functions are not thread-safe.
+
+.. note::
+   The Sycl backend's ``cleanup`` function is currently a no-op and 
+   does not delete the Camp-managed global state.
