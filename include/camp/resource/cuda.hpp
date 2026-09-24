@@ -230,7 +230,7 @@ namespace resources
 
       struct ExtraStream
       {
-        std::array<HipStream, num_streams> streams;
+        std::array<CudaStream, num_streams> streams;
         std::mutex lock;
         int previous{num_streams-1};
       };

@@ -112,13 +112,15 @@ enum class OptionalDtorPolicy
 template <typename T, OptionalDtorPolicy Policy = OptionalDtorPolicy::Default>
 class optional_singleton
 {
+private:
+  constexpr static bool is_trivial_dtor = std::is_trivially_destructible_v<T>;
 public:
   optional_singleton() = default;
 
-  ~optional_singleton() requires (Policy == OptionalDtorPolicy::None || std::is_trivially_destructible_v<T>) = default;
+  ~optional_singleton() requires (Policy == OptionalDtorPolicy::None || is_trivial_dtor) = default;
 
   ~optional_singleton()
-  requires (Policy == OptionalDtorPolicy::Default && !std::is_trivially_destructible_v<T>)
+  requires (Policy == OptionalDtorPolicy::Default && !is_trivial_dtor)
   {
     reset();
   }
