@@ -219,11 +219,12 @@ namespace resources
       static constexpr int num_streams = 16;
 
       // Not destroying these by default due to unspecified cleanup
-      // order of static objects. `camp::OptionalDtorPolicy::Default`
+      // order of static objects. `camp::DestructorPolicy::Default`
       // can result in crashes after main due to the CUDA runtime cleaning
       // up prior to static camp streams.
       template <typename T>
-      using singleton_t = camp::optional_singleton<T, camp::OptionalDtorPolicy::None>;
+      using singleton_t = camp::resettable_singleton<T,
+            camp::DestructorPolicy::None>;
 
       struct ExtraStream
       {

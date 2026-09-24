@@ -91,7 +91,7 @@ void call_once(camp::resettable_once_flag& flag, Callable&& callable, Args&&... 
 /// order after main is not clear, then it may be preferred to avoid
 /// automatic cleanup, which is the None policy. The default behavior
 /// will call the deconstructor.
-enum class OptionalDtorPolicy
+enum class DestructorPolicy
 {
   Default,
   None
@@ -101,26 +101,27 @@ enum class OptionalDtorPolicy
 ///
 /// This class aims to have clear semnatics around initialization and
 /// destruction of singleton types. Types will not be constructed until
-/// `emplace_once` is called. Additionally, if need be types, can be cleaned up
-/// and re-initialized. If types can't be cleaned up at the end of `main`, then
-/// the `OptionalDtorPolicy::None` can be used. This avoids trying to deconstruct
-/// an object when the singleton goes out of scope.
+/// `emplace_once` is called. Additionally, if need be types, can be 
+/// cleaned up.
+/// and re-initialized. If types can't be cleaned up at the end of `main`, 
+/// then the `DestructorPolicy::None` can be used. This avoids trying to 
+/// deconstruct an object when the singleton goes out of scope.
 ///
 /// \note This allows constant initialization (initialization at compiler time)
 /// for all types due the construction of the \tparam{T} happening at a later time.
 /// 
-template <typename T, OptionalDtorPolicy Policy = OptionalDtorPolicy::Default>
-class optional_singleton
+template <typename T, DestructorPolicy Policy = DestructorPolicy::Default>
+class resettable_singleton
 {
 private:
   constexpr static bool is_trivial_dtor = std::is_trivially_destructible_v<T>;
 public:
-  optional_singleton() = default;
+  resettable_singleton() = default;
 
-  ~optional_singleton() requires (Policy == OptionalDtorPolicy::None || is_trivial_dtor) = default;
+  ~resettable_singleton() requires (Policy == DestructorPolicy::None || is_trivial_dtor) = default;
 
-  ~optional_singleton()
-  requires (Policy == OptionalDtorPolicy::Default && !is_trivial_dtor)
+  ~resettable_singleton()
+  requires (Policy == DestructorPolicy::Default && !is_trivial_dtor)
   {
     reset();
   }

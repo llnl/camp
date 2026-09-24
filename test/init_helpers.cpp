@@ -75,21 +75,21 @@ TEST(CampInitHelpers, ThreadedCallOnce)
   ASSERT_EQ(test, num+1);
 }
 
-TEST(CampOptionalSingleton, Construct)
+TEST(CampResettableSingleton, Construct)
 {
-  camp::optional_singleton<int> test;
+  camp::resettable_singleton<int> test;
   CAMP_ALLOW_UNUSED_LOCAL(test);
 }
 
-TEST(CampOptionalSingleton, HasValue)
+TEST(CampResettableSingleton, HasValue)
 {
-  camp::optional_singleton<int> test;
+  camp::resettable_singleton<int> test;
   ASSERT_EQ(test.has_value(), false);
 }
 
-TEST(CampOptionalSingleton, EmplaceOnce)
+TEST(CampResettableSingleton, EmplaceOnce)
 {
-  camp::optional_singleton<int> test;
+  camp::resettable_singleton<int> test;
   ASSERT_EQ(test.has_value(), false);
 
   test.emplace_once(5);
@@ -104,9 +104,9 @@ TEST(CampOptionalSingleton, EmplaceOnce)
   ASSERT_EQ(*test, 5);
 }
 
-TEST(CampOptionalSingleton, ThreadedEmplaceOnce)
+TEST(CampResettableSingleton, ThreadedEmplaceOnce)
 {
-  camp::optional_singleton<int> test;
+  camp::resettable_singleton<int> test;
   ASSERT_EQ(test.has_value(), false);
 
   auto set_once = [&] (int i) {
@@ -142,9 +142,9 @@ TEST(CampOptionalSingleton, ThreadedEmplaceOnce)
   ASSERT_EQ(test.get_or_emplace(), num); // still should be original number
 }
 
-TEST(CampOptionalSingleton, GetOrEmplace)
+TEST(CampResettableSingleton, GetOrEmplace)
 {
-  camp::optional_singleton<int> test;
+  camp::resettable_singleton<int> test;
   ASSERT_EQ(test.has_value(), false);
 
   const int val = test.get_or_emplace(5);
@@ -162,9 +162,9 @@ TEST(CampOptionalSingleton, GetOrEmplace)
   ASSERT_EQ(test.get_or_emplace(), 5);
 }
 
-TEST(CampOptionalSingleton, ThreadedGetOrEmplace)
+TEST(CampResettableSingleton, ThreadedGetOrEmplace)
 {
-  camp::optional_singleton<int> test;
+  camp::resettable_singleton<int> test;
   ASSERT_EQ(test.has_value(), false);
 
   auto set_once = [&] (int i) {
@@ -200,9 +200,9 @@ TEST(CampOptionalSingleton, ThreadedGetOrEmplace)
   ASSERT_EQ(test.get_or_emplace(), num); // still should be original number
 }
 
-TEST(CampOptionalSingleton, OperatorMemberAccess)
+TEST(CampResettableSingleton, OperatorMemberAccess)
 {
-  camp::optional_singleton<detail::MyStruct> test;
+  camp::resettable_singleton<detail::MyStruct> test;
   ASSERT_EQ(test.has_value(), false);
 
   const auto& val = test.get_or_emplace();
@@ -220,9 +220,9 @@ TEST(CampOptionalSingleton, OperatorMemberAccess)
   ASSERT_EQ(test->my_int, 5);
 }
 
-TEST(CampOptionalSingleton, Reset)
+TEST(CampResettableSingleton, Reset)
 {
-  camp::optional_singleton<int> test;
+  camp::resettable_singleton<int> test;
   ASSERT_EQ(test.has_value(), false);
 
   test.emplace_once(5);
@@ -241,9 +241,9 @@ TEST(CampOptionalSingleton, Reset)
   ASSERT_EQ(test.get_or_emplace(), 10);
 }
 
-TEST(CampOptionalSingleton, ResetGetOrEmplace)
+TEST(CampResettableSingleton, ResetGetOrEmplace)
 {
-  camp::optional_singleton<int> test;
+  camp::resettable_singleton<int> test;
   ASSERT_EQ(test.has_value(), false);
 
   const int val = test.get_or_emplace(5);
@@ -264,9 +264,9 @@ TEST(CampOptionalSingleton, ResetGetOrEmplace)
   ASSERT_EQ(test.get_or_emplace(), 10);
 }
 
-TEST(CampOptionalSingleton, ThreadedReset)
+TEST(CampResettableSingleton, ThreadedReset)
 {
-  camp::optional_singleton<int> test;
+  camp::resettable_singleton<int> test;
   ASSERT_EQ(test.has_value(), false);
 
   auto set_once = [&] (int i) {
