@@ -23,6 +23,7 @@
 
 #include "camp/defines.hpp"
 #include "camp/helpers.hpp"
+#include "camp/init_helpers.hpp"
 #include "camp/resource/event.hpp"
 #include "camp/resource/platform.hpp"
 
@@ -151,29 +152,113 @@ namespace resources
       }
     };
 
+    struct HipStream
+    {
+      using handle_type = hipStream_t;
+
+      explicit HipStream() : m_stream(init()) {}
+
+      HipStream(HipStream const&) = delete;
+
+      HipStream(HipStream&& rhs) noexcept
+          : m_stream(std::exchange(rhs.m_stream, nullptr))
+      {
+      }
+
+      HipStream& operator=(HipStream const&) = delete;
+
+      HipStream& operator=(HipStream&& rhs) noexcept
+      {
+        finalize(m_stream);
+        m_stream = std::exchange(rhs.m_stream, nullptr);
+        return *this;
+      }
+
+      ~HipStream() { finalize(m_stream); }
+
+      Platform get_platform() const { return Platform::hip; }
+
+      handle_type get_handle() const { return m_stream; }
+
+      /*
+       * \brief Compares two events to see if they represent the same underlying
+       *        hip stream.
+       *
+       * \return True if both refer to the same hip stream, false otherwise.
+       */
+      friend inline bool operator==(HipStream const& lhs,
+                                    HipStream const& rhs) = default;
+
+      size_t get_hash() const
+      {
+        const size_t platform_type = size_t(get_platform()) << 32;
+        size_t hash = std::hash<hipStream_t>{}(m_stream);
+        return platform_type | (hash & 0xFFFFFFFF);
+      }
+
+
+    private:
+      // note that hipStream_t is an alias for a pointer and is nullable
+      handle_type m_stream;
+
+      static handle_type init()
+      {
+        handle_type stream;
+        CAMP_HIP_API_INVOKE_AND_CHECK(hipStreamCreate, &stream);
+        return stream;
+      }
+
+      static void finalize(handle_type& stream)
+      {
+        if (stream != nullptr) {
+          CAMP_HIP_API_INVOKE_AND_CHECK(hipStreamDestroy, stream);
+          stream = nullptr;
+        }
+      }
+    };
+
     class Hip
     {
+      static constexpr int num_streams = 16;
+
+      // Not destroying these by default due to unspecified cleanup
+      // order of static objects. `camp::DestructorPolicy::Default`
+      // can result in crashes after main due to the HIP runtime cleaning
+      // up prior to static camp streams.
+      template <typename T>
+      using singleton_t = camp::resettable_singleton<T,
+            camp::DestructorPolicy::None>;
+
+      struct ExtraStream
+      {
+        std::array<HipStream, num_streams> streams;
+        std::mutex lock;
+        int previous{num_streams-1};
+      };
+
+      inline static constinit singleton_t<HipStream> default_stream;
+      inline static constinit singleton_t<ExtraStream> extra_streams;
+
+      static hipStream_t get_default_stream()
+      {
+#if !CAMP_USE_PLATFORM_DEFAULT_STREAM
+        return default_stream.get_or_emplace().get_handle();
+#else
+        return nullptr;
+#endif
+      }
+
       static hipStream_t get_a_stream(int num)
       {
-        static constexpr int num_streams = 16;
-        static std::array<hipStream_t, num_streams> s_streams = [] {
-          std::array<hipStream_t, num_streams> streams;
-          for (auto& s : streams) {
-            CAMP_HIP_API_INVOKE_AND_CHECK(hipStreamCreate, &s);
-          }
-          return streams;
-        }();
-
-        static std::mutex s_mtx;
-        static int s_previous = num_streams - 1;
+        auto& extra_state = extra_streams.get_or_emplace();
 
         if (num < 0) {
-          std::lock_guard<std::mutex> lock(s_mtx);
-          s_previous = (s_previous + 1) % num_streams;
-          return s_streams[s_previous];
+          std::lock_guard<std::mutex> lock(extra_state.lock);
+          extra_state.previous = (extra_state.previous + 1) % num_streams;
+          return extra_state.streams[extra_state.previous].get_handle();
         }
 
-        return s_streams[num % num_streams];
+        return extra_state.streams[num % num_streams].get_handle();
       }
 
       // Private from-stream constructor
@@ -224,16 +309,25 @@ namespace resources
 
       static Hip get_default()
       {
-        static Hip h([] {
-          hipStream_t s;
-#if CAMP_USE_PLATFORM_DEFAULT_STREAM
-          s = 0;
-#else
-          CAMP_HIP_API_INVOKE_AND_CHECK(hipStreamCreate, &s);
-#endif
-          return s;
-        }());
-        return h;
+        return Hip(get_default_stream());
+      }
+
+      /**
+       * \brief Destroy all HIP streams created and managed by CAMP.
+       *
+       * Existing resources that refer to CAMP-managed streams are invalid
+       * after this call. Streams passed to HipFromStream and the HIP platform
+       * default stream are not destroyed. This function may be called
+       * repeatedly, and later resource construction recreates the managed
+       * streams.
+       *
+       * The caller must ensure no other thread is using HIP resources while
+       * cleanup runs.
+       */
+      static void cleanup()
+      {
+        extra_streams.reset();
+        default_stream.reset();
       }
 
       HipEvent get_event()
@@ -382,7 +476,6 @@ namespace resources
       hipStream_t stream;
       int device;
     };
-
   }  // namespace v1
 
 }  // namespace resources
