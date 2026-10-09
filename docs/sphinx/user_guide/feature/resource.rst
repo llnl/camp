@@ -31,9 +31,10 @@ In addition to the Host, Camp provides a resource for several device backends:
 Generic vs. Concrete Camp Resources
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Camp has two different types of Resources: generic (aka. type-erased) and concrete (aka. typed). 
-The generic (type-erased) resources work by holding a shared pointer to the base implementation of a resource 
-with virtual methods that call the same methods on the concrete (typed) resource.
+Camp has two different types of Resources: generic (aka. type-erased) and concrete (aka. typed).
+The generic (type-erased) ``Resource`` owns a concrete resource and provides a common interface for using it.
+Copies of a ``Resource`` share ownership of the stored concrete resource.
+For access without ownership, see :ref:`borrowing-resources-label`.
 
 A concrete resource is created with:
 
@@ -51,7 +52,7 @@ resource is created with:
    camp::resources::Resource h{h1};
    camp::resources::Resource r{c1};
 
-This way of creating a generic resource uses the concrete resource created above, ``h1`` or ``c1``, to construct it.
+This way of creating a generic resource uses the concrete resource created above, ``h1`` or ``c1``, to construct an owned copy.
 We can also create a generic resource with:
 
 .. code-block:: cpp
@@ -60,7 +61,7 @@ We can also create a generic resource with:
    camp::resources::Resource r{camp::resources::Cuda()};
 
 Having the ability to use both a typed and a typed-erased resource allows users more flexibility as they use Camp resources.
-The compiler can implicitly convert between the generic and concrete resources for ease of use.
+The compiler can implicitly convert a concrete resource to a generic resource for ease of use.
 
 Using Resources
 ~~~~~~~~~~~~~~~
@@ -68,7 +69,7 @@ Using Resources
 Once you've created a resource, there are several useful things you can do with them including creating events and comparing
 resources. Whether users are using a CUDA or HIP backend, the Camp resources require no code changes and provide
 a hardware-agnostic interface. Because of the way Camp resources were built, the compiler can implicitly
-convert between the generic and concrete resources for ease of use.
+convert a concrete resource to a generic resource for ease of use.
 
 Find more examples of using Camp resources in the Using Camp section :ref:`using_camp-label`.
 Below, a few examples of these key use cases for Camp resources are shown.
@@ -156,20 +157,19 @@ to a separate Camp resource.
    ...
 
 
-Comparison of resources must be of the same type. In other words, you can compare two generic resources
-for equality OR two concrete (or typed) resources for equality. If you need to compare a generic resource
-with a concrete resource, you have to convert the concrete (typed) resource to a generic one. For example:
+You can compare two generic resources, two concrete resources of the same type, or a generic resource and a concrete resource
+for equality. For example:
 
 .. code-block:: cpp
 
    camp::resources::Cuda c1; //This is a typed resource
    camp::resources::Resource other_res = get_other_resource(...); //This is my generic resource
    
-   if (other_res == Resource{c1}) {
+   if (other_res == c1) {
      std::cout << "They are equal!" << std::endl;
    }
 
-The above code works because we converted the typed resource, ``c1``, to a generic resource with ``Resource{c1}``.
+The underlying concrete types must match to compare equal.
 
 While it is possible for two device resources to be different since each resource refers to a different
 device stream, all ``Host`` Camp resources will be the same since there is only one `stream of execution` 
@@ -206,3 +206,62 @@ is re-initialized. For applications, the recommendation is to call
 .. note::
    The Sycl backend's ``cleanup`` function is currently a no-op and 
    does not delete the Camp-managed global state.
+
+.. _borrowing-resources-label:
+
+Borrowing Resources and Events
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Use ``ResourceRef`` when a function needs to use a resource without keeping
+it for later. It provides generic access without taking ownership. Creating
+or copying one does not allocate or participate in shared ownership. Concrete
+resources and owning ``Resource`` objects convert implicitly to ``ResourceRef``:
+
+.. code-block:: cpp
+
+   void wait_for_work(camp::resources::ResourceRef resource)
+   {
+     resource.wait();
+   }
+
+   camp::resources::Cuda cuda;
+   wait_for_work(cuda);
+
+   camp::resources::Resource owned{camp::resources::Cuda{}};
+   wait_for_work(owned);
+
+``ResourceConstRef`` is the const counterpart to ``ResourceRef``. It can refer
+to const or non-const resources and provides read-only access, such as querying
+the platform or comparing resources.
+
+``EventRef`` and ``EventConstRef`` provide the corresponding non-owning views
+for events. Both can check or wait for an event. Use ``EventRef`` if you also
+need mutable access to the concrete event through ``get`` or ``try_get``.
+
+Use ``Resource`` or ``Event`` when generic code needs an owning type-erased
+object instead of a non-owning view. If the code receives a borrowed resource,
+use ``Resource::from_ref`` to store an owning ``Resource`` for later use:
+
+.. code-block:: cpp
+
+   struct PendingWork {
+     explicit PendingWork(camp::resources::ResourceRef resource)
+         : resource_(camp::resources::Resource::from_ref(resource))
+     {}
+
+     camp::resources::Resource resource_;
+   };
+
+``from_ref`` returns a ``Resource`` containing a copy of the referenced
+concrete resource. The returned ``Resource`` owns that copy rather than
+borrowing it through the ``ResourceRef``.
+
+.. important::
+
+   Resource and event views do not take ownership of the objects they refer to.
+   The referenced resource or event must remain alive and valid for as long as
+   the view is used. You cannot create a view from a temporary resource or event.
+
+Owning objects, views, and concrete objects can be compared directly.
+The underlying concrete types must match to compare equal. Equal objects
+produce matching hashes across their owning and non-owning forms.

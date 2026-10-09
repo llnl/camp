@@ -70,7 +70,7 @@ namespace resources
 
       ~SyclEvent() = default;
 
-      Platform get_platform() const { return Platform::sycl; }
+      Platform get_platform() const noexcept { return Platform::sycl; }
 
       bool check() const
       {
@@ -80,9 +80,9 @@ namespace resources
 
       void wait() const { m_event.wait(); }  // sycl::event::wait is non-const
 
-      sycl::event& getSyclEvent_t() { return m_event; }
+      sycl::event& getSyclEvent_t() noexcept { return m_event; }
 
-      sycl::event const& getSyclEvent_t() const { return m_event; }
+      sycl::event const& getSyclEvent_t() const noexcept { return m_event; }
 
       /*
        * \brief Compares two events to see if they represent the same underlying
@@ -91,9 +91,9 @@ namespace resources
        * \return True if both refer to equivalent sycl events, false otherwise.
        */
       friend inline bool operator==(SyclEvent const& lhs,
-                                    SyclEvent const& rhs) = default;
+                                    SyclEvent const& rhs) noexcept = default;
 
-      size_t get_hash() const
+      size_t get_hash() const noexcept
       {
         const size_t sycl_type = size_t(get_platform()) << 32;
         size_t stream_hash = std::hash<sycl::event>{}(m_event);
@@ -314,7 +314,7 @@ namespace resources
       static void cleanup() {}
 
       // Methods
-      Platform get_platform() const { return Platform::sycl; }
+      Platform get_platform() const noexcept { return Platform::sycl; }
 
       // Event
       SyclEvent get_event() { return SyclEvent(get_queue()); }
@@ -401,18 +401,19 @@ namespace resources
       }
 
       // implementation specific
-      sycl::queue& get_queue() { return qu; }
+      sycl::queue& get_queue() noexcept { return qu; }
 
-      sycl::queue const& get_queue() const { return qu; }
+      sycl::queue const& get_queue() const noexcept { return qu; }
 
       /*
        * \brief Compares two (Sycl) resources to see if they are equal
        *
        * \return True or false depending on if this is the same queue
        */
-      friend inline bool operator==(Sycl const& lhs, Sycl const& rhs) = default;
+      friend inline bool operator==(Sycl const& lhs,
+                                    Sycl const& rhs) noexcept = default;
 
-      size_t get_hash() const
+      size_t get_hash() const noexcept
       {
         const size_t sycl_type = size_t(get_platform()) << 32;
         size_t stream_hash = std::hash<sycl::queue>{}(qu);
@@ -442,7 +443,7 @@ namespace std
  */
 template <>
 struct hash<camp::resources::SyclEvent> {
-  std::size_t operator()(const camp::resources::SyclEvent& e) const
+  std::size_t operator()(const camp::resources::SyclEvent& e) const noexcept
   {
     return e.get_hash();
   }
@@ -459,7 +460,7 @@ struct hash<camp::resources::SyclEvent> {
  */
 template <>
 struct hash<camp::resources::Sycl> {
-  std::size_t operator()(const camp::resources::Sycl& s) const
+  std::size_t operator()(const camp::resources::Sycl& s) const noexcept
   {
     return s.get_hash();
   }
