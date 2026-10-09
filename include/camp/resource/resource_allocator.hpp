@@ -12,6 +12,8 @@
 
 #include <concepts>
 #include <cstddef>
+#include <limits>
+#include <new>
 
 #include "camp/concepts.hpp"
 #include "camp/config.hpp"

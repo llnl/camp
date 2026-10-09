@@ -60,6 +60,243 @@ struct NotAResource {
 struct NotAnEvent {
 };
 
+struct TrackingState {
+  int copies = 0;
+};
+
+// Records copies in caller-owned state so tests can verify that refs borrow
+// concrete resources while Resource::from_ref creates an owning copy.
+struct TrackedResource : Host {
+  explicit TrackedResource(TrackingState& state_) : state(&state_)
+  {
+  }
+
+  TrackedResource(TrackedResource const& other)
+      : Host(other), state(other.state)
+  {
+    ++state->copies;
+  }
+
+  TrackedResource(TrackedResource&&) noexcept = default;
+
+  TrackingState* state;
+};
+
+namespace camp
+{
+namespace resources
+{
+  template <>
+  struct is_concrete_resource_impl<TrackedResource> : std::true_type {
+  };
+}  // namespace resources
+}  // namespace camp
+
+// Reference representation
+static_assert(std::is_trivially_copyable_v<ResourceRef>);
+static_assert(std::is_trivially_copyable_v<ResourceConstRef>);
+static_assert(std::is_trivially_copyable_v<EventRef>);
+static_assert(std::is_trivially_copyable_v<EventConstRef>);
+
+// Resource reference construction
+static_assert(std::is_constructible_v<ResourceRef, Host&>);
+static_assert(std::is_constructible_v<ResourceRef, Resource&>);
+static_assert(!std::is_constructible_v<ResourceRef, Host const&>);
+static_assert(!std::is_constructible_v<ResourceRef, Host&&>);
+static_assert(!std::is_constructible_v<ResourceRef, Resource const&>);
+static_assert(!std::is_constructible_v<ResourceRef, Resource&&>);
+static_assert(!std::is_constructible_v<ResourceRef, ResourceConstRef>);
+static_assert(std::is_constructible_v<ResourceConstRef, Host&>);
+static_assert(std::is_constructible_v<ResourceConstRef, Host const&>);
+static_assert(std::is_constructible_v<ResourceConstRef, Resource&>);
+static_assert(std::is_constructible_v<ResourceConstRef, Resource const&>);
+static_assert(std::is_constructible_v<ResourceConstRef, ResourceRef>);
+static_assert(!std::is_constructible_v<ResourceConstRef, Host&&>);
+static_assert(!std::is_constructible_v<ResourceConstRef, Host const&&>);
+static_assert(!std::is_constructible_v<ResourceConstRef, Resource&&>);
+static_assert(!std::is_constructible_v<ResourceConstRef, Resource const&&>);
+
+// Event reference construction
+static_assert(std::is_constructible_v<EventRef, HostEvent&>);
+static_assert(std::is_constructible_v<EventRef, Event&>);
+static_assert(!std::is_constructible_v<EventRef, HostEvent const&>);
+static_assert(!std::is_constructible_v<EventRef, HostEvent&&>);
+static_assert(!std::is_constructible_v<EventRef, Event const&>);
+static_assert(!std::is_constructible_v<EventRef, Event&&>);
+static_assert(!std::is_constructible_v<EventRef, EventConstRef>);
+static_assert(std::is_constructible_v<EventConstRef, HostEvent&>);
+static_assert(std::is_constructible_v<EventConstRef, HostEvent const&>);
+static_assert(std::is_constructible_v<EventConstRef, Event&>);
+static_assert(std::is_constructible_v<EventConstRef, Event const&>);
+static_assert(std::is_constructible_v<EventConstRef, EventRef>);
+static_assert(!std::is_constructible_v<EventConstRef, HostEvent&&>);
+static_assert(!std::is_constructible_v<EventConstRef, HostEvent const&&>);
+static_assert(!std::is_constructible_v<EventConstRef, Event&&>);
+static_assert(!std::is_constructible_v<EventConstRef, Event const&&>);
+
+template <typename T>
+concept NothrowValueSemantics = std::is_nothrow_default_constructible_v<T>
+                                && std::is_nothrow_copy_constructible_v<T>
+                                && std::is_nothrow_move_constructible_v<T>
+                                && std::is_nothrow_copy_assignable_v<T>
+                                && std::is_nothrow_move_assignable_v<T>
+                                && std::is_nothrow_destructible_v<T>;
+
+// Nothrow value semantics and reference construction
+static_assert(NothrowValueSemantics<ResourceRef>);
+static_assert(NothrowValueSemantics<ResourceConstRef>);
+static_assert(NothrowValueSemantics<EventRef>);
+static_assert(NothrowValueSemantics<EventConstRef>);
+static_assert(NothrowValueSemantics<Resource>);
+static_assert(NothrowValueSemantics<Event>);
+static_assert(std::is_nothrow_constructible_v<ResourceRef, Host&>);
+static_assert(std::is_nothrow_constructible_v<ResourceRef, Resource&>);
+static_assert(std::is_nothrow_constructible_v<ResourceConstRef, Host const&>);
+static_assert(
+    std::is_nothrow_constructible_v<ResourceConstRef, Resource const&>);
+static_assert(std::is_nothrow_constructible_v<ResourceConstRef, ResourceRef>);
+static_assert(std::is_nothrow_constructible_v<EventRef, HostEvent&>);
+static_assert(std::is_nothrow_constructible_v<EventRef, Event&>);
+static_assert(
+    std::is_nothrow_constructible_v<EventConstRef, HostEvent const&>);
+static_assert(std::is_nothrow_constructible_v<EventConstRef, Event const&>);
+static_assert(std::is_nothrow_constructible_v<EventConstRef, EventRef>);
+
+// Resource access types
+static_assert(
+    std::same_as<decltype(std::declval<Resource&>().try_get<Host>()), Host*>);
+static_assert(
+    std::same_as<decltype(std::declval<Resource const&>().try_get<Host>()),
+                 Host const*>);
+static_assert(
+    std::same_as<decltype(std::declval<Resource&>().get<Host>()), Host&>);
+static_assert(
+    std::same_as<decltype(std::declval<Resource const&>().get<Host>()),
+                 Host const&>);
+static_assert(
+    std::same_as<decltype(std::declval<ResourceRef const&>().try_get<Host>()),
+                 Host*>);
+static_assert(
+    std::same_as<decltype(std::declval<ResourceRef const&>().get<Host>()),
+                 Host&>);
+static_assert(
+    std::same_as<
+        decltype(std::declval<ResourceConstRef const&>().try_get<Host>()),
+        Host const*>);
+static_assert(
+    std::same_as<decltype(std::declval<ResourceConstRef const&>().get<Host>()),
+                 Host const&>);
+
+// Event access types
+static_assert(
+    std::same_as<decltype(std::declval<Event&>().try_get<HostEvent>()),
+                 HostEvent*>);
+static_assert(
+    std::same_as<decltype(std::declval<Event const&>().try_get<HostEvent>()),
+                 HostEvent const*>);
+static_assert(std::same_as<decltype(std::declval<Event&>().get<HostEvent>()),
+                           HostEvent&>);
+static_assert(
+    std::same_as<decltype(std::declval<Event const&>().get<HostEvent>()),
+                 HostEvent const&>);
+static_assert(
+    std::same_as<decltype(std::declval<EventRef const&>().try_get<HostEvent>()),
+                 HostEvent*>);
+static_assert(
+    std::same_as<decltype(std::declval<EventRef const&>().get<HostEvent>()),
+                 HostEvent&>);
+static_assert(
+    std::same_as<
+        decltype(std::declval<EventConstRef const&>().try_get<HostEvent>()),
+        HostEvent const*>);
+static_assert(
+    std::same_as<
+        decltype(std::declval<EventConstRef const&>().get<HostEvent>()),
+        HostEvent const&>);
+
+template <typename T>
+concept CanAllocateResource = requires(T&& resource) {
+  std::forward<T>(resource).template allocate<int>(1);
+};
+
+template <typename T>
+concept CanGetResourceEvent =
+    requires(T&& resource) { std::forward<T>(resource).get_event(); };
+
+template <typename T>
+concept CanCallocResource =
+    requires(T&& resource) { std::forward<T>(resource).calloc(1); };
+
+template <typename T>
+concept CanDeallocateResource = requires(T&& resource, void* memory) {
+  std::forward<T>(resource).deallocate(memory);
+};
+
+template <typename T>
+concept CanMemcpyResource =
+    requires(T&& resource, void* dst, void const* src) {
+  std::forward<T>(resource).memcpy(dst, src, 1);
+};
+
+template <typename T>
+concept CanMemsetResource = requires(T&& resource, void* memory) {
+  std::forward<T>(resource).memset(memory, 0, 1);
+};
+
+template <typename T>
+concept CanWaitResource =
+    requires(T&& resource) { std::forward<T>(resource).wait(); };
+
+template <typename ResourceType, typename EventType>
+concept CanWaitForResource = requires(ResourceType&& resource,
+                                      EventType&& event) {
+  std::forward<ResourceType>(resource).wait_for(
+      std::forward<EventType>(event));
+};
+
+// Resource operation availability
+static_assert(!CanAllocateResource<Resource const&>);
+static_assert(!CanCallocResource<Resource const&>);
+static_assert(!CanDeallocateResource<Resource const&>);
+static_assert(!CanMemcpyResource<Resource const&>);
+static_assert(!CanMemsetResource<Resource const&>);
+static_assert(!CanGetResourceEvent<Resource const&>);
+static_assert(!CanWaitResource<Resource const&>);
+static_assert(!CanWaitForResource<Resource const&, EventRef>);
+
+static_assert(!CanAllocateResource<ResourceConstRef const&>);
+static_assert(!CanCallocResource<ResourceConstRef const&>);
+static_assert(!CanDeallocateResource<ResourceConstRef const&>);
+static_assert(!CanMemcpyResource<ResourceConstRef const&>);
+static_assert(!CanMemsetResource<ResourceConstRef const&>);
+static_assert(!CanGetResourceEvent<ResourceConstRef const&>);
+static_assert(!CanWaitResource<ResourceConstRef const&>);
+static_assert(!CanWaitForResource<ResourceConstRef const&, EventConstRef>);
+
+// Nothrow comparison and hashing
+static_assert(noexcept(std::declval<ResourceRef>()
+                       == std::declval<ResourceRef>()));
+static_assert(noexcept(std::declval<EventRef>() == std::declval<EventRef>()));
+static_assert(noexcept(std::declval<ResourceRef>()
+                       == std::declval<ResourceConstRef>()));
+static_assert(noexcept(std::declval<EventRef>()
+                       == std::declval<EventConstRef>()));
+static_assert(noexcept(std::declval<Resource const&>()
+                       == std::declval<Resource const&>()));
+static_assert(noexcept(std::declval<Event const&>()
+                       == std::declval<Event const&>()));
+static_assert(noexcept(std::hash<ResourceRef>{}(std::declval<ResourceRef>())));
+static_assert(noexcept(std::hash<EventRef>{}(std::declval<EventRef>())));
+static_assert(noexcept(
+    std::hash<ResourceConstRef>{}(std::declval<ResourceConstRef>())));
+static_assert(
+    noexcept(std::hash<EventConstRef>{}(std::declval<EventConstRef>())));
+static_assert(noexcept(std::hash<Resource>{}(std::declval<Resource const&>())));
+static_assert(noexcept(std::hash<Event>{}(std::declval<Event const&>())));
+static_assert(noexcept(std::hash<Host>{}(std::declval<Host const&>())));
+static_assert(
+    noexcept(std::hash<HostEvent>{}(std::declval<HostEvent const&>())));
+
 template <typename Res>
 void test_construct()
 {
@@ -145,16 +382,57 @@ TEST(CampResource, CopyAssignment)
 }
 
 template <typename Res>
+void test_move_construct()
+{
+  Resource src{Res()};
+  Resource expected = src;
+
+  Resource dst{std::move(src)};
+
+  ASSERT_TRUE(dst);
+  ASSERT_TRUE(dst.try_get<Res>());
+  ASSERT_EQ(dst, expected);
+}
+
+TEST(CampResource, MoveConstruct)
+{
+  test_move_construct<Host>();
+#ifdef CAMP_HAVE_CUDA
+  test_move_construct<Cuda>();
+#endif
+#ifdef CAMP_HAVE_HIP
+  test_move_construct<Hip>();
+#endif
+#ifdef CAMP_HAVE_OMP_OFFLOAD
+  test_move_construct<Omp>();
+#endif
+#ifdef CAMP_HAVE_SYCL
+  test_move_construct<Sycl>();
+#endif
+}
+
+template <typename Res>
 void test_move_assignment()
 {
   Resource src{Res()};
+  ResourceRef original_ref = src;
+  Resource expected = src;
   Resource dst;
+
+  src = src;
+  src = std::move(src);
+  ASSERT_EQ(src.try_get<Res>(), expected.try_get<Res>());
 
   dst = std::move(src);
 
-  ASSERT_FALSE(src);
   ASSERT_TRUE(dst);
   ASSERT_TRUE(dst.try_get<Res>());
+  ASSERT_EQ(dst, expected);
+  ASSERT_EQ(original_ref, dst);
+
+  dst = Resource{};
+  ASSERT_TRUE(original_ref);
+  ASSERT_EQ(original_ref, expected);
 }
 
 TEST(CampResource, MoveAssignment)
@@ -202,68 +480,108 @@ TEST(CampResource, ConvertFails)
 }
 
 template <typename Res>
-void test_convert_works(Platform platform)
+void test_convert_works()
 {
-  const Resource r{Res()};
-  ASSERT_TRUE(r.try_get<Res>());
-  ASSERT_EQ(r.get<Res>().get_platform(), platform);
+  Res concrete;
+  ResourceRef concrete_ref = concrete;
+  ResourceConstRef concrete_const_ref = concrete;
+  ASSERT_EQ(&concrete_ref.template get<Res>(), &concrete);
+  ASSERT_EQ(&concrete_const_ref.template get<Res>(), &concrete);
+
+  Resource owner{concrete};
+  ResourceRef owner_ref = owner;
+  ResourceConstRef owner_const_ref = owner;
+  Resource const& const_owner = owner;
+  Res const* owned = const_owner.try_get<Res>();
+  ASSERT_NE(owned, nullptr);
+  ASSERT_EQ(&const_owner.get<Res>(), owned);
+  ASSERT_EQ(owner_ref.try_get<Res>(), owned);
+  ASSERT_EQ(owner_const_ref.try_get<Res>(), owned);
 }
 
 //
 TEST(CampResource, ConvertWorks)
 {
-  test_convert_works<Host>(Platform::host);
+  test_convert_works<Host>();
 #ifdef CAMP_HAVE_CUDA
-  test_convert_works<Cuda>(Platform::cuda);
+  test_convert_works<Cuda>();
 #endif
 #ifdef CAMP_HAVE_HIP
-  test_convert_works<Hip>(Platform::hip);
+  test_convert_works<Hip>();
 #endif
 #ifdef CAMP_HAVE_OMP_OFFLOAD
-  test_convert_works<Omp>(Platform::omp_target);
+  test_convert_works<Omp>();
 #endif
 #ifdef CAMP_HAVE_SYCL
-  test_convert_works<Sycl>(Platform::sycl);
+  test_convert_works<Sycl>();
 #endif
+}
+
+template <typename Res>
+void test_resource_platform(Platform platform)
+{
+  Res concrete;
+  Resource owner{concrete};
+  ResourceRef concrete_ref = concrete;
+  ResourceConstRef concrete_const_ref = concrete;
+  ResourceRef owner_ref = owner;
+  ResourceConstRef owner_const_ref = owner;
+
+  ASSERT_EQ(owner.get_platform(), platform);
+  ASSERT_EQ(concrete_ref.get_platform(), platform);
+  ASSERT_EQ(concrete_const_ref.get_platform(), platform);
+  ASSERT_EQ(owner_ref.get_platform(), platform);
+  ASSERT_EQ(owner_const_ref.get_platform(), platform);
 }
 
 TEST(CampResource, GetPlatform)
 {
-  ASSERT_EQ(static_cast<const Resource>(Host()).get_platform(), Platform::host);
+  test_resource_platform<Host>(Platform::host);
 #ifdef CAMP_HAVE_CUDA
-  ASSERT_EQ(static_cast<const Resource>(Cuda()).get_platform(), Platform::cuda);
+  test_resource_platform<Cuda>(Platform::cuda);
 #endif
 #ifdef CAMP_HAVE_HIP
-  ASSERT_EQ(static_cast<const Resource>(Hip()).get_platform(), Platform::hip);
+  test_resource_platform<Hip>(Platform::hip);
 #endif
 #ifdef CAMP_HAVE_OMP_OFFLOAD
-  ASSERT_EQ(static_cast<const Resource>(Omp()).get_platform(),
-            Platform::omp_target);
+  test_resource_platform<Omp>(Platform::omp_target);
 #endif
 #ifdef CAMP_HAVE_SYCL
-  ASSERT_EQ(static_cast<const Resource>(Sycl()).get_platform(), Platform::sycl);
+  test_resource_platform<Sycl>(Platform::sycl);
 #endif
+}
+
+template <typename Res>
+void test_event_platform(Platform platform)
+{
+  auto concrete = Res().get_event();
+  Event owner = Res().get_event_erased();
+  EventRef concrete_ref = concrete;
+  EventConstRef concrete_const_ref = concrete;
+  EventRef owner_ref = owner;
+  EventConstRef owner_const_ref = owner;
+
+  ASSERT_EQ(owner.get_platform(), platform);
+  ASSERT_EQ(concrete_ref.get_platform(), platform);
+  ASSERT_EQ(concrete_const_ref.get_platform(), platform);
+  ASSERT_EQ(owner_ref.get_platform(), platform);
+  ASSERT_EQ(owner_const_ref.get_platform(), platform);
 }
 
 TEST(CampEvent, GetPlatform)
 {
-  ASSERT_EQ(static_cast<const Event>(Host().get_event_erased()).get_platform(),
-            Platform::host);
+  test_event_platform<Host>(Platform::host);
 #ifdef CAMP_HAVE_CUDA
-  ASSERT_EQ(static_cast<const Event>(Cuda().get_event_erased()).get_platform(),
-            Platform::cuda);
+  test_event_platform<Cuda>(Platform::cuda);
 #endif
 #ifdef CAMP_HAVE_HIP
-  ASSERT_EQ(static_cast<const Event>(Hip().get_event_erased()).get_platform(),
-            Platform::hip);
+  test_event_platform<Hip>(Platform::hip);
 #endif
 #ifdef CAMP_HAVE_OMP_OFFLOAD
-  ASSERT_EQ(static_cast<const Event>(Omp().get_event_erased()).get_platform(),
-            Platform::omp_target);
+  test_event_platform<Omp>(Platform::omp_target);
 #endif
 #ifdef CAMP_HAVE_SYCL
-  ASSERT_EQ(static_cast<const Event>(Sycl().get_event_erased()).get_platform(),
-            Platform::sycl);
+  test_event_platform<Sycl>(Platform::sycl);
 #endif
 }
 
@@ -271,6 +589,8 @@ TEST(CampResource, EmptyBehavior)
 {
   Resource empty;
   Resource empty2;
+  ResourceRef empty_ref = empty;
+  ResourceConstRef empty_const_ref = empty;
   Resource full{Host()};
   Resource sink{std::move(full)};
   int value = 7;
@@ -280,25 +600,48 @@ TEST(CampResource, EmptyBehavior)
   CAMP_ALLOW_UNUSED_LOCAL(sink);
 
   ASSERT_FALSE(empty);
+  ASSERT_FALSE(empty_ref);
+  ASSERT_FALSE(empty_const_ref);
   ASSERT_EQ(empty.get_platform(), Platform::undefined);
+  ASSERT_EQ(empty_ref.get_platform(), Platform::undefined);
   ASSERT_EQ(empty, empty2);
+  ASSERT_EQ(empty_ref, ResourceRef{});
+  ASSERT_EQ(empty_const_ref, ResourceConstRef{});
   ASSERT_NE(empty, Resource{Host()});
   ASSERT_EQ(std::hash<Resource>{}(empty), 0u);
+  ASSERT_EQ(std::hash<ResourceRef>{}(empty_ref), 0u);
+  ASSERT_EQ(std::hash<ResourceConstRef>{}(empty_const_ref), 0u);
 
   ASSERT_EQ(empty.allocate<int>(0), nullptr);
+  ASSERT_EQ(empty_ref.allocate<int>(0), nullptr);
   ASSERT_EQ(empty.calloc(0), nullptr);
+  ASSERT_EQ(empty_ref.calloc(0), nullptr);
   empty.deallocate(nullptr);
+  empty_ref.deallocate(nullptr);
   empty.memcpy(&value, &value, 0);
+  empty_ref.memcpy(&value, &value, 0);
   empty.memset(&value, 0, 0);
+  empty_ref.memset(&value, 0, 0);
   empty.wait();
+  empty_ref.wait();
+  empty_ref.wait_for(EventRef{});
 
   ASSERT_THROW((void)empty.get<Host>(), std::runtime_error);
   ASSERT_FALSE(empty.try_get<Host>());
+  ASSERT_THROW((void)empty_ref.get<Host>(), std::runtime_error);
+  ASSERT_THROW((void)empty_const_ref.get<Host>(), std::runtime_error);
+  ASSERT_FALSE(empty_ref.try_get<Host>());
+  ASSERT_FALSE(empty_const_ref.try_get<Host>());
   ASSERT_THROW((void)empty.allocate<int>(1), std::runtime_error);
+  ASSERT_THROW((void)empty_ref.allocate<int>(1), std::runtime_error);
   ASSERT_THROW((void)empty.calloc(1), std::runtime_error);
+  ASSERT_THROW((void)empty_ref.calloc(1), std::runtime_error);
   ASSERT_THROW(empty.deallocate(allocated_value), std::runtime_error);
+  ASSERT_THROW(empty_ref.deallocate(allocated_value), std::runtime_error);
   ASSERT_THROW(empty.memcpy(&value, &value, 1), std::runtime_error);
+  ASSERT_THROW(empty_ref.memcpy(&value, &value, 1), std::runtime_error);
   ASSERT_THROW(empty.memset(&value, 0, 1), std::runtime_error);
+  ASSERT_THROW(empty_ref.memset(&value, 0, 1), std::runtime_error);
 
   Event empty_event = empty.get_event();
   Event empty_erased_event = empty.get_event_erased();
@@ -315,18 +658,34 @@ TEST(CampResource, EmptyBehavior)
 
 TEST(CampEvent, EmptyBehavior)
 {
-  const Event empty;
-  const Event empty2;
+  Event empty;
+  Event const& const_empty = empty;
+  Event const empty2;
+  EventRef empty_ref = empty;
+  EventConstRef empty_const_ref = empty;
 
-  ASSERT_FALSE(empty);
-  ASSERT_EQ(empty.get_platform(), Platform::undefined);
-  ASSERT_TRUE(empty.check());
-  empty.wait();
-  ASSERT_EQ(empty, empty2);
-  ASSERT_NE(empty, Host().get_event_erased());
-  ASSERT_EQ(std::hash<Event>{}(empty), 0u);
-  ASSERT_FALSE(empty.try_get<HostEvent>());
-  ASSERT_THROW((void)empty.get<HostEvent>(), std::runtime_error);
+  ASSERT_FALSE(const_empty);
+  ASSERT_FALSE(empty_ref);
+  ASSERT_FALSE(empty_const_ref);
+  ASSERT_EQ(const_empty.get_platform(), Platform::undefined);
+  ASSERT_EQ(empty_ref.get_platform(), Platform::undefined);
+  ASSERT_TRUE(const_empty.check());
+  ASSERT_TRUE(empty_ref.check());
+  const_empty.wait();
+  empty_ref.wait();
+  ASSERT_EQ(const_empty, empty2);
+  ASSERT_EQ(empty_ref, EventRef{});
+  ASSERT_EQ(empty_const_ref, EventConstRef{});
+  ASSERT_NE(const_empty, Host().get_event_erased());
+  ASSERT_EQ(std::hash<Event>{}(const_empty), 0u);
+  ASSERT_EQ(std::hash<EventRef>{}(empty_ref), 0u);
+  ASSERT_EQ(std::hash<EventConstRef>{}(empty_const_ref), 0u);
+  ASSERT_FALSE(const_empty.try_get<HostEvent>());
+  ASSERT_FALSE(empty_ref.try_get<HostEvent>());
+  ASSERT_FALSE(empty_const_ref.try_get<HostEvent>());
+  ASSERT_THROW((void)const_empty.get<HostEvent>(), std::runtime_error);
+  ASSERT_THROW((void)empty_ref.get<HostEvent>(), std::runtime_error);
+  ASSERT_THROW((void)empty_const_ref.get<HostEvent>(), std::runtime_error);
 
   const Event host_event{Host().get_event()};
   ASSERT_TRUE(host_event);
@@ -369,18 +728,61 @@ TEST(CampEvent, CopyAssignment)
 }
 
 template <typename Res>
+void test_event_move_construct()
+{
+  using ResEvent = typename Res::event_type;
+
+  Event src = Res().get_event_erased();
+  Event expected = src;
+
+  Event dst{std::move(src)};
+
+  ASSERT_TRUE(dst);
+  ASSERT_TRUE(dst.try_get<ResEvent>());
+  ASSERT_EQ(dst, expected);
+}
+
+TEST(CampEvent, MoveConstruct)
+{
+  test_event_move_construct<Host>();
+#ifdef CAMP_HAVE_CUDA
+  test_event_move_construct<Cuda>();
+#endif
+#ifdef CAMP_HAVE_HIP
+  test_event_move_construct<Hip>();
+#endif
+#ifdef CAMP_HAVE_OMP_OFFLOAD
+  test_event_move_construct<Omp>();
+#endif
+#ifdef CAMP_HAVE_SYCL
+  test_event_move_construct<Sycl>();
+#endif
+}
+
+template <typename Res>
 void test_event_move_assignment()
 {
   using ResEvent = typename Res::event_type;
 
   Event src = Res().get_event_erased();
+  EventRef original_ref = src;
+  Event expected = src;
   Event dst;
+
+  src = src;
+  src = std::move(src);
+  ASSERT_EQ(src.try_get<ResEvent>(), expected.try_get<ResEvent>());
 
   dst = std::move(src);
 
-  ASSERT_FALSE(src);
   ASSERT_TRUE(dst);
   ASSERT_TRUE(dst.try_get<ResEvent>());
+  ASSERT_EQ(dst, expected);
+  ASSERT_EQ(original_ref, dst);
+
+  dst = Event{};
+  ASSERT_TRUE(original_ref);
+  ASSERT_EQ(original_ref, expected);
 }
 
 TEST(CampEvent, MoveAssignment)
@@ -885,6 +1287,27 @@ void test_id_compare(Resource& h1)
   ASSERT_TRUE(ch1 != ctr);
 }
 
+template <typename Res>
+void test_resource_ref_compare()
+{
+  Res concrete;
+  ResourceRef concrete_ref = concrete;
+  ResourceConstRef concrete_const_ref = concrete;
+  ASSERT_EQ(concrete_ref, concrete_const_ref);
+  ASSERT_EQ(std::hash<ResourceRef>{}(concrete_ref),
+            std::hash<ResourceConstRef>{}(concrete_const_ref));
+
+  Resource owner{concrete};
+  ResourceRef owner_ref = owner;
+  ResourceConstRef owner_const_ref = owner;
+  ASSERT_EQ(owner_ref, owner);
+  ASSERT_EQ(owner_const_ref, owner);
+  ASSERT_EQ(std::hash<ResourceRef>{}(owner_ref),
+            std::hash<Resource>{}(owner));
+  ASSERT_EQ(std::hash<ResourceConstRef>{}(owner_const_ref),
+            std::hash<Resource>{}(owner));
+}
+
 //
 TEST(CampResource, Compare)
 {
@@ -908,17 +1331,23 @@ TEST(CampResource, Compare)
   ASSERT_TRUE(ch == cth);
   ASSERT_FALSE(ch != cth);
 
+  test_resource_ref_compare<Host>();
+
 #ifdef CAMP_HAVE_CUDA
   test_id_compare<Cuda>(h1);
+  test_resource_ref_compare<Cuda>();
 #endif
 #ifdef CAMP_HAVE_HIP
   test_id_compare<Hip>(h1);
+  test_resource_ref_compare<Hip>();
 #endif
 #ifdef CAMP_HAVE_OMP_OFFLOAD
   test_id_compare<Omp>(h1);
+  test_resource_ref_compare<Omp>();
 #endif
 #ifdef CAMP_HAVE_SYCL
   test_id_compare<Sycl>(h1);
+  test_resource_ref_compare<Sycl>();
 #endif
 }
 
@@ -1021,6 +1450,26 @@ void test_id_compare(Event& he)
   ASSERT_TRUE(che != cte);
 }
 
+template <typename Res>
+void test_event_ref_compare()
+{
+  auto concrete = Res().get_event();
+  EventRef concrete_ref = concrete;
+  EventConstRef concrete_const_ref = concrete;
+  ASSERT_EQ(concrete_ref, concrete_const_ref);
+  ASSERT_EQ(std::hash<EventRef>{}(concrete_ref),
+            std::hash<EventConstRef>{}(concrete_const_ref));
+
+  Event owner = Res().get_event_erased();
+  EventRef owner_ref = owner;
+  EventConstRef owner_const_ref = owner;
+  ASSERT_EQ(owner_ref, owner);
+  ASSERT_EQ(owner_const_ref, owner);
+  ASSERT_EQ(std::hash<EventRef>{}(owner_ref), std::hash<Event>{}(owner));
+  ASSERT_EQ(std::hash<EventConstRef>{}(owner_const_ref),
+            std::hash<Event>{}(owner));
+}
+
 //
 TEST(CampEvent, Compare)
 {
@@ -1040,17 +1489,23 @@ TEST(CampEvent, Compare)
   ASSERT_FALSE(e2 != e1);
   ASSERT_FALSE(te != te);
 
+  test_event_ref_compare<Host>();
+
 #ifdef CAMP_HAVE_CUDA
   test_id_compare<Cuda>(e1);
+  test_event_ref_compare<Cuda>();
 #endif
 #ifdef CAMP_HAVE_HIP
   test_id_compare<Hip>(e1);
+  test_event_ref_compare<Hip>();
 #endif
 #ifdef CAMP_HAVE_OMP_OFFLOAD
   test_id_compare<Omp>(e1);
+  test_event_ref_compare<Omp>();
 #endif
 #ifdef CAMP_HAVE_SYCL
   test_id_compare<Sycl>(e1);
+  test_event_ref_compare<Sycl>();
 #endif
 }
 
@@ -1280,6 +1735,18 @@ void test_get_typed_event(EventArgs&&... eventArgs)
   auto&& typed_event = erased_event.get<ResEvent>();
   ResEvent event(std::forward<EventArgs>(eventArgs)...);
   ASSERT_EQ(typeid(event), typeid(typed_event));
+
+  Res concrete_resource;
+  auto concrete_event = concrete_resource.get_event();
+  EventRef concrete_ref = concrete_event;
+  EventConstRef concrete_const_ref = concrete_event;
+  ASSERT_EQ(&concrete_ref.template get<ResEvent>(), &concrete_event);
+  ASSERT_EQ(&concrete_const_ref.template get<ResEvent>(), &concrete_event);
+
+  EventRef owner_ref = erased_event;
+  EventConstRef owner_const_ref = erased_event;
+  ASSERT_EQ(owner_ref.try_get<ResEvent>(), &typed_event);
+  ASSERT_EQ(owner_const_ref.try_get<ResEvent>(), &typed_event);
 }
 
 //
@@ -1471,21 +1938,49 @@ TEST(CampEventProxy, Get)
 #endif
 }
 
-template <typename Res>
-void test_wait()
+template <typename ResourceLike>
+void test_wait_operations(ResourceLike& r)
 {
-  auto r = Res();
   r.wait();
   Event empty_event;
   r.wait_for(empty_event);
   Event erased_event = r.get_event_erased();
+  ASSERT_TRUE(erased_event);
   r.wait_for(erased_event);
   auto typed_event = r.get_event();
   r.wait_for(typed_event);
   Event host_event = Host().get_event_erased();
   r.wait_for(host_event);
+}
+
+template <typename ResourceLike>
+void test_type_erased_wait_for_forms(ResourceLike& resource)
+{
+  HostEvent event;
+  HostEvent const const_event;
+  Event owned_event{HostEvent{}};
+
+  resource.wait_for(EventRef{event});
+  resource.wait_for(EventConstRef{event});
+  resource.wait_for(event);
+  resource.wait_for(const_event);
+  resource.wait_for(owned_event);
+  resource.wait_for(HostEvent{});
+}
+
+template <typename Res>
+void test_wait()
+{
+  Res r;
+  test_wait_operations(r);
+
+  ResourceRef const ref = r;
+  test_wait_operations(ref);
+  test_type_erased_wait_for_forms(ref);
+
   Resource er(r);
-  er.wait();
+  test_wait_operations(er);
+  test_type_erased_wait_for_forms(er);
 }
 
 //
@@ -1510,10 +2005,14 @@ template <typename Res>
 void test_event_wait()
 {
   auto r = Res();
-  const auto typed_event = r.get_event();
-  const Event event = r.get_event_erased();
+  auto typed_event = r.get_event();
+  Event event = r.get_event_erased();
+  EventRef event_ref = typed_event;
+  EventConstRef event_const_ref = typed_event;
   typed_event.wait();
   event.wait();
+  event_ref.wait();
+  event_const_ref.wait();
 }
 
 //
@@ -1538,12 +2037,18 @@ template <typename Res>
 void test_event_check()
 {
   auto r = Res();
-  const auto typed_event = r.get_event();
-  const Event event = r.get_event_erased();
+  auto typed_event = r.get_event();
+  Event event = r.get_event_erased();
+  EventRef event_ref = typed_event;
+  EventConstRef event_const_ref = typed_event;
   // checking in a loop should always eventually return true
   while (!typed_event.check()) {
   }
   while (!event.check()) {
+  }
+  while (!event_ref.check()) {
+  }
+  while (!event_const_ref.check()) {
   }
 }
 
@@ -1700,11 +2205,10 @@ void verify_memset_value(Res& r, void* ptr, unsigned char value)
   }
 }
 
-template <typename Res>
-void test_memory_ops(MemoryAccess access)
+template <typename ResourceLike>
+void test_memory_ops(ResourceLike& r, MemoryAccess access)
 {
   constexpr size_t N = 32;
-  Res r;
   auto* ptr = r.template allocate<unsigned char>(N, access);
   ASSERT_NE(ptr, nullptr);
   verify_memset_value(r, ptr, 0x5A);
@@ -1716,6 +2220,16 @@ void test_memory_ops(MemoryAccess access)
 
   r.deallocate(ptr, access);
   r.deallocate(zeroed, access);
+}
+
+template <typename Res>
+void test_memory_ops(MemoryAccess access)
+{
+  Res r;
+  test_memory_ops(r, access);
+
+  ResourceRef const ref = r;
+  test_memory_ops(ref, access);
 }
 
 template <typename Res>
@@ -1978,3 +2492,80 @@ TEST(CampResource, CleanupPreservesCustomStream)
   test_cleanup_custom_resource<Omp>(Omp{});
 #endif
 }
+
+TEST(CampResource, RefDoesNotCopy)
+{
+  TrackingState concrete_resource_state;
+  TrackedResource concrete_resource{concrete_resource_state};
+  int resource_copies = concrete_resource_state.copies;
+  ResourceRef concrete_ref = concrete_resource;
+  ASSERT_EQ(concrete_resource_state.copies, resource_copies);
+  ASSERT_EQ(concrete_ref.try_get<TrackedResource>(), &concrete_resource);
+
+  TrackingState owned_resource_state;
+  Resource owner{TrackedResource{owned_resource_state}};
+  resource_copies = owned_resource_state.copies;
+  ResourceRef owner_ref = owner;
+  ASSERT_EQ(owned_resource_state.copies, resource_copies);
+  ASSERT_EQ(owner_ref.try_get<TrackedResource>(),
+            owner.try_get<TrackedResource>());
+}
+
+TEST(CampEvent, RefDoesNotCopy)
+{
+  HostEvent concrete_event;
+  EventRef concrete_event_ref = concrete_event;
+  ASSERT_EQ(&concrete_event_ref.get<HostEvent>(), &concrete_event);
+
+  Event event_owner{HostEvent{}};
+  EventRef owner_event_ref = event_owner;
+  ASSERT_EQ(owner_event_ref.try_get<HostEvent>(),
+            event_owner.try_get<HostEvent>());
+}
+
+TEST(CampResource, FromRef)
+{
+  TrackingState concrete_state;
+  TrackedResource concrete{concrete_state};
+  ResourceRef concrete_ref = concrete;
+
+  int copies = concrete_state.copies;
+  Resource copied = Resource::from_ref(concrete_ref);
+  ASSERT_EQ(concrete_state.copies, copies + 1);
+  ASSERT_NE(copied.try_get<TrackedResource>(), &concrete);
+  ASSERT_EQ(copied.try_get<TrackedResource>()->state, &concrete_state);
+
+  Resource shared_copy = copied;
+  ASSERT_EQ(concrete_state.copies, copies + 1);
+  ASSERT_EQ(shared_copy.try_get<TrackedResource>(),
+            copied.try_get<TrackedResource>());
+
+  ASSERT_FALSE(Resource::from_ref(ResourceConstRef{}));
+  ASSERT_FALSE(Resource::from_ref(ResourceRef{}));
+}
+
+TEST(CampResource, ImplicitRefParameterConversion)
+{
+  auto resource_platform = [](ResourceRef ref) { return ref.get_platform(); };
+
+  Host host;
+  Resource owner{host};
+  ASSERT_EQ(resource_platform(host), Platform::host);
+  ASSERT_EQ(resource_platform(owner), Platform::host);
+}
+
+TEST(CampEvent, ImplicitRefParameterConversion)
+{
+  auto event_platform = [](EventRef ref) { return ref.get_platform(); };
+
+  HostEvent host_event;
+  Event event_owner{HostEvent{}};
+  ASSERT_EQ(event_platform(host_event), Platform::host);
+  ASSERT_EQ(event_platform(event_owner), Platform::host);
+}
+
+static_assert(
+    std::same_as<decltype(std::declval<ResourceRef&&>().get<Host>()), Host&>);
+static_assert(
+    std::same_as<decltype(std::declval<EventRef&&>().get<HostEvent>()),
+                 HostEvent&>);

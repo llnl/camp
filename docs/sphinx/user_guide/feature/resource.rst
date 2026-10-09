@@ -31,9 +31,11 @@ In addition to the Host, Camp provides a resource for several device backends:
 Generic vs. Concrete Camp Resources
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Camp has two different types of Resources: generic (aka. type-erased) and concrete (aka. typed). 
-The generic (type-erased) resources work by holding a shared pointer to the base implementation of a resource 
-with virtual methods that call the same methods on the concrete (typed) resource.
+Camp has concrete (typed) resources and type-erased resources. ``Resource`` is
+an owning type-erased resource: copies share ownership of its stored concrete
+resource. ``ResourceRef`` and ``ResourceConstRef`` are mutable and const
+non-owning type-erased views. The corresponding event types are ``Event``,
+``EventRef``, and ``EventConstRef``.
 
 A concrete resource is created with:
 
@@ -51,27 +53,77 @@ resource is created with:
    camp::resources::Resource h{h1};
    camp::resources::Resource r{c1};
 
-This way of creating a generic resource uses the concrete resource created above, ``h1`` or ``c1``, to construct it.
-We can also create a generic resource with:
+These ``Resource`` objects own copies of ``h1`` and ``c1``; they do not borrow
+them. Constructing from a temporary instead moves the concrete resource into
+the owning ``Resource``:
 
 .. code-block:: cpp
 
    camp::resources::Resource h{camp::resources::Host()};
    camp::resources::Resource r{camp::resources::Cuda()};
 
-Having the ability to use both a typed and a typed-erased resource allows users more flexibility as they use Camp resources.
-The compiler can implicitly convert between the generic and concrete resources for ease of use.
+Use a concrete resource when code requires a specific resource type. Use a
+type-erased resource when code needs one interface for different resource
+types.
+
+Borrowing Resources and Events
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``ResourceRef`` provides generic access to a resource without taking
+ownership. Creating or copying one does not allocate or participate in shared
+ownership. Concrete resources and owning ``Resource`` objects convert
+implicitly to ``ResourceRef``, making it useful for short-lived generic
+access:
+
+.. code-block:: cpp
+
+   void initialize(camp::resources::ResourceRef resource)
+   {
+     resource.wait();
+   }
+
+   camp::resources::Cuda cuda;
+   initialize(cuda);
+
+   camp::resources::Resource owned{camp::resources::Cuda{}};
+   initialize(owned);
+
+``ResourceConstRef`` is the const counterpart to ``ResourceRef``. ``EventRef``
+and ``EventConstRef`` provide the corresponding non-owning views for events.
+
+Use ``Resource`` or ``Event`` when generic code needs an owning type-erased
+object instead of a non-owning view. If the code receives a borrowed resource,
+use ``Resource::from_ref`` to store an owning ``Resource`` for later use:
+
+.. code-block:: cpp
+
+   struct PendingWork {
+     explicit PendingWork(camp::resources::ResourceRef resource)
+         : resource_(camp::resources::Resource::from_ref(resource))
+     {}
+
+     camp::resources::Resource resource_;
+   };
+
+``from_ref`` returns a ``Resource`` containing a copy of the referenced
+concrete resource. The returned ``Resource`` owns that copy rather than
+borrowing it through the ``ResourceRef``.
+
+.. important::
+
+   ``ResourceRef``, ``ResourceConstRef``, ``EventRef``, and ``EventConstRef``
+   are non-owning. A concrete resource or event must outlive every view that
+   refers to it. When a view is created from a ``Resource`` or ``Event``, that
+   owner or one of its copies must outlive the view. Views cannot refer to
+   temporaries.
 
 Using Resources
 ~~~~~~~~~~~~~~~
 
-Once you've created a resource, there are several useful things you can do with them including creating events and comparing
-resources. Whether users are using a CUDA or HIP backend, the Camp resources require no code changes and provide
-a hardware-agnostic interface. Because of the way Camp resources were built, the compiler can implicitly
-convert between the generic and concrete resources for ease of use.
-
-Find more examples of using Camp resources in the Using Camp section :ref:`using_camp-label`.
-Below, a few examples of these key use cases for Camp resources are shown.
+Camp resources provide a common interface for coordinating streams of
+execution across supported backends. The following sections show how to use
+events, compare and hash resources, and clean up Camp-managed backend state.
+See :ref:`using_camp-label` for more examples.
 
 Using Events
 ^^^^^^^^^^^^
@@ -156,20 +208,20 @@ to a separate Camp resource.
    ...
 
 
-Comparison of resources must be of the same type. In other words, you can compare two generic resources
-for equality OR two concrete (or typed) resources for equality. If you need to compare a generic resource
-with a concrete resource, you have to convert the concrete (typed) resource to a generic one. For example:
+Owning resources, borrowed resources, and concrete resources can be compared
+directly. The underlying concrete types must match to compare equal:
 
 .. code-block:: cpp
 
    camp::resources::Cuda c1; //This is a typed resource
    camp::resources::Resource other_res = get_other_resource(...); //This is my generic resource
    
-   if (other_res == Resource{c1}) {
+   if (other_res == c1) {
      std::cout << "They are equal!" << std::endl;
    }
 
-The above code works because we converted the typed resource, ``c1``, to a generic resource with ``Resource{c1}``.
+The same interoperability applies to resource and event views. Equal objects
+produce matching hashes across their owning and non-owning forms.
 
 While it is possible for two device resources to be different since each resource refers to a different
 device stream, all ``Host`` Camp resources will be the same since there is only one `stream of execution` 

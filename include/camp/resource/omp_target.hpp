@@ -77,7 +77,7 @@ namespace resources
 
       ~OmpEvent() = default;
 
-      Platform get_platform() const { return Platform::omp_target; }
+      Platform get_platform() const noexcept { return Platform::omp_target; }
 
       bool check() const
       {
@@ -95,7 +95,7 @@ namespace resources
         }
       }
 
-      void* getEventAddr() const { return addr; }
+      void* getEventAddr() const noexcept { return addr; }
 
       /*
        * \brief Compares two events to see if they represent the same underlying
@@ -105,9 +105,9 @@ namespace resources
        *         otherwise.
        */
       friend inline bool operator==(OmpEvent const& lhs,
-                                    OmpEvent const& rhs) = default;
+                                    OmpEvent const& rhs) noexcept = default;
 
-      size_t get_hash() const
+      size_t get_hash() const noexcept
       {
         const size_t platform_type = size_t(get_platform()) << 32;
         size_t hash = std::hash<char*>{}(addr);
@@ -173,7 +173,7 @@ namespace resources
       }
 
       // Methods
-      Platform get_platform() const { return Platform::omp_target; }
+      Platform get_platform() const noexcept { return Platform::omp_target; }
 
       static Omp get_default()
       {
@@ -331,7 +331,7 @@ namespace resources
        *
        * \return The device id of this Omp resource.
        */
-      int get_device() const { return dev; }
+      int get_device() const noexcept { return dev; }
 
       /*
        * \brief Get the depend address associated with this Omp resource.
@@ -344,16 +344,17 @@ namespace resources
        *
        * \return The depend address of this Omp resource.
        */
-      char* get_depend_location() const { return addr; }
+      char* get_depend_location() const noexcept { return addr; }
 
       /*
        * \brief Compares two (Omp) resources to see if they are equal
        *
        * \return True or false depending on if this is the same dev and addr ptr
        */
-      friend inline bool operator==(Omp const& lhs, Omp const& rhs) = default;
+      friend inline bool operator==(Omp const& lhs,
+                                    Omp const& rhs) noexcept = default;
 
-      size_t get_hash() const
+      size_t get_hash() const noexcept
       {
         const size_t omp_type = size_t(get_platform()) << 32;
         size_t stream_hash = std::hash<void*>{}(static_cast<void*>(addr));
@@ -392,7 +393,7 @@ namespace std
  */
 template <>
 struct hash<camp::resources::OmpEvent> {
-  std::size_t operator()(const camp::resources::OmpEvent& e) const
+  std::size_t operator()(const camp::resources::OmpEvent& e) const noexcept
   {
     return e.get_hash();
   }
@@ -409,7 +410,7 @@ struct hash<camp::resources::OmpEvent> {
  */
 template <>
 struct hash<camp::resources::Omp> {
-  std::size_t operator()(const camp::resources::Omp& o) const
+  std::size_t operator()(const camp::resources::Omp& o) const noexcept
   {
     return o.get_hash();
   }
