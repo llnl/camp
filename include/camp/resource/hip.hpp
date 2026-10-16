@@ -97,7 +97,7 @@ namespace resources
 
       ~HipEvent() { finalize(m_event); }
 
-      Platform get_platform() const { return Platform::hip; }
+      Platform get_platform() const noexcept { return Platform::hip; }
 
       bool check() const
       {
@@ -110,7 +110,7 @@ namespace resources
         CAMP_HIP_API_INVOKE_AND_CHECK(hipEventSynchronize, m_event);
       }
 
-      hipEvent_t getHipEvent_t() const { return m_event; }
+      hipEvent_t getHipEvent_t() const noexcept { return m_event; }
 
       /*
        * \brief Compares two events to see if they represent the same underlying
@@ -119,9 +119,9 @@ namespace resources
        * \return True if both refer to the same hip event, false otherwise.
        */
       friend inline bool operator==(HipEvent const& lhs,
-                                    HipEvent const& rhs) = default;
+                                    HipEvent const& rhs) noexcept = default;
 
-      size_t get_hash() const
+      size_t get_hash() const noexcept
       {
         const size_t platform_type = size_t(get_platform()) << 32;
         size_t hash = std::hash<hipEvent_t>{}(m_event);
@@ -176,9 +176,9 @@ namespace resources
 
       ~HipStream() { finalize(m_stream); }
 
-      Platform get_platform() const { return Platform::hip; }
+      Platform get_platform() const noexcept { return Platform::hip; }
 
-      handle_type get_handle() const { return m_stream; }
+      handle_type get_handle() const noexcept { return m_stream; }
 
       /*
        * \brief Compares two events to see if they represent the same underlying
@@ -187,9 +187,9 @@ namespace resources
        * \return True if both refer to the same hip stream, false otherwise.
        */
       friend inline bool operator==(HipStream const& lhs,
-                                    HipStream const& rhs) = default;
+                                    HipStream const& rhs) noexcept = default;
 
-      size_t get_hash() const
+      size_t get_hash() const noexcept
       {
         const size_t platform_type = size_t(get_platform()) << 32;
         size_t hash = std::hash<hipStream_t>{}(m_stream);
@@ -305,7 +305,7 @@ namespace resources
       }
 
       // Methods
-      Platform get_platform() const { return Platform::hip; }
+      Platform get_platform() const noexcept { return Platform::hip; }
 
       static Hip get_default()
       {
@@ -454,18 +454,19 @@ namespace resources
         CAMP_HIP_API_INVOKE_AND_CHECK(hipMemsetAsync, p, val, size, stream);
       }
 
-      hipStream_t get_stream() const { return stream; }
+      hipStream_t get_stream() const noexcept { return stream; }
 
-      int get_device() const { return device; }
+      int get_device() const noexcept { return device; }
 
       /*
        * \brief Compares two (Hip) resources to see if they are equal
        *
        * \return True or false depending on if this is the same stream
        */
-      friend inline bool operator==(Hip const& lhs, Hip const& rhs) = default;
+      friend inline bool operator==(Hip const& lhs,
+                                    Hip const& rhs) noexcept = default;
 
-      size_t get_hash() const
+      size_t get_hash() const noexcept
       {
         const size_t hip_type = size_t(get_platform()) << 32;
         size_t stream_hash = std::hash<void*>{}(static_cast<void*>(stream));
@@ -495,7 +496,7 @@ namespace std
  */
 template <>
 struct hash<camp::resources::HipEvent> {
-  std::size_t operator()(const camp::resources::HipEvent& e) const
+  std::size_t operator()(const camp::resources::HipEvent& e) const noexcept
   {
     return e.get_hash();
   }
@@ -512,7 +513,7 @@ struct hash<camp::resources::HipEvent> {
  */
 template <>
 struct hash<camp::resources::Hip> {
-  std::size_t operator()(const camp::resources::Hip& h) const
+  std::size_t operator()(const camp::resources::Hip& h) const noexcept
   {
     return h.get_hash();
   }
