@@ -460,10 +460,22 @@ static_assert(noexcept(std::declval<ResourceRef>()
                        == std::declval<ResourceConstRef>()));
 static_assert(noexcept(std::declval<EventRef>()
                        == std::declval<EventConstRef>()));
+static_assert(noexcept(std::declval<ResourceConstRef>()
+                       == std::declval<ResourceConstRef>()));
+static_assert(noexcept(std::declval<EventConstRef>()
+                       == std::declval<EventConstRef>()));
 static_assert(noexcept(std::declval<Resource const&>()
                        == std::declval<Resource const&>()));
 static_assert(noexcept(std::declval<Event const&>()
                        == std::declval<Event const&>()));
+static_assert(noexcept(std::declval<Resource const&>()
+                       == std::declval<ResourceRef>()));
+static_assert(noexcept(std::declval<Event const&>()
+                       == std::declval<EventRef>()));
+static_assert(noexcept(std::declval<Resource const&>()
+                       == std::declval<ResourceConstRef>()));
+static_assert(noexcept(std::declval<Event const&>()
+                       == std::declval<EventConstRef>()));
 static_assert(noexcept(std::hash<ResourceRef>{}(std::declval<ResourceRef>())));
 static_assert(noexcept(std::hash<EventRef>{}(std::declval<EventRef>())));
 static_assert(noexcept(
