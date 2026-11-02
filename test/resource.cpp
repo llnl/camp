@@ -312,6 +312,10 @@ concept CanGetResourceEvent =
     requires(T&& resource) { std::forward<T>(resource).get_event(); };
 
 template <typename T>
+concept CanGetResourceEventErased =
+    requires(T&& resource) { std::forward<T>(resource).get_event_erased(); };
+
+template <typename T>
 concept CanCallocResource =
     requires(T&& resource) { std::forward<T>(resource).calloc(1); };
 
@@ -350,6 +354,7 @@ static_assert(CanDeallocateResource<Resource&>);
 static_assert(CanMemcpyResource<Resource&>);
 static_assert(CanMemsetResource<Resource&>);
 static_assert(CanGetResourceEvent<Resource&>);
+static_assert(CanGetResourceEventErased<Resource&>);
 static_assert(CanWaitResource<Resource&>);
 static_assert(CanWaitForResource<Resource&, EventRef>);
 static_assert(CanWaitForResource<Resource&, EventConstRef>);
@@ -361,6 +366,7 @@ static_assert(!CanDeallocateResource<Resource const&>);
 static_assert(!CanMemcpyResource<Resource const&>);
 static_assert(!CanMemsetResource<Resource const&>);
 static_assert(!CanGetResourceEvent<Resource const&>);
+static_assert(!CanGetResourceEventErased<Resource const&>);
 static_assert(!CanWaitResource<Resource const&>);
 static_assert(!CanWaitForResource<Resource const&, EventRef>);
 static_assert(!CanWaitForResource<Resource const&, EventConstRef>);
@@ -372,6 +378,7 @@ static_assert(CanDeallocateResource<ResourceRef&>);
 static_assert(CanMemcpyResource<ResourceRef&>);
 static_assert(CanMemsetResource<ResourceRef&>);
 static_assert(CanGetResourceEvent<ResourceRef&>);
+static_assert(CanGetResourceEventErased<ResourceRef&>);
 static_assert(CanWaitResource<ResourceRef&>);
 static_assert(CanWaitForResource<ResourceRef&, EventRef>);
 static_assert(CanWaitForResource<ResourceRef&, EventConstRef>);
@@ -383,6 +390,7 @@ static_assert(CanDeallocateResource<ResourceRef const&>);
 static_assert(CanMemcpyResource<ResourceRef const&>);
 static_assert(CanMemsetResource<ResourceRef const&>);
 static_assert(CanGetResourceEvent<ResourceRef const&>);
+static_assert(CanGetResourceEventErased<ResourceRef const&>);
 static_assert(CanWaitResource<ResourceRef const&>);
 static_assert(CanWaitForResource<ResourceRef const&, EventRef>);
 static_assert(CanWaitForResource<ResourceRef const&, EventConstRef>);
@@ -394,6 +402,7 @@ static_assert(!CanDeallocateResource<ResourceConstRef&>);
 static_assert(!CanMemcpyResource<ResourceConstRef&>);
 static_assert(!CanMemsetResource<ResourceConstRef&>);
 static_assert(!CanGetResourceEvent<ResourceConstRef&>);
+static_assert(!CanGetResourceEventErased<ResourceConstRef&>);
 static_assert(!CanWaitResource<ResourceConstRef&>);
 static_assert(!CanWaitForResource<ResourceConstRef&, EventRef>);
 static_assert(!CanWaitForResource<ResourceConstRef&, EventConstRef>);
@@ -405,6 +414,7 @@ static_assert(!CanDeallocateResource<ResourceConstRef const&>);
 static_assert(!CanMemcpyResource<ResourceConstRef const&>);
 static_assert(!CanMemsetResource<ResourceConstRef const&>);
 static_assert(!CanGetResourceEvent<ResourceConstRef const&>);
+static_assert(!CanGetResourceEventErased<ResourceConstRef const&>);
 static_assert(!CanWaitResource<ResourceConstRef const&>);
 static_assert(!CanWaitForResource<ResourceConstRef const&, EventRef>);
 static_assert(!CanWaitForResource<ResourceConstRef const&, EventConstRef>);
