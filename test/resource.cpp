@@ -207,6 +207,7 @@ static_assert(NothrowValueSemantics<Resource>);
 static_assert(NothrowValueSemantics<Event>);
 
 // Resource access types
+// From Resource
 static_assert(
     std::same_as<decltype(std::declval<Resource&>().try_get<Host>()), Host*>);
 static_assert(
@@ -218,41 +219,79 @@ static_assert(
     std::same_as<decltype(std::declval<Resource const&>().get<Host>()),
                  Host const&>);
 static_assert(
+    std::same_as<decltype(std::declval<Resource&&>().get<Host>()), Host>);
+
+// From ResourceRef
+static_assert(
+    std::same_as<decltype(std::declval<ResourceRef&>().try_get<Host>()),
+                 Host*>);
+static_assert(
     std::same_as<decltype(std::declval<ResourceRef const&>().try_get<Host>()),
                  Host*>);
 static_assert(
+    std::same_as<decltype(std::declval<ResourceRef&>().get<Host>()), Host&>);
+static_assert(
     std::same_as<decltype(std::declval<ResourceRef const&>().get<Host>()),
                  Host&>);
+
+// From ResourceConstRef
+static_assert(
+    std::same_as<decltype(std::declval<ResourceConstRef&>().try_get<Host>()),
+                 Host const*>);
 static_assert(
     std::same_as<
         decltype(std::declval<ResourceConstRef const&>().try_get<Host>()),
         Host const*>);
 static_assert(
+    std::same_as<decltype(std::declval<ResourceConstRef&>().get<Host>()),
+                 Host const&>);
+static_assert(
     std::same_as<decltype(std::declval<ResourceConstRef const&>().get<Host>()),
                  Host const&>);
 
 // Event access types
+// From Event
 static_assert(
     std::same_as<decltype(std::declval<Event&>().try_get<HostEvent>()),
                  HostEvent*>);
 static_assert(
     std::same_as<decltype(std::declval<Event const&>().try_get<HostEvent>()),
                  HostEvent const*>);
-static_assert(std::same_as<decltype(std::declval<Event&>().get<HostEvent>()),
-                           HostEvent&>);
+static_assert(
+    std::same_as<decltype(std::declval<Event&>().get<HostEvent>()),
+                 HostEvent&>);
 static_assert(
     std::same_as<decltype(std::declval<Event const&>().get<HostEvent>()),
                  HostEvent const&>);
 static_assert(
+    std::same_as<decltype(std::declval<Event&&>().get<HostEvent>()),
+                 HostEvent>);
+
+// From EventRef
+static_assert(
+    std::same_as<decltype(std::declval<EventRef&>().try_get<HostEvent>()),
+                 HostEvent*>);
+static_assert(
     std::same_as<decltype(std::declval<EventRef const&>().try_get<HostEvent>()),
                  HostEvent*>);
 static_assert(
+    std::same_as<decltype(std::declval<EventRef&>().get<HostEvent>()),
+                 HostEvent&>);
+static_assert(
     std::same_as<decltype(std::declval<EventRef const&>().get<HostEvent>()),
                  HostEvent&>);
+
+// From EventConstRef
+static_assert(
+    std::same_as<decltype(std::declval<EventConstRef&>().try_get<HostEvent>()),
+                 HostEvent const*>);
 static_assert(
     std::same_as<
         decltype(std::declval<EventConstRef const&>().try_get<HostEvent>()),
         HostEvent const*>);
+static_assert(
+    std::same_as<decltype(std::declval<EventConstRef&>().get<HostEvent>()),
+                 HostEvent const&>);
 static_assert(
     std::same_as<
         decltype(std::declval<EventConstRef const&>().get<HostEvent>()),
