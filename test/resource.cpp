@@ -233,6 +233,8 @@ static_assert(
 static_assert(
     std::same_as<decltype(std::declval<ResourceRef const&>().get<Host>()),
                  Host&>);
+static_assert(
+    std::same_as<decltype(std::declval<ResourceRef&&>().get<Host>()), Host&>);
 
 // From ResourceConstRef
 static_assert(
@@ -279,6 +281,9 @@ static_assert(
                  HostEvent&>);
 static_assert(
     std::same_as<decltype(std::declval<EventRef const&>().get<HostEvent>()),
+                 HostEvent&>);
+static_assert(
+    std::same_as<decltype(std::declval<EventRef&&>().get<HostEvent>()),
                  HostEvent&>);
 
 // From EventConstRef
@@ -338,6 +343,18 @@ concept CanWaitForResource = requires(ResourceType&& resource,
 };
 
 // Resource operation availability
+// Through Resource&
+static_assert(CanAllocateResource<Resource&>);
+static_assert(CanCallocResource<Resource&>);
+static_assert(CanDeallocateResource<Resource&>);
+static_assert(CanMemcpyResource<Resource&>);
+static_assert(CanMemsetResource<Resource&>);
+static_assert(CanGetResourceEvent<Resource&>);
+static_assert(CanWaitResource<Resource&>);
+static_assert(CanWaitForResource<Resource&, EventRef>);
+static_assert(CanWaitForResource<Resource&, EventConstRef>);
+
+// Through Resource const&
 static_assert(!CanAllocateResource<Resource const&>);
 static_assert(!CanCallocResource<Resource const&>);
 static_assert(!CanDeallocateResource<Resource const&>);
@@ -346,7 +363,42 @@ static_assert(!CanMemsetResource<Resource const&>);
 static_assert(!CanGetResourceEvent<Resource const&>);
 static_assert(!CanWaitResource<Resource const&>);
 static_assert(!CanWaitForResource<Resource const&, EventRef>);
+static_assert(!CanWaitForResource<Resource const&, EventConstRef>);
 
+// Through ResourceRef&
+static_assert(CanAllocateResource<ResourceRef&>);
+static_assert(CanCallocResource<ResourceRef&>);
+static_assert(CanDeallocateResource<ResourceRef&>);
+static_assert(CanMemcpyResource<ResourceRef&>);
+static_assert(CanMemsetResource<ResourceRef&>);
+static_assert(CanGetResourceEvent<ResourceRef&>);
+static_assert(CanWaitResource<ResourceRef&>);
+static_assert(CanWaitForResource<ResourceRef&, EventRef>);
+static_assert(CanWaitForResource<ResourceRef&, EventConstRef>);
+
+// Through ResourceRef const&
+static_assert(CanAllocateResource<ResourceRef const&>);
+static_assert(CanCallocResource<ResourceRef const&>);
+static_assert(CanDeallocateResource<ResourceRef const&>);
+static_assert(CanMemcpyResource<ResourceRef const&>);
+static_assert(CanMemsetResource<ResourceRef const&>);
+static_assert(CanGetResourceEvent<ResourceRef const&>);
+static_assert(CanWaitResource<ResourceRef const&>);
+static_assert(CanWaitForResource<ResourceRef const&, EventRef>);
+static_assert(CanWaitForResource<ResourceRef const&, EventConstRef>);
+
+// Through ResourceConstRef&
+static_assert(!CanAllocateResource<ResourceConstRef&>);
+static_assert(!CanCallocResource<ResourceConstRef&>);
+static_assert(!CanDeallocateResource<ResourceConstRef&>);
+static_assert(!CanMemcpyResource<ResourceConstRef&>);
+static_assert(!CanMemsetResource<ResourceConstRef&>);
+static_assert(!CanGetResourceEvent<ResourceConstRef&>);
+static_assert(!CanWaitResource<ResourceConstRef&>);
+static_assert(!CanWaitForResource<ResourceConstRef&, EventRef>);
+static_assert(!CanWaitForResource<ResourceConstRef&, EventConstRef>);
+
+// Through ResourceConstRef const&
 static_assert(!CanAllocateResource<ResourceConstRef const&>);
 static_assert(!CanCallocResource<ResourceConstRef const&>);
 static_assert(!CanDeallocateResource<ResourceConstRef const&>);
@@ -354,7 +406,41 @@ static_assert(!CanMemcpyResource<ResourceConstRef const&>);
 static_assert(!CanMemsetResource<ResourceConstRef const&>);
 static_assert(!CanGetResourceEvent<ResourceConstRef const&>);
 static_assert(!CanWaitResource<ResourceConstRef const&>);
+static_assert(!CanWaitForResource<ResourceConstRef const&, EventRef>);
 static_assert(!CanWaitForResource<ResourceConstRef const&, EventConstRef>);
+
+template <typename T>
+concept CanCheckEvent =
+    requires(T&& event) { std::forward<T>(event).check(); };
+
+template <typename T>
+concept CanWaitEvent =
+    requires(T&& event) { std::forward<T>(event).wait(); };
+
+// Event operation availability
+// Through Event&
+static_assert(CanCheckEvent<Event&>);
+static_assert(CanWaitEvent<Event&>);
+
+// Through Event const&
+static_assert(CanCheckEvent<Event const&>);
+static_assert(CanWaitEvent<Event const&>);
+
+// Through EventRef&
+static_assert(CanCheckEvent<EventRef&>);
+static_assert(CanWaitEvent<EventRef&>);
+
+// Through EventRef const&
+static_assert(CanCheckEvent<EventRef const&>);
+static_assert(CanWaitEvent<EventRef const&>);
+
+// Through EventConstRef&
+static_assert(CanCheckEvent<EventConstRef&>);
+static_assert(CanWaitEvent<EventConstRef&>);
+
+// Through EventConstRef const&
+static_assert(CanCheckEvent<EventConstRef const&>);
+static_assert(CanWaitEvent<EventConstRef const&>);
 
 // Nothrow comparison and hashing
 static_assert(noexcept(std::declval<ResourceRef>()
@@ -2646,9 +2732,3 @@ TEST(CampEvent, ImplicitRefParameterConversion)
   ASSERT_EQ(event_platform(host_event), Platform::host);
   ASSERT_EQ(event_platform(event_owner), Platform::host);
 }
-
-static_assert(
-    std::same_as<decltype(std::declval<ResourceRef&&>().get<Host>()), Host&>);
-static_assert(
-    std::same_as<decltype(std::declval<EventRef&&>().get<HostEvent>()),
-                 HostEvent&>);
