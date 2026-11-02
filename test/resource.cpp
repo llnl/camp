@@ -2285,6 +2285,7 @@ void test_concrete_resource_trait()
   ASSERT_TRUE(is_concrete_resource<const Res>::value);
   ASSERT_TRUE(is_concrete_resource<const Res&>::value);
   ASSERT_TRUE(is_concrete_resource<Res&&>::value);
+  ASSERT_TRUE(is_concrete_resource<const Res&&>::value);
 }
 
 //
@@ -2308,8 +2309,10 @@ TEST(CampResource, ConcreteResourceTypeTrait)
   test_concrete_resource_trait<Omp>();
 #endif
 
-  // Resource is not a concrete resource
+  // Owners and reference wrappers are not concrete resources
   ASSERT_FALSE(is_concrete_resource<Resource>::value);
+  ASSERT_FALSE(is_concrete_resource<ResourceRef>::value);
+  ASSERT_FALSE(is_concrete_resource<ResourceConstRef>::value);
   // Test is_concrete_resource with non-resource types
   ASSERT_FALSE(is_concrete_resource<int>::value);
   ASSERT_FALSE(is_concrete_resource<float>::value);
@@ -2329,6 +2332,7 @@ void test_concrete_event_trait()
   ASSERT_TRUE(is_concrete_event<const Evt>::value);
   ASSERT_TRUE(is_concrete_event<const Evt&>::value);
   ASSERT_TRUE(is_concrete_event<Evt&&>::value);
+  ASSERT_TRUE(is_concrete_event<const Evt&&>::value);
 }
 
 //
@@ -2352,8 +2356,10 @@ TEST(CampEvent, ConcreteEventTypeTrait)
   test_concrete_event_trait<OmpEvent>();
 #endif
 
-  // Event is not a concrete event
+  // Owners and reference wrappers are not concrete events
   ASSERT_FALSE(is_concrete_event<Event>::value);
+  ASSERT_FALSE(is_concrete_event<EventRef>::value);
+  ASSERT_FALSE(is_concrete_event<EventConstRef>::value);
   // Test is_concrete_event with non-event types
   ASSERT_FALSE(is_concrete_event<int>::value);
   ASSERT_FALSE(is_concrete_event<float>::value);
