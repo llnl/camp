@@ -396,7 +396,7 @@ namespace resources
         return ret;
       }
 
-      void* calloc(size_t size, MemoryAccess ma)
+      void* calloc(size_t size, MemoryAccess ma = MemoryAccess::Device)
       {
         if (size == 0) {
           return nullptr;
