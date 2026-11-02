@@ -99,40 +99,96 @@ static_assert(std::is_trivially_copyable_v<EventRef>);
 static_assert(std::is_trivially_copyable_v<EventConstRef>);
 
 // Resource reference construction
-static_assert(std::is_constructible_v<ResourceRef, Host&>);
-static_assert(std::is_constructible_v<ResourceRef, Resource&>);
+// From Host
+static_assert(std::is_nothrow_constructible_v<ResourceRef, Host&>);
 static_assert(!std::is_constructible_v<ResourceRef, Host const&>);
 static_assert(!std::is_constructible_v<ResourceRef, Host&&>);
-static_assert(!std::is_constructible_v<ResourceRef, Resource const&>);
-static_assert(!std::is_constructible_v<ResourceRef, Resource&&>);
-static_assert(!std::is_constructible_v<ResourceRef, ResourceConstRef>);
-static_assert(std::is_constructible_v<ResourceConstRef, Host&>);
-static_assert(std::is_constructible_v<ResourceConstRef, Host const&>);
-static_assert(std::is_constructible_v<ResourceConstRef, Resource&>);
-static_assert(std::is_constructible_v<ResourceConstRef, Resource const&>);
-static_assert(std::is_constructible_v<ResourceConstRef, ResourceRef>);
+static_assert(!std::is_constructible_v<ResourceRef, Host const&&>);
+static_assert(std::is_nothrow_constructible_v<ResourceConstRef, Host&>);
+static_assert(std::is_nothrow_constructible_v<ResourceConstRef, Host const&>);
 static_assert(!std::is_constructible_v<ResourceConstRef, Host&&>);
 static_assert(!std::is_constructible_v<ResourceConstRef, Host const&&>);
+
+// From Resource
+static_assert(std::is_nothrow_constructible_v<ResourceRef, Resource&>);
+static_assert(!std::is_constructible_v<ResourceRef, Resource const&>);
+static_assert(!std::is_constructible_v<ResourceRef, Resource&&>);
+static_assert(!std::is_constructible_v<ResourceRef, Resource const&&>);
+static_assert(std::is_nothrow_constructible_v<ResourceConstRef, Resource&>);
+static_assert(
+    std::is_nothrow_constructible_v<ResourceConstRef, Resource const&>);
 static_assert(!std::is_constructible_v<ResourceConstRef, Resource&&>);
 static_assert(!std::is_constructible_v<ResourceConstRef, Resource const&&>);
 
+// From ResourceRef
+static_assert(std::is_nothrow_constructible_v<ResourceRef, ResourceRef&>);
+static_assert(std::is_nothrow_constructible_v<ResourceRef, ResourceRef const&>);
+static_assert(std::is_nothrow_constructible_v<ResourceRef, ResourceRef&&>);
+static_assert(
+    std::is_nothrow_constructible_v<ResourceRef, ResourceRef const&&>);
+static_assert(std::is_nothrow_constructible_v<ResourceConstRef, ResourceRef&>);
+static_assert(
+    std::is_nothrow_constructible_v<ResourceConstRef, ResourceRef const&>);
+static_assert(std::is_nothrow_constructible_v<ResourceConstRef, ResourceRef&&>);
+static_assert(
+    std::is_nothrow_constructible_v<ResourceConstRef, ResourceRef const&&>);
+
+// From ResourceConstRef
+static_assert(!std::is_constructible_v<ResourceRef, ResourceConstRef&>);
+static_assert(!std::is_constructible_v<ResourceRef, ResourceConstRef const&>);
+static_assert(!std::is_constructible_v<ResourceRef, ResourceConstRef&&>);
+static_assert(!std::is_constructible_v<ResourceRef, ResourceConstRef const&&>);
+static_assert(
+    std::is_nothrow_constructible_v<ResourceConstRef, ResourceConstRef&>);
+static_assert(
+    std::is_nothrow_constructible_v<ResourceConstRef, ResourceConstRef const&>);
+static_assert(
+    std::is_nothrow_constructible_v<ResourceConstRef, ResourceConstRef&&>);
+static_assert(
+    std::is_nothrow_constructible_v<ResourceConstRef, ResourceConstRef const&&>);
+
 // Event reference construction
-static_assert(std::is_constructible_v<EventRef, HostEvent&>);
-static_assert(std::is_constructible_v<EventRef, Event&>);
+// From HostEvent
+static_assert(std::is_nothrow_constructible_v<EventRef, HostEvent&>);
 static_assert(!std::is_constructible_v<EventRef, HostEvent const&>);
 static_assert(!std::is_constructible_v<EventRef, HostEvent&&>);
-static_assert(!std::is_constructible_v<EventRef, Event const&>);
-static_assert(!std::is_constructible_v<EventRef, Event&&>);
-static_assert(!std::is_constructible_v<EventRef, EventConstRef>);
-static_assert(std::is_constructible_v<EventConstRef, HostEvent&>);
-static_assert(std::is_constructible_v<EventConstRef, HostEvent const&>);
-static_assert(std::is_constructible_v<EventConstRef, Event&>);
-static_assert(std::is_constructible_v<EventConstRef, Event const&>);
-static_assert(std::is_constructible_v<EventConstRef, EventRef>);
+static_assert(!std::is_constructible_v<EventRef, HostEvent const&&>);
+static_assert(std::is_nothrow_constructible_v<EventConstRef, HostEvent&>);
+static_assert(std::is_nothrow_constructible_v<EventConstRef, HostEvent const&>);
 static_assert(!std::is_constructible_v<EventConstRef, HostEvent&&>);
 static_assert(!std::is_constructible_v<EventConstRef, HostEvent const&&>);
+
+// From Event
+static_assert(std::is_nothrow_constructible_v<EventRef, Event&>);
+static_assert(!std::is_constructible_v<EventRef, Event const&>);
+static_assert(!std::is_constructible_v<EventRef, Event&&>);
+static_assert(!std::is_constructible_v<EventRef, Event const&&>);
+static_assert(std::is_nothrow_constructible_v<EventConstRef, Event&>);
+static_assert(std::is_nothrow_constructible_v<EventConstRef, Event const&>);
 static_assert(!std::is_constructible_v<EventConstRef, Event&&>);
 static_assert(!std::is_constructible_v<EventConstRef, Event const&&>);
+
+// From EventRef
+static_assert(std::is_nothrow_constructible_v<EventRef, EventRef&>);
+static_assert(std::is_nothrow_constructible_v<EventRef, EventRef const&>);
+static_assert(std::is_nothrow_constructible_v<EventRef, EventRef&&>);
+static_assert(std::is_nothrow_constructible_v<EventRef, EventRef const&&>);
+static_assert(std::is_nothrow_constructible_v<EventConstRef, EventRef&>);
+static_assert(std::is_nothrow_constructible_v<EventConstRef, EventRef const&>);
+static_assert(std::is_nothrow_constructible_v<EventConstRef, EventRef&&>);
+static_assert(std::is_nothrow_constructible_v<EventConstRef, EventRef const&&>);
+
+// From EventConstRef
+static_assert(!std::is_constructible_v<EventRef, EventConstRef&>);
+static_assert(!std::is_constructible_v<EventRef, EventConstRef const&>);
+static_assert(!std::is_constructible_v<EventRef, EventConstRef&&>);
+static_assert(!std::is_constructible_v<EventRef, EventConstRef const&&>);
+static_assert(std::is_nothrow_constructible_v<EventConstRef, EventConstRef&>);
+static_assert(
+    std::is_nothrow_constructible_v<EventConstRef, EventConstRef const&>);
+static_assert(std::is_nothrow_constructible_v<EventConstRef, EventConstRef&&>);
+static_assert(
+    std::is_nothrow_constructible_v<EventConstRef, EventConstRef const&&>);
 
 template <typename T>
 concept NothrowValueSemantics = std::is_nothrow_default_constructible_v<T>
@@ -142,25 +198,13 @@ concept NothrowValueSemantics = std::is_nothrow_default_constructible_v<T>
                                 && std::is_nothrow_move_assignable_v<T>
                                 && std::is_nothrow_destructible_v<T>;
 
-// Nothrow value semantics and reference construction
+// Nothrow value semantics
 static_assert(NothrowValueSemantics<ResourceRef>);
 static_assert(NothrowValueSemantics<ResourceConstRef>);
 static_assert(NothrowValueSemantics<EventRef>);
 static_assert(NothrowValueSemantics<EventConstRef>);
 static_assert(NothrowValueSemantics<Resource>);
 static_assert(NothrowValueSemantics<Event>);
-static_assert(std::is_nothrow_constructible_v<ResourceRef, Host&>);
-static_assert(std::is_nothrow_constructible_v<ResourceRef, Resource&>);
-static_assert(std::is_nothrow_constructible_v<ResourceConstRef, Host const&>);
-static_assert(
-    std::is_nothrow_constructible_v<ResourceConstRef, Resource const&>);
-static_assert(std::is_nothrow_constructible_v<ResourceConstRef, ResourceRef>);
-static_assert(std::is_nothrow_constructible_v<EventRef, HostEvent&>);
-static_assert(std::is_nothrow_constructible_v<EventRef, Event&>);
-static_assert(
-    std::is_nothrow_constructible_v<EventConstRef, HostEvent const&>);
-static_assert(std::is_nothrow_constructible_v<EventConstRef, Event const&>);
-static_assert(std::is_nothrow_constructible_v<EventConstRef, EventRef>);
 
 // Resource access types
 static_assert(
