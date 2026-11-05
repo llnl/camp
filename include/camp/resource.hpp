@@ -39,8 +39,8 @@ namespace resources
       struct ResourceVTable {
         std::type_info const* type;
         Platform (*platform)(void const*) noexcept;
-        bool (*equal)(void const*, void const*) noexcept;
-        std::size_t (*hash)(void const*) noexcept;
+        bool (*equal)(void const*, void const*);
+        std::size_t (*hash)(void const*);
         std::shared_ptr<void> (*copy)(void const*);
         void* (*allocate)(void*, std::size_t, MemoryAccess);
         void* (*calloc)(void*, std::size_t, MemoryAccess);
@@ -52,29 +52,19 @@ namespace resources
         void (*wait)(void*);
       };
 
-      template <typename T>
+      template <camp::concepts::ConcreteResourceAPI T>
       inline constexpr ResourceVTable resource_vtable_for{
           &typeid(T),
           [](void const* p) noexcept {
-            static_assert(noexcept(std::declval<T const&>().get_platform()),
-                          "Concrete resource get_platform() must be "
-                          "noexcept");
             return static_cast<T const*>(p)->get_platform();
           },
-          [](void const* lhs, void const* rhs) noexcept {
-            static_assert(noexcept(std::declval<T const&>()
-                                   == std::declval<T const&>()),
-                          "Concrete resource equality must be noexcept");
+          [](void const* lhs, void const* rhs) -> bool {
             return *static_cast<T const*>(lhs) == *static_cast<T const*>(rhs);
           },
-          [](void const* p) noexcept {
-            static_assert(noexcept(std::declval<T const&>().get_hash()),
-                          "Concrete resource get_hash() must be noexcept");
-            return static_cast<T const*>(p)->get_hash();
+          [](void const* p) -> std::size_t {
+            return std::hash<T>{}(*static_cast<T const*>(p));
           },
           [](void const* p) -> std::shared_ptr<void> {
-            static_assert(std::is_copy_constructible_v<T>,
-                          "Concrete resources must be copy constructible");
             return std::make_shared<T>(*static_cast<T const*>(p));
           },
           [](void* p, std::size_t size, MemoryAccess access) -> void* {
@@ -293,7 +283,7 @@ namespace resources
         }
 
         template <bool OtherConst>
-        bool operator==(BasicResourceRef<OtherConst> rhs) const noexcept
+        bool operator==(BasicResourceRef<OtherConst> rhs) const
         {
           if (!m_resource || !rhs.m_resource) {
             return m_resource == rhs.m_resource;
@@ -304,7 +294,6 @@ namespace resources
 
         template <camp::concepts::ConcreteResource T>
         bool operator==(T const& rhs) const
-            noexcept(noexcept(*this->template try_get<T>() == rhs))
         {
           if (auto* value = this->template try_get<T>()) {
             return *value == rhs;
@@ -318,7 +307,7 @@ namespace resources
         friend class ::camp::resources::Resource;
         friend struct std::hash<BasicResourceRef<IsConst>>;
 
-        std::size_t get_hash() const noexcept
+        std::size_t get_hash() const
         {
           return m_resource ? m_vtable->hash(m_resource) : 0u;
         }
@@ -496,21 +485,20 @@ namespace resources
        * \return True if both are empty or their concrete resources compare
        * equal, false otherwise.
        */
-      friend bool operator==(Resource const& lhs, Resource const& rhs) noexcept
+      friend bool operator==(Resource const& lhs, Resource const& rhs)
       {
         return ResourceConstRef{lhs} == ResourceConstRef{rhs};
       }
 
       template <bool IsConst>
       friend bool operator==(Resource const& lhs,
-                             detail::BasicResourceRef<IsConst> rhs) noexcept
+                             detail::BasicResourceRef<IsConst> rhs)
       {
         return ResourceConstRef{lhs} == rhs;
       }
 
       template <camp::concepts::ConcreteResource T>
-      friend bool operator==(Resource const& lhs, T const& rhs) noexcept(
-          noexcept(ResourceConstRef{lhs} == rhs))
+      friend bool operator==(Resource const& lhs, T const& rhs)
       {
         return ResourceConstRef{lhs} == rhs;
       }
@@ -527,7 +515,7 @@ namespace resources
        *
        * \return The underlying concrete resource's hash, or zero if empty.
        */
-      std::size_t get_hash() const noexcept
+      std::size_t get_hash() const
       {
         return ResourceConstRef{*this}.get_hash();
       }
@@ -595,7 +583,7 @@ namespace std
 /** \brief Hash support for mutable resource views. */
 template <>
 struct hash<camp::resources::ResourceRef> {
-  std::size_t operator()(camp::resources::ResourceRef resource) const noexcept
+  std::size_t operator()(camp::resources::ResourceRef resource) const
   {
     return resource.get_hash();
   }
@@ -605,7 +593,7 @@ struct hash<camp::resources::ResourceRef> {
 template <>
 struct hash<camp::resources::ResourceConstRef> {
   std::size_t operator()(
-      camp::resources::ResourceConstRef resource) const noexcept
+      camp::resources::ResourceConstRef resource) const
   {
     return resource.get_hash();
   }
@@ -623,7 +611,7 @@ struct hash<camp::resources::ResourceConstRef> {
 template <>
 struct hash<camp::resources::Resource> {
   std::size_t operator()(
-      camp::resources::Resource const& resource) const noexcept
+      camp::resources::Resource const& resource) const
   {
     return resource.get_hash();
   }

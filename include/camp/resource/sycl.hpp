@@ -319,7 +319,7 @@ namespace resources
       // Event
       SyclEvent get_event() { return SyclEvent(get_queue()); }
 
-      Event get_event_erased() { return Event{get_event()}; }
+      Event get_event_erased();
 
       void wait() { qu.wait(); }
 
@@ -329,14 +329,7 @@ namespace resources
             [&](::sycl::handler& h) { h.depends_on(e.getSyclEvent_t()); });
       }
 
-      void wait_for(Event const& e)
-      {
-        if (auto sycl_event = e.try_get<SyclEvent>()) {
-          wait_for(*sycl_event);
-        } else {
-          e.wait();
-        }
-      }
+      void wait_for(Event const& e);
 
       // Memory
       template <typename T>
@@ -423,7 +416,6 @@ namespace resources
     private:
       sycl::queue qu;
     };
-
   }  // namespace v1
 
 }  // namespace resources
@@ -467,6 +459,37 @@ struct hash<camp::resources::Sycl> {
 };
 
 }  // namespace std
+
+namespace camp
+{
+namespace resources
+{
+  inline namespace v1
+  {
+    // Define these methods after the std::hash specializations: Event
+    // construction and wait_for overload resolution check ConcreteEventAPI,
+    // which requires Hashable.
+
+    inline Event Sycl::get_event_erased()
+    {
+      return Event{get_event()};
+    }
+
+    inline void Sycl::wait_for(Event const& e)
+    {
+      if (auto sycl_event = e.try_get<SyclEvent>()) {
+        wait_for(*sycl_event);
+      } else {
+        e.wait();
+      }
+    }
+
+    static_assert(camp::concepts::ConcreteEventAPI<SyclEvent>);
+    static_assert(camp::concepts::ConcreteResourceAPI<Sycl>);
+  }  // namespace v1
+}  // namespace resources
+}  // namespace camp
+
 #endif  // #ifdef CAMP_ENABLE_SYCL
 
 #endif /* __CAMP_SYCL_HPP */

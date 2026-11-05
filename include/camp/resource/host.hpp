@@ -100,20 +100,13 @@ namespace resources
 
       HostEvent get_event() { return HostEvent(); }
 
-      Event get_event_erased() { return Event{get_event()}; }
+      Event get_event_erased();
 
       void wait() {}
 
       void wait_for(HostEvent const& e) { e.wait(); }
 
-      void wait_for(Event const& e)
-      {
-        if (auto host_event = e.try_get<HostEvent>()) {
-          wait_for(*host_event);
-        } else {
-          e.wait();
-        }
-      }
+      void wait_for(Event const& e);
 
       // Memory
       template <typename T>
@@ -173,7 +166,6 @@ namespace resources
         return size_t(get_platform()) << 32;  // All Host resources are the same
       }
     };
-
   }  // namespace v1
 
 }  // namespace resources
@@ -217,4 +209,35 @@ struct hash<camp::resources::Host> {
 };
 
 }  // namespace std
+
+namespace camp
+{
+namespace resources
+{
+  inline namespace v1
+  {
+    // Define these methods after the std::hash specializations: Event
+    // construction and wait_for overload resolution check ConcreteEventAPI,
+    // which requires Hashable.
+
+    inline Event Host::get_event_erased()
+    {
+      return Event{get_event()};
+    }
+
+    inline void Host::wait_for(Event const& e)
+    {
+      if (auto host_event = e.try_get<HostEvent>()) {
+        wait_for(*host_event);
+      } else {
+        e.wait();
+      }
+    }
+
+    static_assert(camp::concepts::ConcreteEventAPI<HostEvent>);
+    static_assert(camp::concepts::ConcreteResourceAPI<Host>);
+  }  // namespace v1
+}  // namespace resources
+}  // namespace camp
+
 #endif /* __CAMP_DEVICES_HPP */

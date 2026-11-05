@@ -336,7 +336,7 @@ namespace resources
         return HipEvent(get_stream());
       }
 
-      Event get_event_erased() { return Event{get_event()}; }
+      Event get_event_erased();
 
       void wait()
       {
@@ -353,14 +353,7 @@ namespace resources
                                       0);
       }
 
-      void wait_for(Event const& e)
-      {
-        if (auto hip_event = e.try_get<HipEvent>()) {
-          wait_for(*hip_event);
-        } else {
-          e.wait();
-        }
-      }
+      void wait_for(Event const& e);
 
       // Memory
       template <typename T>
@@ -520,6 +513,37 @@ struct hash<camp::resources::Hip> {
 };
 
 }  // namespace std
+
+namespace camp
+{
+namespace resources
+{
+  inline namespace v1
+  {
+    // Define these methods after the std::hash specializations: Event
+    // construction and wait_for overload resolution check ConcreteEventAPI,
+    // which requires Hashable.
+
+    inline Event Hip::get_event_erased()
+    {
+      return Event{get_event()};
+    }
+
+    inline void Hip::wait_for(Event const& e)
+    {
+      if (auto hip_event = e.try_get<HipEvent>()) {
+        wait_for(*hip_event);
+      } else {
+        e.wait();
+      }
+    }
+
+    static_assert(camp::concepts::ConcreteEventAPI<HipEvent>);
+    static_assert(camp::concepts::ConcreteResourceAPI<Hip>);
+  }  // namespace v1
+}  // namespace resources
+}  // namespace camp
+
 
 #endif  // #ifdef CAMP_ENABLE_HIP
 

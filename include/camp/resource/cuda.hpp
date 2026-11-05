@@ -338,7 +338,7 @@ namespace resources
         return CudaEvent(get_stream());
       }
 
-      Event get_event_erased() { return Event{get_event()}; }
+      Event get_event_erased();
 
       void wait()
       {
@@ -355,14 +355,7 @@ namespace resources
                                        0);
       }
 
-      void wait_for(Event const& e)
-      {
-        if (auto cuda_event = e.try_get<CudaEvent>()) {
-          wait_for(*cuda_event);
-        } else {
-          e.wait();
-        }
-      }
+      void wait_for(Event const& e);
 
       // Memory
       template <typename T>
@@ -522,6 +515,37 @@ struct hash<camp::resources::Cuda> {
 };
 
 }  // namespace std
+
+namespace camp
+{
+namespace resources
+{
+  inline namespace v1
+  {
+    // Define these methods after the std::hash specializations: Event
+    // construction and wait_for overload resolution check ConcreteEventAPI,
+    // which requires Hashable.
+
+    inline Event Cuda::get_event_erased()
+    {
+      return Event{get_event()};
+    }
+
+    inline void Cuda::wait_for(Event const& e)
+    {
+      if (auto cuda_event = e.try_get<CudaEvent>()) {
+        wait_for(*cuda_event);
+      } else {
+        e.wait();
+      }
+    }
+
+    static_assert(camp::concepts::ConcreteEventAPI<CudaEvent>);
+    static_assert(camp::concepts::ConcreteResourceAPI<Cuda>);
+  }  // namespace v1
+}  // namespace resources
+}  // namespace camp
+
 
 #endif  // #ifdef CAMP_ENABLE_CUDA
 

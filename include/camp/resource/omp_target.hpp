@@ -188,7 +188,7 @@ namespace resources
 
       OmpEvent get_event() { return OmpEvent(addr, dev); }
 
-      Event get_event_erased() { return Event{get_event()}; }
+      Event get_event_erased();
 
       void wait()
       {
@@ -211,14 +211,7 @@ namespace resources
         }
       }
 
-      void wait_for(Event const& e)
-      {
-        if (auto omp_event = e.try_get<OmpEvent>()) {
-          wait_for(*omp_event);
-        } else {
-          e.wait();
-        }
-      }
+      void wait_for(Event const& e);
 
       // Memory
       template <typename T>
@@ -372,7 +365,6 @@ namespace resources
         return dev_register;
       }
     };
-
   }  // namespace v1
 
 
@@ -417,6 +409,37 @@ struct hash<camp::resources::Omp> {
 };
 
 }  // namespace std
+
+namespace camp
+{
+namespace resources
+{
+  inline namespace v1
+  {
+    // Define these methods after the std::hash specializations: Event
+    // construction and wait_for overload resolution check ConcreteEventAPI,
+    // which requires Hashable.
+
+    inline Event Omp::get_event_erased()
+    {
+      return Event{get_event()};
+    }
+
+    inline void Omp::wait_for(Event const& e)
+    {
+      if (auto omp_event = e.try_get<OmpEvent>()) {
+        wait_for(*omp_event);
+      } else {
+        e.wait();
+      }
+    }
+
+    static_assert(camp::concepts::ConcreteEventAPI<OmpEvent>);
+    static_assert(camp::concepts::ConcreteResourceAPI<Omp>);
+  }  // namespace v1
+}  // namespace resources
+}  // namespace camp
+
 #endif  // #ifdef CAMP_ENABLE_TARGET_OPENMP
 
 #endif /* __CAMP_OMP_TARGET_HPP */

@@ -15,12 +15,13 @@ Concepts and Type Traits
 
 Camp provides a small set of C++20 concepts and companion type traits in
 ``camp/concepts.hpp``. The concepts are useful in ``requires`` clauses and
-constrained templates, while the traits provide the same checks in
-``std::bool_constant`` form for code that still prefers the traditional
+constrained templates, while the general-purpose traits provide the same checks
+in ``std::bool_constant`` form for code that still prefers the traditional
 type-trait style.
 
-All concepts live in ``camp::concepts``. All trait wrappers live in
-``camp::type_traits``.
+All concepts live in ``camp::concepts``. General-purpose trait wrappers live
+in ``camp::type_traits``. Resource registration traits live in
+``camp::resources``.
 
 ------------
 Introduction
@@ -80,6 +81,14 @@ both directions, with results convertible to ``bool``.
 
    static_assert(camp::concepts::Comparable<index_t>);
    static_assert(camp::type_traits::is_comparable_v<index_t>);
+
+--------
+Hashable
+--------
+
+``camp::concepts::Hashable`` checks whether a type can be hashed using
+``std::hash``. Hashing a const value must produce a result convertible to
+``std::size_t``. The concept ignores const and reference qualifiers.
 
 ----------------
 Numeric Concepts
@@ -148,26 +157,36 @@ the dereferenced type from a range-like or iterator-like type.
    using range_value = camp::type_traits::IterableValue<std::vector<double>>;
    using iter_value = camp::type_traits::IteratorValue<double*>;
 
-------------------------------------
+-------------------------------------------
 Concepts and Type Traits for Camp Resources
-------------------------------------
+-------------------------------------------
 
 Camp also exposes concepts and traits for concrete resource and event types:
 
 * ``camp::concepts::ConcreteResource``
 * ``camp::concepts::ConcreteEvent``
+* ``camp::concepts::ConcreteResourceAPI``
+* ``camp::concepts::ConcreteEventAPI``
 * ``camp::resources::is_concrete_resource<T>``
 * ``camp::resources::is_concrete_resource_v<T>``
 * ``camp::resources::is_concrete_event<T>``
 * ``camp::resources::is_concrete_event_v<T>``
 
-These are primarily used by Camp's resource API to distinguish typed backend
-objects from the generic type-erased wrappers.
+``ConcreteResource`` and ``ConcreteEvent`` identify registered Camp backend
+types satisfying the common resource or event API, such as ``Host`` or
+``HostEvent``.
 
 .. code-block:: cpp
 
    template <camp::concepts::ConcreteResource Res>
    void submit_work(Res&& res);
+
+``ConcreteResourceAPI`` and ``ConcreteEventAPI`` check the common resource and
+event interfaces independently of registration. All four concepts ignore
+const and reference qualifiers.
+
+The traits check registration alone. Generic wrappers such as ``Resource``
+and ``Event`` are not concrete backend types.
 
 ---------------------------------
 Template Specialization Utilities

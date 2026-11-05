@@ -41,30 +41,23 @@ namespace resources
       struct EventVTable {
         std::type_info const* type;
         Platform (*platform)(void const*) noexcept;
-        bool (*equal)(void const*, void const*) noexcept;
-        std::size_t (*hash)(void const*) noexcept;
+        bool (*equal)(void const*, void const*);
+        std::size_t (*hash)(void const*);
         bool (*check)(void const*);
         void (*wait)(void const*);
       };
 
-      template <typename T>
+      template <camp::concepts::ConcreteEventAPI T>
       inline constexpr EventVTable event_vtable_for{
           &typeid(T),
           [](void const* p) noexcept {
-            static_assert(noexcept(std::declval<T const&>().get_platform()),
-                          "Concrete event get_platform() must be noexcept");
             return static_cast<T const*>(p)->get_platform();
           },
-          [](void const* lhs, void const* rhs) noexcept {
-            static_assert(noexcept(std::declval<T const&>()
-                                   == std::declval<T const&>()),
-                          "Concrete event equality must be noexcept");
+          [](void const* lhs, void const* rhs) -> bool {
             return *static_cast<T const*>(lhs) == *static_cast<T const*>(rhs);
           },
-          [](void const* p) noexcept {
-            static_assert(noexcept(std::declval<T const&>().get_hash()),
-                          "Concrete event get_hash() must be noexcept");
-            return static_cast<T const*>(p)->get_hash();
+          [](void const* p) -> std::size_t {
+            return std::hash<T>{}(*static_cast<T const*>(p));
           },
           [](void const* p) { return static_cast<T const*>(p)->check(); },
           [](void const* p) { static_cast<T const*>(p)->wait(); }};
@@ -151,7 +144,7 @@ namespace resources
         explicit operator bool() const noexcept { return m_event != nullptr; }
 
         template <bool OtherConst>
-        bool operator==(BasicEventRef<OtherConst> rhs) const noexcept
+        bool operator==(BasicEventRef<OtherConst> rhs) const
         {
           if (!m_event || !rhs.m_event) {
             return m_event == rhs.m_event;
@@ -162,7 +155,6 @@ namespace resources
 
         template <camp::concepts::ConcreteEvent T>
         bool operator==(T const& rhs) const
-            noexcept(noexcept(*this->template try_get<T>() == rhs))
         {
           if (auto* value = this->template try_get<T>()) {
             return *value == rhs;
@@ -176,7 +168,7 @@ namespace resources
         friend class ::camp::resources::Event;
         friend struct std::hash<BasicEventRef<IsConst>>;
 
-        std::size_t get_hash() const noexcept
+        std::size_t get_hash() const
         {
           return m_event ? m_vtable->hash(m_event) : 0u;
         }
@@ -291,22 +283,21 @@ namespace resources
        * \return True if both are empty or their underlying typed events compare
        * equal, false otherwise.
        */
-      friend bool operator==(Event const& lhs, Event const& rhs) noexcept
+      friend bool operator==(Event const& lhs, Event const& rhs)
       {
         return EventConstRef{lhs} == EventConstRef{rhs};
       }
 
       template <bool IsConst>
       friend bool operator==(Event const& lhs,
-                             detail::BasicEventRef<IsConst> rhs) noexcept
+                             detail::BasicEventRef<IsConst> rhs)
       {
         return EventConstRef{lhs} == rhs;
       }
 
       template <camp::concepts::ConcreteEvent T>
       friend bool operator==(Event const& lhs,
-                             T const& rhs) noexcept(noexcept(EventConstRef{lhs}
-                                                             == rhs))
+                             T const& rhs)
       {
         return EventConstRef{lhs} == rhs;
       }
@@ -323,10 +314,7 @@ namespace resources
        *
        * \return The underlying concrete event's hash, or zero if empty.
        */
-      std::size_t get_hash() const noexcept
-      {
-        return EventConstRef{*this}.get_hash();
-      }
+      std::size_t get_hash() const { return EventConstRef{*this}.get_hash(); }
 
       std::shared_ptr<void> m_owner;
     };
@@ -355,7 +343,7 @@ namespace std
 /** \brief Hash support for mutable event views. */
 template <>
 struct hash<camp::resources::EventRef> {
-  std::size_t operator()(camp::resources::EventRef event) const noexcept
+  std::size_t operator()(camp::resources::EventRef event) const
   {
     return event.get_hash();
   }
@@ -364,7 +352,7 @@ struct hash<camp::resources::EventRef> {
 /** \brief Hash support for const event views. */
 template <>
 struct hash<camp::resources::EventConstRef> {
-  std::size_t operator()(camp::resources::EventConstRef event) const noexcept
+  std::size_t operator()(camp::resources::EventConstRef event) const
   {
     return event.get_hash();
   }
@@ -381,7 +369,7 @@ struct hash<camp::resources::EventConstRef> {
  */
 template <>
 struct hash<camp::resources::Event> {
-  std::size_t operator()(camp::resources::Event const& event) const noexcept
+  std::size_t operator()(camp::resources::Event const& event) const
   {
     return event.get_hash();
   }

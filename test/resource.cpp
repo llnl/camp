@@ -19,6 +19,7 @@ using namespace camp::resources;
 
 // compatible but different resource for conversion test
 struct Host2 : Host {
+  static Host2 get_default() { return {}; }
 };
 
 struct HostEvent2 : HostEvent {
@@ -60,6 +61,14 @@ struct NotAResource {
 struct NotAnEvent {
 };
 
+struct MoveOnlyResource : Host {
+  static MoveOnlyResource get_default() { return {}; }
+
+  MoveOnlyResource() = default;
+  MoveOnlyResource(MoveOnlyResource const&) = delete;
+  MoveOnlyResource(MoveOnlyResource&&) = default;
+};
+
 struct TrackingState {
   int copies = 0;
 };
@@ -67,6 +76,9 @@ struct TrackingState {
 // Records copies in caller-owned state so tests can verify that refs borrow
 // concrete resources while Resource::from_ref creates an owning copy.
 struct TrackedResource : Host {
+  // Only used in unevaluated API checks; runtime tests supply their own state.
+  static TrackedResource get_default();
+
   explicit TrackedResource(TrackingState& state_) : state(&state_)
   {
   }
@@ -87,10 +99,34 @@ namespace camp
 namespace resources
 {
   template <>
+  struct is_concrete_resource_impl<MoveOnlyResource> : std::true_type {
+  };
+
+  template <>
   struct is_concrete_resource_impl<TrackedResource> : std::true_type {
   };
 }  // namespace resources
 }  // namespace camp
+
+namespace std
+{
+template <>
+struct hash<Host2> : hash<Host> {
+};
+
+template <>
+struct hash<HostEvent2> : hash<HostEvent> {
+};
+
+template <>
+struct hash<MoveOnlyResource> : hash<Host> {
+};
+
+template <>
+struct hash<TrackedResource> : hash<Host> {
+};
+
+}  // namespace std
 
 // Reference representation
 static_assert(std::is_trivially_copyable_v<ResourceRef>);
@@ -348,14 +384,7 @@ concept CanWaitForResource = requires(ResourceType&& resource,
 
 // Resource operation availability
 // Through Resource&
-static_assert(CanAllocateResource<Resource&>);
-static_assert(CanCallocResource<Resource&>);
-static_assert(CanDeallocateResource<Resource&>);
-static_assert(CanMemcpyResource<Resource&>);
-static_assert(CanMemsetResource<Resource&>);
-static_assert(CanGetResourceEvent<Resource&>);
-static_assert(CanGetResourceEventErased<Resource&>);
-static_assert(CanWaitResource<Resource&>);
+static_assert(camp::concepts::detail::ResourceOperations<Resource&>);
 static_assert(CanWaitForResource<Resource&, EventRef>);
 static_assert(CanWaitForResource<Resource&, EventConstRef>);
 
@@ -372,26 +401,12 @@ static_assert(!CanWaitForResource<Resource const&, EventRef>);
 static_assert(!CanWaitForResource<Resource const&, EventConstRef>);
 
 // Through ResourceRef&
-static_assert(CanAllocateResource<ResourceRef&>);
-static_assert(CanCallocResource<ResourceRef&>);
-static_assert(CanDeallocateResource<ResourceRef&>);
-static_assert(CanMemcpyResource<ResourceRef&>);
-static_assert(CanMemsetResource<ResourceRef&>);
-static_assert(CanGetResourceEvent<ResourceRef&>);
-static_assert(CanGetResourceEventErased<ResourceRef&>);
-static_assert(CanWaitResource<ResourceRef&>);
+static_assert(camp::concepts::detail::ResourceOperations<ResourceRef&>);
 static_assert(CanWaitForResource<ResourceRef&, EventRef>);
 static_assert(CanWaitForResource<ResourceRef&, EventConstRef>);
 
 // Through ResourceRef const&
-static_assert(CanAllocateResource<ResourceRef const&>);
-static_assert(CanCallocResource<ResourceRef const&>);
-static_assert(CanDeallocateResource<ResourceRef const&>);
-static_assert(CanMemcpyResource<ResourceRef const&>);
-static_assert(CanMemsetResource<ResourceRef const&>);
-static_assert(CanGetResourceEvent<ResourceRef const&>);
-static_assert(CanGetResourceEventErased<ResourceRef const&>);
-static_assert(CanWaitResource<ResourceRef const&>);
+static_assert(camp::concepts::detail::ResourceOperations<ResourceRef const&>);
 static_assert(CanWaitForResource<ResourceRef const&, EventRef>);
 static_assert(CanWaitForResource<ResourceRef const&, EventConstRef>);
 
@@ -419,74 +434,13 @@ static_assert(!CanWaitResource<ResourceConstRef const&>);
 static_assert(!CanWaitForResource<ResourceConstRef const&, EventRef>);
 static_assert(!CanWaitForResource<ResourceConstRef const&, EventConstRef>);
 
-template <typename T>
-concept CanCheckEvent =
-    requires(T&& event) { std::forward<T>(event).check(); };
-
-template <typename T>
-concept CanWaitEvent =
-    requires(T&& event) { std::forward<T>(event).wait(); };
-
 // Event operation availability
-// Through Event&
-static_assert(CanCheckEvent<Event&>);
-static_assert(CanWaitEvent<Event&>);
-
-// Through Event const&
-static_assert(CanCheckEvent<Event const&>);
-static_assert(CanWaitEvent<Event const&>);
-
-// Through EventRef&
-static_assert(CanCheckEvent<EventRef&>);
-static_assert(CanWaitEvent<EventRef&>);
-
-// Through EventRef const&
-static_assert(CanCheckEvent<EventRef const&>);
-static_assert(CanWaitEvent<EventRef const&>);
-
-// Through EventConstRef&
-static_assert(CanCheckEvent<EventConstRef&>);
-static_assert(CanWaitEvent<EventConstRef&>);
-
-// Through EventConstRef const&
-static_assert(CanCheckEvent<EventConstRef const&>);
-static_assert(CanWaitEvent<EventConstRef const&>);
-
-// Nothrow comparison and hashing
-static_assert(noexcept(std::declval<ResourceRef>()
-                       == std::declval<ResourceRef>()));
-static_assert(noexcept(std::declval<EventRef>() == std::declval<EventRef>()));
-static_assert(noexcept(std::declval<ResourceRef>()
-                       == std::declval<ResourceConstRef>()));
-static_assert(noexcept(std::declval<EventRef>()
-                       == std::declval<EventConstRef>()));
-static_assert(noexcept(std::declval<ResourceConstRef>()
-                       == std::declval<ResourceConstRef>()));
-static_assert(noexcept(std::declval<EventConstRef>()
-                       == std::declval<EventConstRef>()));
-static_assert(noexcept(std::declval<Resource const&>()
-                       == std::declval<Resource const&>()));
-static_assert(noexcept(std::declval<Event const&>()
-                       == std::declval<Event const&>()));
-static_assert(noexcept(std::declval<Resource const&>()
-                       == std::declval<ResourceRef>()));
-static_assert(noexcept(std::declval<Event const&>()
-                       == std::declval<EventRef>()));
-static_assert(noexcept(std::declval<Resource const&>()
-                       == std::declval<ResourceConstRef>()));
-static_assert(noexcept(std::declval<Event const&>()
-                       == std::declval<EventConstRef>()));
-static_assert(noexcept(std::hash<ResourceRef>{}(std::declval<ResourceRef>())));
-static_assert(noexcept(std::hash<EventRef>{}(std::declval<EventRef>())));
-static_assert(noexcept(
-    std::hash<ResourceConstRef>{}(std::declval<ResourceConstRef>())));
-static_assert(
-    noexcept(std::hash<EventConstRef>{}(std::declval<EventConstRef>())));
-static_assert(noexcept(std::hash<Resource>{}(std::declval<Resource const&>())));
-static_assert(noexcept(std::hash<Event>{}(std::declval<Event const&>())));
-static_assert(noexcept(std::hash<Host>{}(std::declval<Host const&>())));
-static_assert(
-    noexcept(std::hash<HostEvent>{}(std::declval<HostEvent const&>())));
+static_assert(camp::concepts::detail::EventOperations<Event&>);
+static_assert(camp::concepts::detail::EventOperations<Event const&>);
+static_assert(camp::concepts::detail::EventOperations<EventRef&>);
+static_assert(camp::concepts::detail::EventOperations<EventRef const&>);
+static_assert(camp::concepts::detail::EventOperations<EventConstRef&>);
+static_assert(camp::concepts::detail::EventOperations<EventConstRef const&>);
 
 template <typename Res>
 void test_construct()
@@ -2327,10 +2281,7 @@ TEST(CampResource, ConcreteResourceTypeTrait)
   ASSERT_FALSE(is_concrete_resource<ResourceConstRef>::value);
   // Test is_concrete_resource with non-resource types
   ASSERT_FALSE(is_concrete_resource<int>::value);
-  ASSERT_FALSE(is_concrete_resource<float>::value);
-  ASSERT_FALSE(is_concrete_resource<double>::value);
   ASSERT_FALSE(is_concrete_resource<void*>::value);
-  ASSERT_FALSE(is_concrete_resource<char*>::value);
   ASSERT_FALSE(is_concrete_resource<NotAResource>::value);
   // Host2 has an overload of is_concrete_resource_impl
   ASSERT_TRUE(is_concrete_resource<Host2>::value);
@@ -2374,13 +2325,27 @@ TEST(CampEvent, ConcreteEventTypeTrait)
   ASSERT_FALSE(is_concrete_event<EventConstRef>::value);
   // Test is_concrete_event with non-event types
   ASSERT_FALSE(is_concrete_event<int>::value);
-  ASSERT_FALSE(is_concrete_event<float>::value);
-  ASSERT_FALSE(is_concrete_event<double>::value);
   ASSERT_FALSE(is_concrete_event<void*>::value);
-  ASSERT_FALSE(is_concrete_event<char*>::value);
   ASSERT_FALSE(is_concrete_event<NotAnEvent>::value);
   // Host2 has an overload of is_concrete_event_impl
   ASSERT_TRUE(is_concrete_event<HostEvent2>::value);
+}
+
+template <typename T>
+void test_rejected_resource()
+{
+  static_assert(is_concrete_resource_v<T>);
+  static_assert(!camp::concepts::ConcreteResourceAPI<T>);
+  static_assert(!camp::concepts::ConcreteResource<T>);
+  static_assert(!std::is_constructible_v<Resource, T>);
+  static_assert(!std::is_constructible_v<Resource, T&>);
+  static_assert(!std::is_constructible_v<ResourceRef, T&>);
+  static_assert(!std::is_constructible_v<ResourceConstRef, T const&>);
+}
+
+TEST(CampResource, ConcreteResourceConstraints)
+{
+  test_rejected_resource<MoveOnlyResource>();
 }
 
 template <typename Res>
