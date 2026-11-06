@@ -92,15 +92,13 @@ struct MissingWait : ResourceAPIBase<MissingWait> {
 // rejection tests the intended call.
 struct MissingNativeWait : ResourceAPIBase<MissingNativeWait> {
   void wait_for(HostEvent const&) = delete;
-  template <bool IsConst>
-  void wait_for(detail::BasicEventRef<IsConst>);
+  void wait_for(EventConstRef);
   void wait_for(Event const&);
 };
 
 struct MissingErasedWait : ResourceAPIBase<MissingErasedWait> {
   void wait_for(HostEvent const&);
-  template <bool IsConst>
-  void wait_for(detail::BasicEventRef<IsConst>);
+  void wait_for(EventConstRef);
   void wait_for(Event const&) = delete;
 };
 

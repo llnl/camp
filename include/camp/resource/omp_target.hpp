@@ -211,8 +211,7 @@ namespace resources
         }
       }
 
-      template <bool IsConst>
-      void wait_for(detail::BasicEventRef<IsConst> e);
+      void wait_for(EventConstRef e);
 
       void wait_for(Event const& e);
 
@@ -428,8 +427,7 @@ namespace resources
       return Event{get_event()};
     }
 
-    template <bool IsConst>
-    inline void Omp::wait_for(detail::BasicEventRef<IsConst> e)
+    inline void Omp::wait_for(EventConstRef e)
     {
       if (auto omp_event = e.template try_get<OmpEvent>()) {
         wait_for(*omp_event);

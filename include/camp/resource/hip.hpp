@@ -353,8 +353,7 @@ namespace resources
                                       0);
       }
 
-      template <bool IsConst>
-      void wait_for(detail::BasicEventRef<IsConst> e);
+      void wait_for(EventConstRef e);
 
       void wait_for(Event const& e);
 
@@ -532,8 +531,7 @@ namespace resources
       return Event{get_event()};
     }
 
-    template <bool IsConst>
-    inline void Hip::wait_for(detail::BasicEventRef<IsConst> e)
+    inline void Hip::wait_for(EventConstRef e)
     {
       if (auto hip_event = e.template try_get<HipEvent>()) {
         wait_for(*hip_event);

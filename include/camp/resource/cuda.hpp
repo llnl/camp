@@ -355,8 +355,7 @@ namespace resources
                                        0);
       }
 
-      template <bool IsConst>
-      void wait_for(detail::BasicEventRef<IsConst> e);
+      void wait_for(EventConstRef e);
 
       void wait_for(Event const& e);
 
@@ -534,8 +533,7 @@ namespace resources
       return Event{get_event()};
     }
 
-    template <bool IsConst>
-    inline void Cuda::wait_for(detail::BasicEventRef<IsConst> e)
+    inline void Cuda::wait_for(EventConstRef e)
     {
       if (auto cuda_event = e.template try_get<CudaEvent>()) {
         wait_for(*cuda_event);

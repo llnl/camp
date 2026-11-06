@@ -329,8 +329,7 @@ namespace resources
             [&](::sycl::handler& h) { h.depends_on(e.getSyclEvent_t()); });
       }
 
-      template <bool IsConst>
-      void wait_for(detail::BasicEventRef<IsConst> e);
+      void wait_for(EventConstRef e);
 
       void wait_for(Event const& e);
 
@@ -478,8 +477,7 @@ namespace resources
       return Event{get_event()};
     }
 
-    template <bool IsConst>
-    inline void Sycl::wait_for(detail::BasicEventRef<IsConst> e)
+    inline void Sycl::wait_for(EventConstRef e)
     {
       if (auto sycl_event = e.template try_get<SyclEvent>()) {
         wait_for(*sycl_event);

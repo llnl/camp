@@ -106,8 +106,7 @@ namespace resources
 
       void wait_for(HostEvent const& e) { e.wait(); }
 
-      template <bool IsConst>
-      void wait_for(detail::BasicEventRef<IsConst> e);
+      void wait_for(EventConstRef e);
 
       void wait_for(Event const& e);
 
@@ -228,8 +227,7 @@ namespace resources
       return Event{get_event()};
     }
 
-    template <bool IsConst>
-    inline void Host::wait_for(detail::BasicEventRef<IsConst> e)
+    inline void Host::wait_for(EventConstRef e)
     {
       if (auto host_event = e.template try_get<HostEvent>()) {
         wait_for(*host_event);
