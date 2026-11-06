@@ -260,7 +260,9 @@ borrowing it through the ``ResourceRef``.
 
    Resource and event views do not take ownership of the objects they refer to.
    The referenced resource or event must remain alive and valid for as long as
-   the view is used. You cannot create a view from a temporary resource or event.
+   the view is used. Views of owning ``Resource`` or ``Event`` objects refer to
+   the stored concrete object, which reassignment may destroy. You cannot
+   create a view from a temporary resource or event.
 
 Owning objects, views, and concrete objects can be compared directly.
 The underlying concrete types must match to compare equal. Equal objects
