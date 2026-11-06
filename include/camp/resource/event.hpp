@@ -240,10 +240,18 @@ namespace resources
       {
       }
 
-      using EventRef::check;
-      using EventRef::get_platform;
       using EventRef::operator bool;
-      using EventRef::wait;
+
+      // NVCC 12.2 rejects private-base using declarations for named methods
+      // when they are checked in templated requires expressions.
+      Platform get_platform() const noexcept
+      {
+        return EventRef::get_platform();
+      }
+
+      bool check() const { return EventRef::check(); }
+
+      void wait() const { EventRef::wait(); }
 
       template <typename T>
       T* try_get() noexcept

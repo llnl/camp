@@ -402,8 +402,14 @@ namespace resources
         return result;
       }
 
-      using ResourceRef::get_platform;
       using ResourceRef::operator bool;
+
+      // NVCC 12.2 rejects private-base using declarations for named methods
+      // when they are checked in templated requires expressions.
+      Platform get_platform() const noexcept
+      {
+        return ResourceRef::get_platform();
+      }
 
       template <typename T>
       T* try_get() noexcept
