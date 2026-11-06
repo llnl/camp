@@ -86,14 +86,21 @@ struct MissingWait : ResourceAPIBase<MissingWait> {
   void wait() = delete;
 };
 
-// Preserve the other wait_for overload so only the selected call is rejected.
+// ROCm 6.4.3 HIP mode can select an inherited overload exposed by a using
+// declaration even when the exact-match overload here is deleted. Declare
+// the surviving overloads directly, including the event-ref overload, so each
+// rejection tests the intended call.
 struct MissingNativeWait : ResourceAPIBase<MissingNativeWait> {
-  using Host::wait_for;
   void wait_for(HostEvent const&) = delete;
+  template <bool IsConst>
+  void wait_for(detail::BasicEventRef<IsConst>);
+  void wait_for(Event const&);
 };
 
 struct MissingErasedWait : ResourceAPIBase<MissingErasedWait> {
-  using Host::wait_for;
+  void wait_for(HostEvent const&);
+  template <bool IsConst>
+  void wait_for(detail::BasicEventRef<IsConst>);
   void wait_for(Event const&) = delete;
 };
 
