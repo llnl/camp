@@ -353,6 +353,9 @@ namespace resources
                                       0);
       }
 
+      template <bool IsConst>
+      void wait_for(detail::BasicEventRef<IsConst> e);
+
       void wait_for(Event const& e);
 
       // Memory
@@ -529,13 +532,19 @@ namespace resources
       return Event{get_event()};
     }
 
-    inline void Hip::wait_for(Event const& e)
+    template <bool IsConst>
+    inline void Hip::wait_for(detail::BasicEventRef<IsConst> e)
     {
-      if (auto hip_event = e.try_get<HipEvent>()) {
+      if (auto hip_event = e.template try_get<HipEvent>()) {
         wait_for(*hip_event);
       } else {
         e.wait();
       }
+    }
+
+    inline void Hip::wait_for(Event const& e)
+    {
+      wait_for(EventConstRef{e});
     }
 
     static_assert(camp::concepts::ConcreteEventAPI<HipEvent>);

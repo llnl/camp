@@ -2117,11 +2117,21 @@ void test_wait_operations(ResourceLike& r)
   r.wait();
   Event empty_event;
   r.wait_for(empty_event);
+  r.wait_for(EventRef{});
+  r.wait_for(EventConstRef{});
   Event erased_event = r.get_event_erased();
   ASSERT_TRUE(erased_event);
   r.wait_for(erased_event);
+  r.wait_for(EventRef{erased_event});
+  r.wait_for(EventConstRef{erased_event});
   auto typed_event = r.get_event();
   r.wait_for(typed_event);
+  r.wait_for(EventRef{typed_event});
+  r.wait_for(EventConstRef{typed_event});
+  HostEvent host_typed_event;
+  r.wait_for(EventRef{host_typed_event});
+  r.wait_for(EventConstRef{host_typed_event});
+  r.wait_for(HostEvent{});
   Event host_event = Host().get_event_erased();
   r.wait_for(host_event);
 }

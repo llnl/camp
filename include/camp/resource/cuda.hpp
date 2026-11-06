@@ -355,6 +355,9 @@ namespace resources
                                        0);
       }
 
+      template <bool IsConst>
+      void wait_for(detail::BasicEventRef<IsConst> e);
+
       void wait_for(Event const& e);
 
       // Memory
@@ -531,13 +534,19 @@ namespace resources
       return Event{get_event()};
     }
 
-    inline void Cuda::wait_for(Event const& e)
+    template <bool IsConst>
+    inline void Cuda::wait_for(detail::BasicEventRef<IsConst> e)
     {
-      if (auto cuda_event = e.try_get<CudaEvent>()) {
+      if (auto cuda_event = e.template try_get<CudaEvent>()) {
         wait_for(*cuda_event);
       } else {
         e.wait();
       }
+    }
+
+    inline void Cuda::wait_for(Event const& e)
+    {
+      wait_for(EventConstRef{e});
     }
 
     static_assert(camp::concepts::ConcreteEventAPI<CudaEvent>);

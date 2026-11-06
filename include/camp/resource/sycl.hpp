@@ -329,6 +329,9 @@ namespace resources
             [&](::sycl::handler& h) { h.depends_on(e.getSyclEvent_t()); });
       }
 
+      template <bool IsConst>
+      void wait_for(detail::BasicEventRef<IsConst> e);
+
       void wait_for(Event const& e);
 
       // Memory
@@ -475,13 +478,19 @@ namespace resources
       return Event{get_event()};
     }
 
-    inline void Sycl::wait_for(Event const& e)
+    template <bool IsConst>
+    inline void Sycl::wait_for(detail::BasicEventRef<IsConst> e)
     {
-      if (auto sycl_event = e.try_get<SyclEvent>()) {
+      if (auto sycl_event = e.template try_get<SyclEvent>()) {
         wait_for(*sycl_event);
       } else {
         e.wait();
       }
+    }
+
+    inline void Sycl::wait_for(Event const& e)
+    {
+      wait_for(EventConstRef{e});
     }
 
     static_assert(camp::concepts::ConcreteEventAPI<SyclEvent>);

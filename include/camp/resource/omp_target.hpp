@@ -211,6 +211,9 @@ namespace resources
         }
       }
 
+      template <bool IsConst>
+      void wait_for(detail::BasicEventRef<IsConst> e);
+
       void wait_for(Event const& e);
 
       // Memory
@@ -425,13 +428,19 @@ namespace resources
       return Event{get_event()};
     }
 
-    inline void Omp::wait_for(Event const& e)
+    template <bool IsConst>
+    inline void Omp::wait_for(detail::BasicEventRef<IsConst> e)
     {
-      if (auto omp_event = e.try_get<OmpEvent>()) {
+      if (auto omp_event = e.template try_get<OmpEvent>()) {
         wait_for(*omp_event);
       } else {
         e.wait();
       }
+    }
+
+    inline void Omp::wait_for(Event const& e)
+    {
+      wait_for(EventConstRef{e});
     }
 
     static_assert(camp::concepts::ConcreteEventAPI<OmpEvent>);
