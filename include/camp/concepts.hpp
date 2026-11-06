@@ -24,6 +24,21 @@
 
 namespace camp
 {
+namespace resources
+{
+  inline namespace v1
+  {
+    namespace detail
+    {
+      template <bool IsConst>
+      struct BasicEventRef;
+    }
+  }
+}
+}
+
+namespace camp
+{
 
 namespace concepts
 {
@@ -586,10 +601,23 @@ namespace concepts
     };
 
     template <typename T>
-    concept ResourceOperations =
+    concept WaitsForEvents =
         requires(T& resource,
                  typename std::remove_cvref_t<T>::event_type const& event,
                  ::camp::resources::Event const& erased_event,
+                 ::camp::resources::detail::BasicEventRef<false> mutable_event,
+                 ::camp::resources::detail::BasicEventRef<true> const_event) {
+          { resource.wait() } -> std::same_as<void>;
+          { resource.wait_for(event) } -> std::same_as<void>;
+          { resource.wait_for(erased_event) } -> std::same_as<void>;
+          { resource.wait_for(mutable_event) } -> std::same_as<void>;
+          { resource.wait_for(const_event) } -> std::same_as<void>;
+        };
+
+    template <typename T>
+    concept ResourceOperations =
+        WaitsForEvents<T>
+        && requires(T& resource,
                  std::size_t size,
                  ::camp::resources::MemoryAccess access,
                  void* dst,
@@ -601,9 +629,6 @@ namespace concepts
           {
             resource.get_event_erased()
           } -> std::same_as<::camp::resources::Event>;
-          { resource.wait() } -> std::same_as<void>;
-          { resource.wait_for(event) } -> std::same_as<void>;
-          { resource.wait_for(erased_event) } -> std::same_as<void>;
           { resource.template allocate<char>(size) } -> std::same_as<char*>;
           {
             resource.template allocate<char>(size, access)

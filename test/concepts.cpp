@@ -102,6 +102,11 @@ struct MissingErasedWait : ResourceAPIBase<MissingErasedWait> {
   void wait_for(Event const&) = delete;
 };
 
+struct MissingRefWait : ResourceAPIBase<MissingRefWait> {
+  void wait_for(HostEvent const&);
+  void wait_for(Event const&);
+};
+
 struct WrongAllocation : ResourceAPIBase<WrongAllocation> {
   template <typename T>
   void* allocate(std::size_t, MemoryAccess = MemoryAccess::Device);
@@ -246,6 +251,11 @@ struct hash<resource_api_test::MissingErasedWait>
 };
 
 template <>
+struct hash<resource_api_test::MissingRefWait>
+    : hash<camp::resources::Host> {
+};
+
+template <>
 struct hash<resource_api_test::WrongAllocation> : hash<camp::resources::Host> {
 };
 
@@ -321,6 +331,7 @@ static_assert(!ConcreteResourceAPI<WrongErasedEvent>);
 static_assert(!ConcreteResourceAPI<MissingWait>);
 static_assert(!ConcreteResourceAPI<MissingNativeWait>);
 static_assert(!ConcreteResourceAPI<MissingErasedWait>);
+static_assert(!ConcreteResourceAPI<MissingRefWait>);
 static_assert(!ConcreteResourceAPI<WrongAllocation>);
 static_assert(!ConcreteResourceAPI<MissingDefaultAccess>);
 static_assert(!ConcreteResourceAPI<WrongCalloc>);
