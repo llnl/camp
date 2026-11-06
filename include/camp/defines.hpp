@@ -214,15 +214,15 @@ cudaAssert(cudaError_t code, const char* call, const char* file, int line);
                         __LINE__);                                        \
   }
 ///
-#define CAMP_CUDA_API_INVOKE_AND_CHECK_RETURN(...)             \
+#define CAMP_CUDA_API_INVOKE_AND_CHECK_RETURN(func, ...)             \
   [&]() {                                                      \
-    CAMP_CUDA_API_INVOKE_AND_CHECK_IMPLEMENTATION(__VA_ARGS__) \
+    CAMP_CUDA_API_INVOKE_AND_CHECK_IMPLEMENTATION(func, __VA_ARGS__) \
     return code_56792578;                                      \
   }()
 ///
-#define CAMP_CUDA_API_INVOKE_AND_CHECK(...)                    \
+#define CAMP_CUDA_API_INVOKE_AND_CHECK(func, ...)                    \
   do {                                                         \
-    CAMP_CUDA_API_INVOKE_AND_CHECK_IMPLEMENTATION(__VA_ARGS__) \
+    CAMP_CUDA_API_INVOKE_AND_CHECK_IMPLEMENTATION(func, __VA_ARGS__) \
   } while (false)
 
 #endif  // #ifdef CAMP_ENABLE_CUDA
