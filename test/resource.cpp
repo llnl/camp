@@ -134,6 +134,25 @@ static_assert(std::is_trivially_copyable_v<ResourceConstRef>);
 static_assert(std::is_trivially_copyable_v<EventRef>);
 static_assert(std::is_trivially_copyable_v<EventConstRef>);
 
+template <typename T>
+concept ExplicitlyBoolConvertible = requires(T& value) {
+  { static_cast<bool>(value) } -> std::same_as<bool>;
+};
+
+// Owning and borrowed handles support contextual conversion to bool.
+static_assert(ExplicitlyBoolConvertible<Resource&>);
+static_assert(ExplicitlyBoolConvertible<Resource const&>);
+static_assert(ExplicitlyBoolConvertible<ResourceRef&>);
+static_assert(ExplicitlyBoolConvertible<ResourceRef const&>);
+static_assert(ExplicitlyBoolConvertible<ResourceConstRef&>);
+static_assert(ExplicitlyBoolConvertible<ResourceConstRef const&>);
+static_assert(ExplicitlyBoolConvertible<Event&>);
+static_assert(ExplicitlyBoolConvertible<Event const&>);
+static_assert(ExplicitlyBoolConvertible<EventRef&>);
+static_assert(ExplicitlyBoolConvertible<EventRef const&>);
+static_assert(ExplicitlyBoolConvertible<EventConstRef&>);
+static_assert(ExplicitlyBoolConvertible<EventConstRef const&>);
+
 // Resource reference construction
 // From Host
 static_assert(std::is_nothrow_constructible_v<ResourceRef, Host&>);
