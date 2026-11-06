@@ -7,6 +7,7 @@
 // SPDX-License-Identifier: (BSD-3-Clause)
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+#include <list>
 #include <numeric>
 #include <vector>
 
@@ -468,4 +469,22 @@ TEST(CampResourceAllocator, Vector)
 #ifdef CAMP_HAVE_SYCL
   test_allocate<Sycl>();
 #endif
+}
+
+TEST(CampResourceAllocator, ResourceRefRebind)
+{
+  Host host;
+  ResourceRef resource{host};
+  using Allocator = camp::ResourceAllocator<int, ResourceRef>;
+
+  std::list<int, Allocator> values{Allocator{resource, MemoryAccess::Pinned}};
+  values.push_back(42);
+
+  auto allocator = values.get_allocator();
+  ASSERT_EQ(allocator.get_resource().try_get<Host>(), &host);
+  ASSERT_EQ(allocator.get_mem_access(), MemoryAccess::Pinned);
+  ASSERT_EQ(values.front(), 42);
+
+  values.pop_back();
+  EXPECT_TRUE(values.empty());
 }

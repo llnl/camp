@@ -14,6 +14,8 @@
 #include <cstddef>
 #include <limits>
 #include <new>
+#include <type_traits>
+#include <utility>
 
 #include "camp/concepts.hpp"
 #include "camp/config.hpp"
@@ -33,7 +35,7 @@ namespace resources
       allocator(Resource res = Resource{},
                 camp::resources::MemoryAccess mem_type =
                     camp::resources::MemoryAccess::Device)
-          : m_res{res}, m_mem_type{mem_type}
+          : m_res{std::move(res)}, m_mem_type{mem_type}
       {
       }
 
@@ -44,9 +46,10 @@ namespace resources
       allocator& operator=(allocator&&) = default;
 
       template <typename OtherAllocator>
-        requires std::convertible_to<typename OtherAllocator::resource_type,
-                                     camp::resources::Resource>
-      allocator(OtherAllocator const& other) noexcept
+        requires std::constructible_from<
+            Resource, typename OtherAllocator::resource_type const&>
+      allocator(OtherAllocator const& other)
+          noexcept(noexcept(Resource{other.get_resource()}))
           : m_res{other.get_resource()}, m_mem_type{other.get_mem_access()}
       {
       }
@@ -80,7 +83,8 @@ namespace resources
       }
 
       [[nodiscard]]
-      Resource get_resource() noexcept
+      Resource get_resource() noexcept(
+          std::is_nothrow_copy_constructible_v<Resource>)
       {
         return m_res;
       }
