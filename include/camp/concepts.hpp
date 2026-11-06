@@ -11,13 +11,31 @@
 #define CAMP_CONCEPTS_HPP
 
 #include <concepts>
+#include <cstddef>
+#include <functional>
 #include <iterator>
 #include <type_traits>
 
 #include "camp/helpers.hpp"
 #include "camp/list.hpp"
 #include "camp/number.hpp"
+#include "camp/resource/platform.hpp"
 #include "camp/type_traits/is_same.hpp"
+
+namespace camp
+{
+namespace resources
+{
+  inline namespace v1
+  {
+    namespace detail
+    {
+      template <bool IsConst>
+      struct BasicEventRef;
+    }
+  }
+}
+}
 
 namespace camp
 {
@@ -164,6 +182,14 @@ namespace concepts
   /// SFINAE concept checking
   template <template <class...> class Op, class... Args>
   struct requires_ : detail::detected<Op, detail::TL<Args...>> {
+  };
+
+  /// Matches types whose std::hash produces a value convertible to std::size_t.
+  /// Ignores cv/reference qualifiers and permits throwing hash functions.
+  template <typename T>
+  concept Hashable = requires(std::remove_cvref_t<T> const& value) {
+    { std::hash<std::remove_cvref_t<T>>{}(value) }
+        -> std::convertible_to<std::size_t>;
   };
 
   /// Matches types that satisfy `std::swappable`.
@@ -522,6 +548,7 @@ namespace resources
 {
   inline namespace v1
   {
+    class Event;
 
     template <typename T>
     struct is_concrete_event_impl : std::false_type {
@@ -556,13 +583,118 @@ namespace resources
 namespace concepts
 {
 
-  /// Matches concrete event types recognized by Camp's resource system.
-  template <typename T>
-  concept ConcreteEvent = ::camp::resources::is_concrete_event_v<T>;
+  namespace detail
+  {
+    template <typename T>
+    concept HasPlatform = requires(std::remove_cvref_t<T> const& value) {
+      {
+        value.get_platform()
+      } noexcept -> std::same_as<::camp::resources::Platform>;
+    };
 
-  /// Matches concrete resource types recognized by Camp's resource system.
+    // Preserve qualifiers here so these checks also describe operations through
+    // owning wrappers and mutable/const views.
+    template <typename T>
+    concept EventOperations = requires(T& event) {
+      { event.check() } -> std::same_as<bool>;
+      { event.wait() } -> std::same_as<void>;
+    };
+
+    template <typename T>
+    concept WaitsForEvents =
+        requires(T& resource,
+                 typename std::remove_cvref_t<T>::event_type const& event,
+                 ::camp::resources::Event const& erased_event,
+                 ::camp::resources::detail::BasicEventRef<false> mutable_event,
+                 ::camp::resources::detail::BasicEventRef<true> const_event) {
+          { resource.wait() } -> std::same_as<void>;
+          { resource.wait_for(event) } -> std::same_as<void>;
+          { resource.wait_for(erased_event) } -> std::same_as<void>;
+          { resource.wait_for(mutable_event) } -> std::same_as<void>;
+          { resource.wait_for(const_event) } -> std::same_as<void>;
+        };
+
+    template <typename T>
+    concept ResourceOperations =
+        WaitsForEvents<T>
+        && requires(T& resource,
+                 std::size_t size,
+                 ::camp::resources::MemoryAccess access,
+                 void* dst,
+                 void const* src,
+                 int value) {
+          {
+            resource.get_event()
+          } -> std::same_as<typename std::remove_cvref_t<T>::event_type>;
+          {
+            resource.get_event_erased()
+          } -> std::same_as<::camp::resources::Event>;
+          { resource.template allocate<char>(size) } -> std::same_as<char*>;
+          {
+            resource.template allocate<char>(size, access)
+          } -> std::same_as<char*>;
+          { resource.template allocate<int>(size) } -> std::same_as<int*>;
+          {
+            resource.template allocate<int>(size, access)
+          } -> std::same_as<int*>;
+          { resource.calloc(size) } -> std::same_as<void*>;
+          { resource.calloc(size, access) } -> std::same_as<void*>;
+          { resource.deallocate(dst) } -> std::same_as<void>;
+          { resource.deallocate(dst, access) } -> std::same_as<void>;
+          { resource.memcpy(dst, src, size) } -> std::same_as<void>;
+          { resource.memset(dst, value, size) } -> std::same_as<void>;
+        };
+  }  // namespace detail
+
+  /// Checks the common concrete event API, independently of registration.
   template <typename T>
-  concept ConcreteResource = ::camp::resources::is_concrete_resource_v<T>;
+  concept ConcreteEventAPI =
+      std::equality_comparable<std::remove_cvref_t<T>>
+      && Hashable<T>
+      && detail::HasPlatform<T>
+      && detail::EventOperations<std::remove_cvref_t<T> const>;
+
+  /// Checks the common concrete resource API, independently of registration.
+  /// Allocation is checked with byte and typed storage, with explicit and
+  /// default memory access. Backend-specific native handles are not required.
+  template <typename T>
+  concept ConcreteResourceAPI =
+      std::copy_constructible<std::remove_cvref_t<T>>
+      && std::equality_comparable<std::remove_cvref_t<T>>
+      && Hashable<T>
+      && detail::HasPlatform<T>
+      && requires {
+           requires ConcreteEventAPI<
+               typename std::remove_cvref_t<T>::event_type>;
+           requires std::same_as<
+               typename std::remove_cvref_t<T>::event_type,
+               std::remove_cvref_t<
+                   typename std::remove_cvref_t<T>::event_type>>;
+           {
+             std::remove_cvref_t<T>::get_default()
+           } -> std::same_as<std::remove_cvref_t<T>>;
+           { std::remove_cvref_t<T>::cleanup() } -> std::same_as<void>;
+         } && detail::ResourceOperations<std::remove_cvref_t<T>>;
+
+  /// Matches owning and non-owning type-erased event types.
+  template <typename T>
+  concept GenericEvent =
+      std::same_as<std::remove_cvref_t<T>, ::camp::resources::Event>
+      || std::same_as<std::remove_cvref_t<T>,
+                      ::camp::resources::detail::BasicEventRef<false>>
+      || std::same_as<std::remove_cvref_t<T>,
+                      ::camp::resources::detail::BasicEventRef<true>>;
+
+  /// Matches registered concrete events that satisfy the common event API.
+  template <typename T>
+  concept ConcreteEvent =
+      ::camp::resources::is_concrete_event_v<T> && ConcreteEventAPI<T>;
+
+  /// Matches registered concrete resources that satisfy the common resource
+  /// API.
+  template <typename T>
+  concept ConcreteResource =
+      ::camp::resources::is_concrete_resource_v<T> && ConcreteResourceAPI<T>;
 
 }  // namespace concepts
 

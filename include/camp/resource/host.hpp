@@ -55,7 +55,7 @@ namespace resources
 
       ~HostEvent() = default;
 
-      Platform get_platform() const { return Platform::host; }
+      Platform get_platform() const noexcept { return Platform::host; }
 
       bool check() const { return true; }
 
@@ -68,9 +68,9 @@ namespace resources
        * \return True (Host is always synchronous so host events are trivial)
        */
       friend inline bool operator==(HostEvent const& lhs,
-                                    HostEvent const& rhs) = default;
+                                    HostEvent const& rhs) noexcept = default;
 
-      size_t get_hash() const
+      size_t get_hash() const noexcept
       {
         const size_t platform_type = size_t(get_platform()) << 32;
         return platform_type;
@@ -85,7 +85,7 @@ namespace resources
       Host(int /* group */ = -1) {}
 
       // Methods
-      Platform get_platform() const { return Platform::host; }
+      Platform get_platform() const noexcept { return Platform::host; }
 
       static Host get_default()
       {
@@ -100,20 +100,20 @@ namespace resources
 
       HostEvent get_event() { return HostEvent(); }
 
-      Event get_event_erased() { return Event{get_event()}; }
+      Event get_event_erased();
 
       void wait() {}
 
       void wait_for(HostEvent const& e) { e.wait(); }
 
-      void wait_for(Event const& e)
+      template <camp::concepts::ConcreteEvent T>
+      void wait_for(T const& e)
       {
-        if (auto host_event = e.try_get<HostEvent>()) {
-          wait_for(*host_event);
-        } else {
-          e.wait();
-        }
+        e.wait();
       }
+
+      template <camp::concepts::GenericEvent T>
+      void wait_for(T&& e);
 
       // Memory
       template <typename T>
@@ -163,17 +163,16 @@ namespace resources
        * \return Always return true since Host resources are always the same
        */
       friend inline bool operator==(Host const& CAMP_UNUSED_ARG(lhs),
-                                    Host const& CAMP_UNUSED_ARG(rhs))
+                                    Host const& CAMP_UNUSED_ARG(rhs)) noexcept
       {
         return true;
       }
 
-      size_t get_hash() const
+      size_t get_hash() const noexcept
       {
         return size_t(get_platform()) << 32;  // All Host resources are the same
       }
     };
-
   }  // namespace v1
 
 }  // namespace resources
@@ -193,7 +192,7 @@ namespace std
  */
 template <>
 struct hash<camp::resources::HostEvent> {
-  std::size_t operator()(const camp::resources::HostEvent& e) const
+  std::size_t operator()(const camp::resources::HostEvent& e) const noexcept
   {
     return e.get_hash();
   }
@@ -210,11 +209,44 @@ struct hash<camp::resources::HostEvent> {
  */
 template <>
 struct hash<camp::resources::Host> {
-  std::size_t operator()(const camp::resources::Host& h) const
+  std::size_t operator()(const camp::resources::Host& h) const noexcept
   {
     return h.get_hash();
   }
 };
 
 }  // namespace std
+
+namespace camp
+{
+namespace resources
+{
+  inline namespace v1
+  {
+    // Define these methods after the std::hash specializations: Event
+    // construction and wait_for overload resolution check ConcreteEventAPI,
+    // which requires Hashable.
+
+    inline Event Host::get_event_erased()
+    {
+      return Event{get_event()};
+    }
+
+    template <camp::concepts::GenericEvent T>
+    inline void Host::wait_for(T&& e)
+    {
+      EventConstRef ref{e};
+      if (auto host_event = ref.template try_get<HostEvent>()) {
+        wait_for(*host_event);
+      } else {
+        ref.wait();
+      }
+    }
+
+    static_assert(camp::concepts::ConcreteEventAPI<HostEvent>);
+    static_assert(camp::concepts::ConcreteResourceAPI<Host>);
+  }  // namespace v1
+}  // namespace resources
+}  // namespace camp
+
 #endif /* __CAMP_DEVICES_HPP */

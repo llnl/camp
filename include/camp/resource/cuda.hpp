@@ -97,7 +97,7 @@ namespace resources
 
       ~CudaEvent() { finalize(m_event); }
 
-      Platform get_platform() const { return Platform::cuda; }
+      Platform get_platform() const noexcept { return Platform::cuda; }
 
       bool check() const
       {
@@ -110,7 +110,7 @@ namespace resources
         CAMP_CUDA_API_INVOKE_AND_CHECK(cudaEventSynchronize, m_event);
       }
 
-      cudaEvent_t getCudaEvent_t() const { return m_event; }
+      cudaEvent_t getCudaEvent_t() const noexcept { return m_event; }
 
       /*
        * \brief Compares two events to see if they represent the same underlying
@@ -119,9 +119,9 @@ namespace resources
        * \return True if both refer to the same cuda event, false otherwise.
        */
       friend inline bool operator==(CudaEvent const& lhs,
-                                    CudaEvent const& rhs) = default;
+                                    CudaEvent const& rhs) noexcept = default;
 
-      size_t get_hash() const
+      size_t get_hash() const noexcept
       {
         const size_t platform_type = size_t(get_platform()) << 32;
         size_t hash = std::hash<cudaEvent_t>{}(m_event);
@@ -175,9 +175,9 @@ namespace resources
 
       ~CudaStream() { finalize(m_stream); }
 
-      Platform get_platform() const { return Platform::cuda; }
+      Platform get_platform() const noexcept { return Platform::cuda; }
 
-      handle_type get_handle() const { return m_stream; }
+      handle_type get_handle() const noexcept { return m_stream; }
 
       /*
        * \brief Compares two events to see if they represent the same underlying
@@ -186,9 +186,9 @@ namespace resources
        * \return True if both refer to the same cuda stream, false otherwise.
        */
       friend inline bool operator==(CudaStream const& lhs,
-                                    CudaStream const& rhs) = default;
+                                    CudaStream const& rhs) noexcept = default;
 
-      size_t get_hash() const
+      size_t get_hash() const noexcept
       {
         const size_t platform_type = size_t(get_platform()) << 32;
         size_t hash = std::hash<handle_type>{}(m_stream);
@@ -307,7 +307,7 @@ namespace resources
       }
 
       // Methods
-      Platform get_platform() const { return Platform::cuda; }
+      Platform get_platform() const noexcept { return Platform::cuda; }
 
       static Cuda get_default()
       {
@@ -338,7 +338,7 @@ namespace resources
         return CudaEvent(get_stream());
       }
 
-      Event get_event_erased() { return Event{get_event()}; }
+      Event get_event_erased();
 
       void wait()
       {
@@ -355,14 +355,14 @@ namespace resources
                                        0);
       }
 
-      void wait_for(Event const& e)
+      template <camp::concepts::ConcreteEvent T>
+      void wait_for(T const& e)
       {
-        if (auto cuda_event = e.try_get<CudaEvent>()) {
-          wait_for(*cuda_event);
-        } else {
-          e.wait();
-        }
+        e.wait();
       }
+
+      template <camp::concepts::GenericEvent T>
+      void wait_for(T&& e);
 
       // Memory
       template <typename T>
@@ -456,18 +456,19 @@ namespace resources
         CAMP_CUDA_API_INVOKE_AND_CHECK(cudaMemsetAsync, p, val, size, stream);
       }
 
-      cudaStream_t get_stream() const { return stream; }
+      cudaStream_t get_stream() const noexcept { return stream; }
 
-      int get_device() const { return device; }
+      int get_device() const noexcept { return device; }
 
       /*
        * \brief Compares two (Cuda) resources to see if they are equal
        *
        * \return True or false depending on if it is the same stream
        */
-      friend inline bool operator==(Cuda const& lhs, Cuda const& rhs) = default;
+      friend inline bool operator==(Cuda const& lhs,
+                                    Cuda const& rhs) noexcept = default;
 
-      size_t get_hash() const
+      size_t get_hash() const noexcept
       {
         const size_t cuda_type = size_t(get_platform()) << 32;
         size_t stream_hash = std::hash<void*>{}(static_cast<void*>(stream));
@@ -497,7 +498,7 @@ namespace std
  */
 template <>
 struct hash<camp::resources::CudaEvent> {
-  std::size_t operator()(const camp::resources::CudaEvent& e) const
+  std::size_t operator()(const camp::resources::CudaEvent& e) const noexcept
   {
     return e.get_hash();
   }
@@ -514,13 +515,46 @@ struct hash<camp::resources::CudaEvent> {
  */
 template <>
 struct hash<camp::resources::Cuda> {
-  std::size_t operator()(const camp::resources::Cuda& c) const
+  std::size_t operator()(const camp::resources::Cuda& c) const noexcept
   {
     return c.get_hash();
   }
 };
 
 }  // namespace std
+
+namespace camp
+{
+namespace resources
+{
+  inline namespace v1
+  {
+    // Define these methods after the std::hash specializations: Event
+    // construction and wait_for overload resolution check ConcreteEventAPI,
+    // which requires Hashable.
+
+    inline Event Cuda::get_event_erased()
+    {
+      return Event{get_event()};
+    }
+
+    template <camp::concepts::GenericEvent T>
+    inline void Cuda::wait_for(T&& e)
+    {
+      EventConstRef ref{e};
+      if (auto cuda_event = ref.template try_get<CudaEvent>()) {
+        wait_for(*cuda_event);
+      } else {
+        ref.wait();
+      }
+    }
+
+    static_assert(camp::concepts::ConcreteEventAPI<CudaEvent>);
+    static_assert(camp::concepts::ConcreteResourceAPI<Cuda>);
+  }  // namespace v1
+}  // namespace resources
+}  // namespace camp
+
 
 #endif  // #ifdef CAMP_ENABLE_CUDA
 
