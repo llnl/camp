@@ -106,9 +106,14 @@ namespace resources
 
       void wait_for(HostEvent const& e) { e.wait(); }
 
-      void wait_for(EventConstRef e);
+      template <camp::concepts::ConcreteEvent T>
+      void wait_for(T const& e)
+      {
+        e.wait();
+      }
 
-      void wait_for(Event const& e);
+      template <camp::concepts::GenericEvent T>
+      void wait_for(T&& e);
 
       // Memory
       template <typename T>
@@ -227,18 +232,15 @@ namespace resources
       return Event{get_event()};
     }
 
-    inline void Host::wait_for(EventConstRef e)
+    template <camp::concepts::GenericEvent T>
+    inline void Host::wait_for(T&& e)
     {
-      if (auto host_event = e.template try_get<HostEvent>()) {
+      EventConstRef ref{e};
+      if (auto host_event = ref.template try_get<HostEvent>()) {
         wait_for(*host_event);
       } else {
-        e.wait();
+        ref.wait();
       }
-    }
-
-    inline void Host::wait_for(Event const& e)
-    {
-      wait_for(EventConstRef{e});
     }
 
     static_assert(camp::concepts::ConcreteEventAPI<HostEvent>);

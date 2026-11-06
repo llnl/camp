@@ -353,9 +353,14 @@ namespace resources
                                       0);
       }
 
-      void wait_for(EventConstRef e);
+      template <camp::concepts::ConcreteEvent T>
+      void wait_for(T const& e)
+      {
+        e.wait();
+      }
 
-      void wait_for(Event const& e);
+      template <camp::concepts::GenericEvent T>
+      void wait_for(T&& e);
 
       // Memory
       template <typename T>
@@ -531,18 +536,15 @@ namespace resources
       return Event{get_event()};
     }
 
-    inline void Hip::wait_for(EventConstRef e)
+    template <camp::concepts::GenericEvent T>
+    inline void Hip::wait_for(T&& e)
     {
-      if (auto hip_event = e.template try_get<HipEvent>()) {
+      EventConstRef ref{e};
+      if (auto hip_event = ref.template try_get<HipEvent>()) {
         wait_for(*hip_event);
       } else {
-        e.wait();
+        ref.wait();
       }
-    }
-
-    inline void Hip::wait_for(Event const& e)
-    {
-      wait_for(EventConstRef{e});
     }
 
     static_assert(camp::concepts::ConcreteEventAPI<HipEvent>);

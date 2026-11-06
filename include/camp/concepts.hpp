@@ -676,6 +676,15 @@ namespace concepts
            { std::remove_cvref_t<T>::cleanup() } -> std::same_as<void>;
          } && detail::ResourceOperations<std::remove_cvref_t<T>>;
 
+  /// Matches owning and non-owning type-erased event types.
+  template <typename T>
+  concept GenericEvent =
+      std::same_as<std::remove_cvref_t<T>, ::camp::resources::Event>
+      || std::same_as<std::remove_cvref_t<T>,
+                      ::camp::resources::detail::BasicEventRef<false>>
+      || std::same_as<std::remove_cvref_t<T>,
+                      ::camp::resources::detail::BasicEventRef<true>>;
+
   /// Matches registered concrete events that satisfy the common event API.
   template <typename T>
   concept ConcreteEvent =

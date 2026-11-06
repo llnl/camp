@@ -33,6 +33,20 @@ static_assert(camp::concepts::ConcreteEvent<const HostEvent&>);
 static_assert(camp::concepts::ConcreteEvent<HostEvent&&>);
 static_assert(camp::concepts::ConcreteEvent<const HostEvent&&>);
 
+// Event satisfies the API but is not registered as a concrete event.
+static_assert(ConcreteEventAPI<Event>);
+static_assert(!camp::concepts::ConcreteEvent<Event>);
+static_assert(!camp::concepts::ConcreteEvent<EventRef>);
+static_assert(!camp::concepts::ConcreteEvent<EventConstRef>);
+
+// GenericEvent accepts owning events and views, not concrete events.
+static_assert(camp::concepts::GenericEvent<Event>);
+static_assert(camp::concepts::GenericEvent<EventRef>);
+static_assert(camp::concepts::GenericEvent<EventConstRef>);
+static_assert(camp::concepts::GenericEvent<const Event&>);
+static_assert(!camp::concepts::GenericEvent<HostEvent>);
+static_assert(!camp::concepts::GenericEvent<int>);
+
 // Start with Host's valid API and change one requirement in each derived
 // fixture. ResourceAPIBase supplies get_default() with the fixture's return
 // type; inheriting Host::get_default() would otherwise return Host and cause

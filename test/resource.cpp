@@ -415,6 +415,13 @@ concept CanWaitForResource = requires(ResourceType&& resource,
       std::forward<EventType>(event));
 };
 
+#ifdef CAMP_HAVE_CUDA
+static_assert(CanWaitForResource<Cuda&, CudaEvent&>);
+static_assert(CanWaitForResource<Cuda&, Event>);
+static_assert(CanWaitForResource<Cuda&, HostEvent&>);
+static_assert(CanWaitForResource<Cuda&, HostEvent>);
+#endif
+
 // Resource operation availability
 // Through Resource&
 static_assert(camp::concepts::detail::ResourceOperations<Resource&>);
@@ -2155,6 +2162,7 @@ void test_wait_operations(ResourceLike& r)
   Event erased_event = r.get_event_erased();
   ASSERT_TRUE(erased_event);
   r.wait_for(erased_event);
+  r.wait_for(r.get_event_erased());
   r.wait_for(EventRef{erased_event});
   r.wait_for(EventConstRef{erased_event});
   auto typed_event = r.get_event();
@@ -2162,6 +2170,7 @@ void test_wait_operations(ResourceLike& r)
   r.wait_for(EventRef{typed_event});
   r.wait_for(EventConstRef{typed_event});
   HostEvent host_typed_event;
+  r.wait_for(host_typed_event);
   r.wait_for(EventRef{host_typed_event});
   r.wait_for(EventConstRef{host_typed_event});
   r.wait_for(HostEvent{});
