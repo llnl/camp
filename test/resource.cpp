@@ -153,6 +153,20 @@ static_assert(ExplicitlyBoolConvertible<EventRef const&>);
 static_assert(ExplicitlyBoolConvertible<EventConstRef&>);
 static_assert(ExplicitlyBoolConvertible<EventConstRef const&>);
 
+// Every owning or borrowed handle reports its platform through const access.
+static_assert(camp::concepts::detail::HasPlatform<Resource&>);
+static_assert(camp::concepts::detail::HasPlatform<Resource const&>);
+static_assert(camp::concepts::detail::HasPlatform<ResourceRef&>);
+static_assert(camp::concepts::detail::HasPlatform<ResourceRef const&>);
+static_assert(camp::concepts::detail::HasPlatform<ResourceConstRef&>);
+static_assert(camp::concepts::detail::HasPlatform<ResourceConstRef const&>);
+static_assert(camp::concepts::detail::HasPlatform<Event&>);
+static_assert(camp::concepts::detail::HasPlatform<Event const&>);
+static_assert(camp::concepts::detail::HasPlatform<EventRef&>);
+static_assert(camp::concepts::detail::HasPlatform<EventRef const&>);
+static_assert(camp::concepts::detail::HasPlatform<EventConstRef&>);
+static_assert(camp::concepts::detail::HasPlatform<EventConstRef const&>);
+
 // Resource reference construction
 // From Host
 static_assert(std::is_nothrow_constructible_v<ResourceRef, Host&>);

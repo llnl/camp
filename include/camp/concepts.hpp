@@ -570,6 +570,13 @@ namespace concepts
 
   namespace detail
   {
+    template <typename T>
+    concept HasPlatform = requires(std::remove_cvref_t<T> const& value) {
+      {
+        value.get_platform()
+      } noexcept -> std::same_as<::camp::resources::Platform>;
+    };
+
     // Preserve qualifiers here so these checks also describe operations through
     // owning wrappers and mutable/const views.
     template <typename T>
@@ -619,11 +626,8 @@ namespace concepts
   concept ConcreteEventAPI =
       std::equality_comparable<std::remove_cvref_t<T>>
       && Hashable<T>
-      && requires(std::remove_cvref_t<T> const& lhs) {
-           {
-             lhs.get_platform()
-           } noexcept -> std::same_as<::camp::resources::Platform>;
-         } && detail::EventOperations<std::remove_cvref_t<T> const>;
+      && detail::HasPlatform<T>
+      && detail::EventOperations<std::remove_cvref_t<T> const>;
 
   /// Checks the common concrete resource API, independently of registration.
   /// Allocation is checked with byte and typed storage, with explicit and
@@ -633,7 +637,8 @@ namespace concepts
       std::copy_constructible<std::remove_cvref_t<T>>
       && std::equality_comparable<std::remove_cvref_t<T>>
       && Hashable<T>
-      && requires(std::remove_cvref_t<T> const& lhs) {
+      && detail::HasPlatform<T>
+      && requires {
            requires ConcreteEventAPI<
                typename std::remove_cvref_t<T>::event_type>;
            requires std::same_as<
@@ -644,9 +649,6 @@ namespace concepts
              std::remove_cvref_t<T>::get_default()
            } -> std::same_as<std::remove_cvref_t<T>>;
            { std::remove_cvref_t<T>::cleanup() } -> std::same_as<void>;
-           {
-             lhs.get_platform()
-           } noexcept -> std::same_as<::camp::resources::Platform>;
          } && detail::ResourceOperations<std::remove_cvref_t<T>>;
 
   /// Matches registered concrete events that satisfy the common event API.
